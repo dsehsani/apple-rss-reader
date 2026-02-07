@@ -27,6 +27,7 @@
 		3D147CA12F32B35E00748E17 /* OpenRSS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenRSS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D147CB02F32B36000748E17 /* OpenRSSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenRSSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D147CBA2F32B36000748E17 /* OpenRSSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenRSSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D7E39622F38015300A6B0F2 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -92,6 +93,7 @@
 		3D147C982F32B35E00748E17 = {
 			isa = PBXGroup;
 			children = (
+				3D7E39622F38015300A6B0F2 /* README.md */,
 				3D147CA32F32B35E00748E17 /* OpenRSS */,
 				3D147CB32F32B36000748E17 /* OpenRSSTests */,
 				3D147CBD2F32B36000748E17 /* OpenRSSUITests */,
