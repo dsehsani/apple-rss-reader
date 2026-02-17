@@ -76,16 +76,22 @@ final class TodayViewModel {
 
     /// Refresh articles (simulates network fetch)
     func refresh() async {
+        print("🔄 TodayViewModel.refresh() CALLED")
         isRefreshing = true
+        defer { isRefreshing = false }
 
-        // Simulate network delay
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
-
-        await MainActor.run {
-            loadArticles()
-            isRefreshing = false
+        if let mock = dataService as? MockDataService {
+            print("✅ dataService is MockDataService, calling refreshAllFeeds()")
+            await mock.refreshAllFeeds()
+            print("✅ refreshAllFeeds() DONE. mock articles =", mock.articles.count)
+        } else {
+            print("❌ dataService is NOT MockDataService. It is:", type(of: dataService))
         }
+
+        loadArticles()
+        print("✅ loadArticles DONE. viewModel articles =", articles.count)
     }
+
 
     /// Select a category
     func selectCategory(_ category: Category) {

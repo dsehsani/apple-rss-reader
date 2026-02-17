@@ -137,15 +137,25 @@ final class MockDataService: FeedDataService {
                 iconColor: .orange,
                 categoryID: CategoryIDs.design
             ),
+//            Source(
+//                id: SourceIDs.designernews,
+//                name: "Designer News",
+//                feedURL: "https://www.designernews.co/?format=rss",
+//                websiteURL: "https://designernews.co",
+//                icon: "newspaper.fill",
+//                iconColor: .blue,
+//                categoryID: CategoryIDs.design
+//            ),
             Source(
                 id: SourceIDs.designernews,
-                name: "Designer News",
-                feedURL: "https://designernews.co/feed/",
-                websiteURL: "https://designernews.co",
+                name: "A List Apart",
+                feedURL: "https://alistapart.com/main/feed/",
+                websiteURL: "https://alistapart.com",
                 icon: "newspaper.fill",
                 iconColor: .blue,
                 categoryID: CategoryIDs.design
             ),
+            
             Source(
                 id: SourceIDs.abduzeedo,
                 name: "Abduzeedo",
@@ -157,19 +167,29 @@ final class MockDataService: FeedDataService {
             ),
 
             // Work Sources
+//            Source(
+//                id: SourceIDs.hbr,
+//                name: "Harvard Business Review",
+//                feedURL: "https://feeds.harvardbusiness.org/harvardbusiness?format=xml",
+//                websiteURL: "https://hbr.org",
+//                icon: "building.columns.fill",
+//                iconColor: .red,
+//                categoryID: CategoryIDs.work
+//            ),
             Source(
-                id: SourceIDs.hbr,
-                name: "Harvard Business Review",
-                feedURL: "https://hbr.org/feed/",
-                websiteURL: "https://hbr.org",
+                id: SourceIDs.hbr, // reuse the same id for now OR create a new one later
+                name: "MIT Sloan Management Review",
+                feedURL: "https://sloanreview.mit.edu/feed/",
+                websiteURL: "https://sloanreview.mit.edu",
                 icon: "building.columns.fill",
                 iconColor: .red,
                 categoryID: CategoryIDs.work
             ),
+            
             Source(
                 id: SourceIDs.fastCompany,
                 name: "Fast Company",
-                feedURL: "https://fastcompany.com/feed/",
+                feedURL: "https://www.fastcompany.com/work-life/rss",
                 websiteURL: "https://fastcompany.com",
                 icon: "hare.fill",
                 iconColor: .green,
@@ -186,6 +206,7 @@ final class MockDataService: FeedDataService {
                 iconColor: .yellow,
                 categoryID: CategoryIDs.productivity
             ),
+         /* 404
             Source(
                 id: SourceIDs.zenHabits,
                 name: "Zen Habits",
@@ -195,7 +216,7 @@ final class MockDataService: FeedDataService {
                 iconColor: .green,
                 categoryID: CategoryIDs.productivity
             ),
-
+          */
             // Personal Sources
             Source(
                 id: SourceIDs.brainPickings,
@@ -506,6 +527,101 @@ final class MockDataService: FeedDataService {
         ]
     }
 
+    @MainActor
+    func refreshAllFeeds() async {
+        let rssService = RSSService()
+        var newArticles: [Article] = []
+        var seen = Set<String>() // de-dupe key
+
+        for source in sources {
+            guard let url = URL(string: source.feedURL) else { continue }
+
+            do {
+                let parsed = try await rssService.fetchAndParseFeed(from: url)
+
+                // ===== DEMO LOGGING (sample only) =====
+                print("\n🛰 Fetching Feed:", source.name)
+                print("   URL:", source.feedURL)
+                print("   Articles Found:", parsed.count)
+
+                for a in parsed.prefix(2) {
+                    let t = a.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "nil"
+                    let au = a.author?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "nil"
+                    let lk = a.link?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "nil"
+
+                    print("   • Title:", t)
+                    print("     Author:", au)
+                    print("     Date:", a.publicationDate?.description ?? "nil")
+                    print("     Link:", lk)
+                }
+                print("-----")
+                // =====================================
+
+                let converted: [Article] = parsed.compactMap { p in
+                    guard let title = p.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+                          !title.isEmpty else { return nil }
+
+                    let rawExcerpt = p.description ?? ""
+                    let excerpt = self.plainText(rawExcerpt)
+
+                    // Better de-dupe: prefer link if present, else fall back to title
+                    let linkKey = (p.link ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    let key = linkKey.isEmpty
+                        ? "\(source.id.uuidString)|\(title)"
+                        : "\(source.id.uuidString)|\(linkKey)"
+                    guard seen.insert(key).inserted else { return nil }
+
+                    // Go back to “original” behavior:
+                    // If the feed doesn't provide a date, just use now.
+                    let published = p.publicationDate ?? Date()
+
+                    // read-time estimate (200 wpm), clamped 1..30
+                    let wordCount = excerpt.split { $0.isWhitespace || $0.isNewline }.count
+                    let minutes = max(1, min(30, wordCount / 200))
+
+                    return Article(
+                        title: title,
+                        excerpt: excerpt,
+                        sourceID: source.id,
+                        categoryID: source.categoryID,
+                        publishedAt: published,
+                        isRead: false,
+                        readTimeMinutes: minutes
+                    )
+                }
+
+                newArticles.append(contentsOf: converted)
+
+            } catch {
+                print("❌ Failed to fetch \(source.name): \(error)")
+            }
+
+            // throttle a bit to reduce rate-limit/blocks
+            try? await Task.sleep(nanoseconds: 300_000_000)
+        }
+
+        newArticles.sort { $0.publishedAt > $1.publishedAt }
+
+        if !newArticles.isEmpty {
+            self.articles = newArticles
+        } else {
+            print("⚠️ refreshAllFeeds produced 0 articles; keeping existing articles.")
+        }
+    }
+
+    // Put this helper anywhere inside MockDataService (private is fine)
+    private func plainText(_ html: String) -> String {
+        html
+            .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+
+    
     // MARK: - Query Methods
 
     func source(for id: UUID) -> Source? {
