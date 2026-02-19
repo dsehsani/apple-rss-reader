@@ -62,7 +62,34 @@ struct ArticleCardView: View {
 
     private var heroImage: some View {
         ZStack {
-            // Placeholder gradient based on source color - adaptive opacity
+            // Always-visible placeholder so the frame never collapses
+            placeholderHero
+
+            if let urlString = article.imageURL, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty:
+                        Color.clear
+                            .overlay(ProgressView().tint(.white.opacity(0.5)))
+                    case .failure:
+                        Color.clear   // placeholder already visible underneath
+                    @unknown default:
+                        Color.clear
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 180)
+        .clipped()
+    }
+
+    private var placeholderHero: some View {
+        ZStack {
             LinearGradient(
                 colors: [
                     (source?.iconColor ?? .blue).opacity(colorScheme == .dark ? 0.3 : 0.2),
@@ -71,14 +98,11 @@ struct ArticleCardView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-
-            // Placeholder icon - adaptive for light/dark
             Image(systemName: source?.icon ?? "doc.text.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(Design.Colors.primaryText(for: colorScheme).opacity(0.3))
         }
-        .aspectRatio(16/9, contentMode: .fill)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var sourceInfoRow: some View {

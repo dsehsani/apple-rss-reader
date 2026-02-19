@@ -25,15 +25,13 @@ struct SourcesView: View {
             // Background - adaptive for light/dark mode
             Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
-            // Main content
+            // Main content — safeAreaInset adapts to any device automatically
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Spacer for header
-                    Color.clear.frame(height: 120)
-
                     // Search bar
                     searchBar
                         .padding(.horizontal, Design.Spacing.edge)
+                        .padding(.top, Design.Spacing.edge)
                         .padding(.bottom, Design.Spacing.edge)
 
                     // Category sections
@@ -70,14 +68,14 @@ struct SourcesView: View {
                     // Manage Categories button
                     manageCategoriesButton
                         .padding(Design.Spacing.edge)
-
-                    // Bottom padding for tab bar
-                    Color.clear.frame(height: 120)
                 }
             }
-
-            // Sticky header
-            headerView
+            .safeAreaInset(edge: .top, spacing: 0) {
+                headerView
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: 94)
+            }
 
             // Floating add button
             addButton
@@ -88,27 +86,26 @@ struct SourcesView: View {
     }
 
     // MARK: - Header View
+    // .ignoresSafeArea(edges: .top) lets the material fill up to the Dynamic Island / notch.
 
     private var headerView: some View {
-        VStack(spacing: 0) {
-            Text("Sources")
-                .font(Design.Typography.largeTitle)
-                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Design.Spacing.edge + 4)
-                .padding(.top, 60)
-                .padding(.bottom, Design.Spacing.edge)
-        }
-        .background(
-            Rectangle()
-                .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(Design.Colors.glassBorder(for: colorScheme))
-                        .frame(height: 0.5)
-                }
-                .ignoresSafeArea()
-        )
+        Text("Sources")
+            .font(Design.Typography.largeTitle)
+            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Design.Spacing.edge + 4)
+            .padding(.top, 16)
+            .padding(.bottom, Design.Spacing.edge)
+            .background(
+                Rectangle()
+                    .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+                    .overlay(alignment: .bottom) {
+                        Rectangle()
+                            .fill(Design.Colors.glassBorder(for: colorScheme))
+                            .frame(height: 0.5)
+                    }
+                    .ignoresSafeArea(edges: .top)
+            )
     }
 
     // MARK: - Search Bar

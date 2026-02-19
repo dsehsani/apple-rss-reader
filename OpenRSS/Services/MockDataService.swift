@@ -38,9 +38,8 @@ final class MockDataService: FeedDataService {
     // MARK: - Initialization
 
     private init() {
-        setupCategories()
-        setupSources()
-        setupArticles()
+        // Data is now managed by SwiftDataService + SwiftData persistence.
+        // MockDataService starts empty; it is kept only as a test/preview stub.
     }
 
     // MARK: - Categories Setup

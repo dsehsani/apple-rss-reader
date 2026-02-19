@@ -24,6 +24,7 @@ struct MainTabView: View {
     // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppState.self)  private var appState
 
     // MARK: - Body
 
@@ -37,7 +38,7 @@ struct MainTabView: View {
                 case .discover:
                     DiscoverView()
                 case .saved:
-                    SavedView()
+                    MyFeedsView()
                 case .sources:
                     SourcesView()
                 case .settings:
@@ -45,8 +46,15 @@ struct MainTabView: View {
                 }
             }
 
-            // Apple News-style floating tab bar
+            // Apple News-style floating tab bar — hidden while reading an article
             appleNewsStyleTabBar
+                .offset(y: appState.isReadingArticle ? 140 : 0)
+                .opacity(appState.isReadingArticle ? 0 : 1)
+                .animation(
+                    .spring(response: 0.38, dampingFraction: 0.82),
+                    value: appState.isReadingArticle
+                )
+                .allowsHitTesting(!appState.isReadingArticle)
         }
         .ignoresSafeArea(.keyboard)
     }
@@ -259,7 +267,7 @@ enum Tab: CaseIterable {
         switch self {
         case .today: return "Today"
         case .discover: return "Discover"
-        case .saved: return "Saved"
+        case .saved: return "My Feeds"
         case .sources: return "Sources"
         case .settings: return "Settings"
         }
@@ -269,7 +277,7 @@ enum Tab: CaseIterable {
         switch self {
         case .today: return Design.Icons.today
         case .discover: return Design.Icons.discover
-        case .saved: return Design.Icons.saved
+        case .saved: return "list.bullet.below.rectangle"
         case .sources: return Design.Icons.sources
         case .settings: return Design.Icons.settings
         }

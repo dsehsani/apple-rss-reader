@@ -21,7 +21,16 @@ final class TodayViewModel {
     var selectedCategory: Category?
     var articles: [Article] = []
     var isRefreshing: Bool = false
-    var searchText: String = ""
+
+    /// Dedicated search ViewModel — owns the query string and filter strategy.
+    /// The View binds directly to `searchViewModel.searchText`.
+    var searchViewModel = SearchViewModel(mode: .titleOnly)
+
+    /// The set of active filter options. Empty means "show everything".
+    var activeFilters: Set<FilterOption> = []
+
+    /// True when at least one filter is toggled on — used to show the badge dot.
+    var hasActiveFilters: Bool { !activeFilters.isEmpty }
 
     // MARK: - Computed Properties
 
@@ -30,26 +39,40 @@ final class TodayViewModel {
         [Category.allUpdates] + dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    /// Filtered articles based on selected category and search text
+    /// Articles filtered by the selected category then by the search query.
+    /// Category logic lives here; search filtering is delegated to SearchViewModel.
     var filteredArticles: [Article] {
         var result = articles
 
-        // Filter by category
+        // 1. Limit to the past 7 days
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        result = result.filter { $0.publishedAt >= sevenDaysAgo }
+
+        // 2. Filter by selected category
         if let category = selectedCategory, category.id != Category.allUpdates.id {
             result = result.filter { $0.categoryID == category.id }
         }
 
-        // Filter by search text
-        if !searchText.isEmpty {
-            let query = searchText.lowercased()
-            result = result.filter {
-                $0.title.lowercased().contains(query) ||
-                $0.excerpt.lowercased().contains(query)
+        // 2. Delegate search filtering to SearchViewModel (Strategy Pattern)
+        result = searchViewModel.filteredArticles(from: result)
+
+        // 3. Apply each active filter option
+        for filter in activeFilters {
+            switch filter {
+            case .saved:
+                result = result.filter { $0.isBookmarked }
+            case .unread:
+                result = result.filter { !$0.isRead }
+            case .today:
+                result = result.filter { Calendar.current.isDateInToday($0.publishedAt) }
             }
         }
 
         return result.sorted { $0.publishedAt > $1.publishedAt }
     }
+
+    /// True when the user has at least one subscribed feed — drives the empty state in TodayView.
+    var hasSources: Bool { !dataService.sources.isEmpty }
 
     /// Unread count for a specific category
     func unreadCount(for category: Category) -> Int {
@@ -61,7 +84,7 @@ final class TodayViewModel {
 
     // MARK: - Initialization
 
-    init(dataService: FeedDataService = MockDataService.shared) {
+    init(dataService: FeedDataService = SwiftDataService.shared) {
         self.dataService = dataService
         self.selectedCategory = Category.allUpdates
         loadArticles()
@@ -74,18 +97,16 @@ final class TodayViewModel {
         articles = dataService.articles.sorted { $0.publishedAt > $1.publishedAt }
     }
 
-    /// Refresh articles (simulates network fetch)
+    /// Refresh articles from all subscribed feeds, then prune old cache.
     func refresh() async {
         print("🔄 TodayViewModel.refresh() CALLED")
         isRefreshing = true
         defer { isRefreshing = false }
 
-        if let mock = dataService as? MockDataService {
-            print("✅ dataService is MockDataService, calling refreshAllFeeds()")
-            await mock.refreshAllFeeds()
-            print("✅ refreshAllFeeds() DONE. mock articles =", mock.articles.count)
-        } else {
-            print("❌ dataService is NOT MockDataService. It is:", type(of: dataService))
+        if let sds = dataService as? SwiftDataService {
+            await sds.refreshAllFeeds()
+            // Purge extracted article cache entries older than 7 days
+            sds.purgeOldArticleCache(olderThan: 7)
         }
 
         loadArticles()

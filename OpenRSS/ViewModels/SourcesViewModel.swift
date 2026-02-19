@@ -85,7 +85,7 @@ final class SourcesViewModel {
 
     // MARK: - Initialization
 
-    init(dataService: FeedDataService = MockDataService.shared) {
+    init(dataService: FeedDataService = SwiftDataService.shared) {
         self.dataService = dataService
     }
 
@@ -126,15 +126,13 @@ final class SourcesViewModel {
         showingManageCategoriesSheet = true
     }
 
-    /// Delete a source (mock implementation)
+    /// Delete a source from SwiftData.
     func deleteSource(_ source: Source) {
-        // In real implementation, would remove from data store
-        print("Would delete source: \(source.name)")
+        try? SwiftDataService.shared.deleteFeed(id: source.id)
     }
 
-    /// Toggle source enabled state
+    /// Toggle a source's enabled state in SwiftData.
     func toggleSourceEnabled(_ source: Source) {
-        // In real implementation, would update data store
-        print("Would toggle enabled for: \(source.name)")
+        try? SwiftDataService.shared.toggleFeedEnabled(id: source.id)
     }
 }

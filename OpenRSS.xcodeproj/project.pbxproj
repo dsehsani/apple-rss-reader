@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		71B2CA312F4312700054BC30 /* FeedKit in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA302F4312700054BC30 /* FeedKit */; };
+		71B2CA342F4412700054BC30 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA332F4412700054BC30 /* SwiftSoup */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,8 +39,11 @@
 		3D147D0F2F32B99900748E17 /* Exceptions for "OpenRSS" folder in "OpenRSS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Prompts/AddRSSFeed.md,
 				Prompts/LiquidGlass.md,
+				Prompts/SearchBarImplementation.md,
 				Prompts/stitchCSS.md,
+				Prompts/TextRenderingPrompt.md,
 				Prompts/tweakingUI.md,
 				Prompts/UIPrompt.md,
 				Prompts/UpdateUI.md,
@@ -75,6 +79,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				71B2CA312F4312700054BC30 /* FeedKit in Frameworks */,
+				71B2CA342F4412700054BC30 /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -145,6 +150,7 @@
 			name = OpenRSS;
 			packageProductDependencies = (
 				71B2CA302F4312700054BC30 /* FeedKit */,
+				71B2CA332F4412700054BC30 /* SwiftSoup */,
 			);
 			productName = OpenRSS;
 			productReference = 3D147CA12F32B35E00748E17 /* OpenRSS.app */;
@@ -231,6 +237,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				71B2CA2F2F4310EF0054BC30 /* XCRemoteSwiftPackageReference "FeedKit" */,
+				71B2CA322F4412700054BC30 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3D147CA22F32B35E00748E17 /* Products */;
@@ -630,6 +637,14 @@
 				minimumVersion = 9.1.1;
 			};
 		};
+		71B2CA322F4412700054BC30 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -637,6 +652,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 71B2CA2F2F4310EF0054BC30 /* XCRemoteSwiftPackageReference "FeedKit" */;
 			productName = FeedKit;
+		};
+		71B2CA332F4412700054BC30 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71B2CA322F4412700054BC30 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

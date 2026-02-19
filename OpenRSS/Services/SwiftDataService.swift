@@ -1,0 +1,325 @@
+//
+//  SwiftDataService.swift
+//  OpenRSS
+//
+//  @Observable singleton implementing FeedDataService via SwiftData.
+//  Replaces MockDataService as the live data source.
+//
+//  Data flow:
+//    SwiftData (SQLite) → loadFromSwiftData() → categories/sources arrays
+//    → TodayViewModel / MyFeedsViewModel / SourcesViewModel (via FeedDataService)
+//
+
+import Foundation
+import SwiftUI
+import SwiftData
+
+// MARK: - SwiftDataService
+
+@Observable
+final class SwiftDataService: FeedDataService {
+
+    // MARK: - Singleton
+
+    // init() is nonisolated (no @MainActor on the class), so this is fine.
+    // Methods that touch ModelContext are individually marked @MainActor.
+    static let shared = SwiftDataService()
+
+    // MARK: - FeedDataService — Observable Properties
+
+    private(set) var categories: [Category] = []
+    private(set) var sources: [Source] = []
+    /// In-memory articles fetched from live RSS feeds. Not persisted.
+    private(set) var articles: [Article] = []
+
+    // MARK: - Internal
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Constants
+
+    /// Feeds with no assigned folder use this sentinel UUID as their `categoryID`.
+    /// It never corresponds to a real FolderModel in SwiftData.
+    static let unfiledFolderID = UUID(uuidString: "00000000-0000-0000-0000-000000000099")!
+
+    // MARK: - Initialization
+
+    private init() {}
+
+    // MARK: - Bootstrap
+
+    /// Called once from `OpenRSSApp.init()` after the ModelContainer is created.
+    @MainActor
+    func configure(container: ModelContainer) {
+        self.modelContext = container.mainContext
+        loadFromSwiftData()
+    }
+
+    // MARK: - Load
+
+    /// Re-reads all FolderModel and FeedModel records and maps them to domain models.
+    /// Called after every write so that `@Observable` property changes propagate to views.
+    @MainActor
+    func loadFromSwiftData() {
+        guard let context = modelContext else { return }
+
+        let folderDescriptor = FetchDescriptor<FolderModel>(
+            sortBy: [SortDescriptor(\.sortOrder, order: .forward)]
+        )
+        let feedDescriptor = FetchDescriptor<FeedModel>(
+            sortBy: [SortDescriptor(\.addedAt, order: .forward)]
+        )
+
+        do {
+            let folders = try context.fetch(folderDescriptor)
+            let feeds   = try context.fetch(feedDescriptor)
+
+            self.categories = folders.map { Category(from: $0) }
+            self.sources    = feeds.map   { Source(from: $0) }
+        } catch {
+            print("SwiftDataService load error: \(error)")
+        }
+    }
+
+    // MARK: - FeedDataService Protocol
+
+    func source(for id: UUID) -> Source? {
+        sources.first { $0.id == id }
+    }
+
+    func category(for id: UUID) -> Category? {
+        categories.first { $0.id == id }
+    }
+
+    func articlesForCategory(_ categoryID: UUID) -> [Article] {
+        articles.filter { $0.categoryID == categoryID }
+                .sorted { $0.publishedAt > $1.publishedAt }
+    }
+
+    func articlesForSource(_ sourceID: UUID) -> [Article] {
+        articles.filter { $0.sourceID == sourceID }
+                .sorted { $0.publishedAt > $1.publishedAt }
+    }
+
+    func unreadCountForCategory(_ categoryID: UUID) -> Int {
+        articles.filter { $0.categoryID == categoryID && !$0.isRead }.count
+    }
+
+    func unreadCountForSource(_ sourceID: UUID) -> Int {
+        articles.filter { $0.sourceID == sourceID && !$0.isRead }.count
+    }
+
+    // MARK: - CRUD: Folders
+
+    /// Creates a new folder and persists it.
+    @MainActor
+    func addFolder(name: String, iconName: String = "folder.fill", colorHex: String = "007AFF") throws {
+        guard let context = modelContext else { return }
+        let folder = FolderModel(name: name, sortOrder: categories.count, iconName: iconName, colorHex: colorHex)
+        context.insert(folder)
+        try context.save()
+        loadFromSwiftData()
+    }
+
+    /// Permanently deletes a folder (cascade-deletes all its feeds).
+    @MainActor
+    func deleteFolder(id: UUID) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FolderModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let folder = try context.fetch(descriptor).first {
+            context.delete(folder)
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    /// Returns the live FolderModel for a given UUID (used when assigning a feed to a folder).
+    @MainActor
+    func folderModel(for id: UUID) -> FolderModel? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<FolderModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? context.fetch(descriptor).first
+    }
+
+    // MARK: - CRUD: Feeds
+
+    /// Creates a new feed subscription and optionally assigns it to a folder.
+    @MainActor
+    func addFeed(feedURL: String, title: String, websiteURL: String, folderID: UUID?) throws {
+        guard let context = modelContext else { return }
+        let feed = FeedModel(feedURL: feedURL, title: title, websiteURL: websiteURL)
+        if let folderID {
+            feed.folder = folderModel(for: folderID)
+        }
+        context.insert(feed)
+        try context.save()
+        loadFromSwiftData()
+    }
+
+    /// Permanently deletes a feed subscription.
+    @MainActor
+    func deleteFeed(id: UUID) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            context.delete(feed)
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    /// Toggles whether a feed is included in refresh.
+    @MainActor
+    func toggleFeedEnabled(id: UUID) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.isEnabled.toggle()
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    // MARK: - RSS Refresh
+
+    /// Fetches live articles from every enabled source and updates the in-memory `articles` array.
+    /// Mirrors the logic from `MockDataService.refreshAllFeeds()`.
+    @MainActor
+    func refreshAllFeeds() async {
+        let rssService = RSSService()
+        var newArticles: [Article] = []
+        var seen = Set<String>()
+
+        for source in sources where source.isEnabled {
+            guard let url = URL(string: source.feedURL) else { continue }
+
+            do {
+                let parsed = try await rssService.fetchAndParseFeed(from: url)
+                print("🛰 Fetched \(parsed.count) articles from \(source.name)")
+
+                let converted: [Article] = parsed.compactMap { p in
+                    guard let title = p.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+                          !title.isEmpty else { return nil }
+
+                    let rawExcerpt = p.description ?? ""
+                    let excerpt = plainText(rawExcerpt)
+
+                    let linkKey = (p.link ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    let key = linkKey.isEmpty
+                        ? "\(source.id.uuidString)|\(title)"
+                        : "\(source.id.uuidString)|\(linkKey)"
+                    guard seen.insert(key).inserted else { return nil }
+
+                    let published = p.publicationDate ?? Date()
+                    let wordCount = excerpt.split { $0.isWhitespace || $0.isNewline }.count
+                    let minutes   = max(1, min(30, wordCount / 200))
+
+                    // Use media:content/enclosure URL, or fall back to the
+                    // first <img src="…"> found in the raw description HTML.
+                    let imageURL = p.imageURL ?? firstImageURL(in: p.description)
+
+                    return Article(
+                        title: title,
+                        excerpt: excerpt,
+                        sourceID: source.id,
+                        categoryID: source.categoryID,
+                        imageURL: imageURL,
+                        articleURL: linkKey.isEmpty ? "https://example.com" : linkKey,
+                        publishedAt: published,
+                        isRead: false,
+                        readTimeMinutes: minutes
+                    )
+                }
+                newArticles.append(contentsOf: converted)
+
+            } catch {
+                print("❌ Failed to fetch \(source.name): \(error)")
+            }
+
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s throttle
+        }
+
+        newArticles.sort { $0.publishedAt > $1.publishedAt }
+
+        if !newArticles.isEmpty {
+            self.articles = newArticles
+        } else {
+            print("⚠️ refreshAllFeeds produced 0 articles; keeping existing.")
+        }
+    }
+
+    // MARK: - Cache Maintenance
+
+    /// Purges extracted articles from the SwiftData cache that are older than `days` days.
+    @MainActor
+    func purgeOldArticleCache(olderThan days: Int = 7) {
+        guard let context = modelContext else { return }
+        let service = ArticleCacheService(context: context)
+        try? service.purgeOldCache(olderThan: days)
+    }
+
+    // MARK: - Private Helpers
+
+    /// Extracts the first `src="…"` URL from raw HTML (e.g. description field).
+    /// Returns nil if none found or the URL doesn't start with http.
+    private func firstImageURL(in html: String?) -> String? {
+        guard let html else { return nil }
+        guard let srcRange = html.range(of: "src=\"", options: .caseInsensitive) else { return nil }
+        let afterSrc = html[srcRange.upperBound...]
+        guard let endQuote = afterSrc.firstIndex(of: "\"") else { return nil }
+        let candidate = String(afterSrc[..<endQuote])
+        return candidate.hasPrefix("http") ? candidate : nil
+    }
+
+    private func plainText(_ html: String) -> String {
+        html
+            .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;",  with: " ")
+            .replacingOccurrences(of: "&amp;",   with: "&")
+            .replacingOccurrences(of: "&quot;",  with: "\"")
+            .replacingOccurrences(of: "&#39;",   with: "'")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: - Domain Model Mapping
+
+private extension Category {
+    /// Maps a SwiftData `FolderModel` to the `Category` domain model.
+    /// Icon and color come from the user's selection stored on the model.
+    init(from model: FolderModel) {
+        self.init(
+            id:        model.id,
+            name:      model.name,
+            icon:      model.iconName,
+            color:     Color(hex: model.colorHex),
+            sortOrder: model.sortOrder
+        )
+    }
+}
+
+private extension Source {
+    /// Maps a SwiftData `FeedModel` to the `Source` domain model.
+    /// Feeds without a folder use the sentinel `unfiledFolderID` as their `categoryID`.
+    init(from model: FeedModel) {
+        self.init(
+            id:         model.id,
+            name:       model.title,
+            feedURL:    model.feedURL,
+            websiteURL: model.websiteURL,
+            icon:       "dot.radiowaves.left.and.right",
+            iconColor:  .blue,
+            categoryID: model.folder?.id ?? SwiftDataService.unfiledFolderID,
+            isEnabled:  model.isEnabled,
+            addedAt:    model.addedAt
+        )
+    }
+}
