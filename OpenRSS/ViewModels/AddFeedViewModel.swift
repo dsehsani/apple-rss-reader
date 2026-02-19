@@ -72,7 +72,8 @@ final class AddFeedViewModel {
 
     // MARK: - Private
 
-    private let rssService = RSSService()
+    private let rssService     = RSSService()
+    private let youtubeService = YouTubeService()
 
     /// URL with `https://` prepended if the user omitted the scheme.
     private var normalizedURL: String {
@@ -83,11 +84,11 @@ final class AddFeedViewModel {
     // MARK: - Actions
 
     /// Fetches the RSS channel title from the entered URL.
-    /// Uses FeedKit directly on the raw data so we get the channel/feed name,
-    /// not just article titles.
+    /// YouTube channel URLs are automatically resolved to their Atom RSS feed URL
+    /// before fetching so the user can paste any YouTube channel link.
     func fetchFeedTitle() async {
         let urlString = normalizedURL
-        guard let url = URL(string: urlString) else {
+        guard let rawURL = URL(string: urlString) else {
             fetchError = "Please enter a valid URL."
             return
         }
@@ -97,8 +98,22 @@ final class AddFeedViewModel {
         hasFetchedSuccessfully = false
         fetchedTitle = ""
 
+        // Resolve YouTube channel URLs to their Atom RSS feed URL first.
+        // After resolution, urlText is updated so Subscribe saves the correct RSS URL.
+        var feedURL = rawURL
+        if YouTubeService.isYouTubeURL(rawURL) {
+            do {
+                feedURL = try await youtubeService.resolveRSSFeedURL(from: rawURL)
+                urlText = feedURL.absoluteString
+            } catch {
+                fetchError = error.localizedDescription
+                isFetching = false
+                return
+            }
+        }
+
         do {
-            let data = try await rssService.fetchFeedData(from: url)
+            let data = try await rssService.fetchFeedData(from: feedURL)
 
             // Parse channel metadata with FeedKit to extract the feed title
             let title: String? = try await withCheckedThrowingContinuation { cont in
@@ -117,8 +132,8 @@ final class AddFeedViewModel {
             }
 
             fetchedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
-                        ?? url.host
-                        ?? urlString
+                        ?? feedURL.host
+                        ?? feedURL.absoluteString
             hasFetchedSuccessfully = true
 
         } catch {

@@ -28,10 +28,12 @@ struct ArticleReaderHostView: View {
     private enum LoadState {
         case loading
         case loaded(ExtractedArticle)
+        case youtube(URL)
         case failed(String)
     }
 
     @State private var loadState: LoadState = .loading
+    @State private var isDescriptionExpanded = false
 
     // MARK: - Environment
 
@@ -48,6 +50,9 @@ struct ArticleReaderHostView: View {
 
             case .loaded(let extracted):
                 ArticleReaderView(extracted: extracted)
+
+            case .youtube(let videoURL):
+                youtubeView(videoURL: videoURL)
 
             case .failed(let message):
                 errorView(message: message)
@@ -107,12 +112,142 @@ struct ArticleReaderHostView: View {
         .background(Color(.systemBackground))
     }
 
+    // MARK: - YouTube View
+
+    private func youtubeView(videoURL: URL) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+
+                // ── Thumbnail ──────────────────────────────────────────
+                let videoID = YouTubeService.videoID(from: videoURL.absoluteString)
+                let thumbURL = videoID.flatMap { YouTubeService.thumbnailURL(videoID: $0) }
+
+                AsyncImage(url: thumbURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    default:
+                        ZStack {
+                            Color(.secondarySystemBackground)
+                            Image(systemName: "play.rectangle.fill")
+                                .font(.system(size: 48, weight: .ultraLight))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 210)
+                .clipped()
+
+                // ── Title & Channel ────────────────────────────────────
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(article.title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.circle")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.red)
+                        Text(feedName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(article.relativeTimeString)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 20)
+
+                Divider().padding(.horizontal, 20)
+
+                // ── Description ────────────────────────────────────────
+                if !article.excerpt.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("DESCRIPTION")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                            .tracking(0.8)
+
+                        Text(article.excerpt)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.primary)
+                            .lineSpacing(5)
+                            .lineLimit(isDescriptionExpanded ? nil : 6)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .animation(.easeInOut(duration: 0.2), value: isDescriptionExpanded)
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isDescriptionExpanded.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(isDescriptionExpanded ? "Show Less" : "Show More")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Image(systemName: isDescriptionExpanded
+                                      ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                            .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                }
+
+                // ── Actions ────────────────────────────────────────────
+                VStack(spacing: 12) {
+                    Link(destination: videoURL) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 18))
+                            Text("Watch on YouTube")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.red, in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    Link(destination: videoURL) {
+                        Label("Open in Safari", systemImage: "safari")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 48)
+            }
+        }
+        .background(Color(.systemBackground))
+    }
+
     // MARK: - Pipeline
 
     @MainActor
     private func runPipeline() async {
         guard let url = URL(string: article.articleURL) else {
             loadState = .failed("The article link is invalid.")
+            return
+        }
+
+        // YouTube video watch pages: skip the pipeline and show the video card.
+        if YouTubeService.isYouTubeVideoURL(article.articleURL) {
+            loadState = .youtube(url)
             return
         }
 

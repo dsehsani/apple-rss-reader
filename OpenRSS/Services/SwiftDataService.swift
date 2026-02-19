@@ -202,15 +202,23 @@ final class SwiftDataService: FeedDataService {
             guard let url = URL(string: source.feedURL) else { continue }
 
             do {
-                let parsed = try await rssService.fetchAndParseFeed(from: url)
+                // Fetch the raw feed data so we can run both FeedKit and (for
+                // YouTube) our custom media:group parser on the same bytes.
+                let feedData = try await rssService.fetchFeedData(from: url)
+                let parsed   = try await rssService.parseFeed(from: feedData)
                 print("🛰 Fetched \(parsed.count) articles from \(source.name)")
+
+                // For YouTube Atom feeds, FeedKit does not map media:description
+                // or media:thumbnail inside media:group. Run our lightweight SAX
+                // parser to extract those fields from the raw XML.
+                var youtubeExtras: [String: YouTubeAtomParser.VideoMeta] = [:]
+                if YouTubeService.isYouTubeURL(url) {
+                    youtubeExtras = YouTubeAtomParser().parse(data: feedData)
+                }
 
                 let converted: [Article] = parsed.compactMap { p in
                     guard let title = p.title?.trimmingCharacters(in: .whitespacesAndNewlines),
                           !title.isEmpty else { return nil }
-
-                    let rawExcerpt = p.description ?? ""
-                    let excerpt = plainText(rawExcerpt)
 
                     let linkKey = (p.link ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                     let key = linkKey.isEmpty
@@ -218,13 +226,29 @@ final class SwiftDataService: FeedDataService {
                         : "\(source.id.uuidString)|\(linkKey)"
                     guard seen.insert(key).inserted else { return nil }
 
+                    // Supplement FeedKit's parse with YouTube media:group fields.
+                    let ytMeta   = youtubeExtras[linkKey]
+                    let rawExcerpt = p.description
+                        ?? ytMeta?.description
+                        ?? ""
+                    let excerpt = plainText(rawExcerpt)
+
                     let published = p.publicationDate ?? Date()
                     let wordCount = excerpt.split { $0.isWhitespace || $0.isNewline }.count
                     let minutes   = max(1, min(30, wordCount / 200))
 
-                    // Use media:content/enclosure URL, or fall back to the
-                    // first <img src="…"> found in the raw description HTML.
-                    let imageURL = p.imageURL ?? firstImageURL(in: p.description)
+                    // Image priority:
+                    //   1. FeedKit media:content / enclosure
+                    //   2. YouTubeAtomParser media:thumbnail (inside media:group)
+                    //   3. First <img> found in raw description HTML
+                    //   4. YouTube hqdefault thumbnail derived from video ID
+                    var imageURL = p.imageURL
+                        ?? ytMeta?.thumbnailURL
+                        ?? firstImageURL(in: p.description)
+                    if imageURL == nil, YouTubeService.isYouTubeVideoURL(linkKey) {
+                        imageURL = YouTubeService.videoID(from: linkKey)
+                            .flatMap { YouTubeService.thumbnailURL(videoID: $0)?.absoluteString }
+                    }
 
                     return Article(
                         title: title,
