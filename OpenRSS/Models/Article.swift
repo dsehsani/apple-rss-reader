@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents an RSS article/feed item
-struct Article: Identifiable, Hashable {
+struct Article: Identifiable, Hashable, Codable {
     let id: UUID
     let title: String
     let excerpt: String
