@@ -51,9 +51,6 @@ struct TodayView: View {
                                 onBookmarkTap: {
                                     viewModel.toggleBookmark(for: article)
                                 },
-                                onShareTap: {
-                                    shareArticle(article)
-                                },
                                 onReadMoreTap: {
                                     viewModel.markAsRead(article)
                                     selectedArticle = article
@@ -84,6 +81,10 @@ struct TodayView: View {
                 article: article,
                 feedName: viewModel.source(for: article)?.name ?? "Article"
             )
+        }
+        // Auto-refresh on first appearance; skips if a refresh ran < 30 min ago.
+        .task {
+            await viewModel.autoRefreshIfNeeded()
         }
         } // NavigationStack
     }
@@ -259,12 +260,6 @@ struct TodayView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Actions
-
-    private func shareArticle(_ article: Article) {
-        // In real implementation, would present share sheet
-        print("Share: \(article.title)")
-    }
 }
 
 // MARK: - Preview

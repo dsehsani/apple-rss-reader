@@ -4,120 +4,176 @@ A native iOS RSS reader built with Swift and SwiftUI, featuring a polished liqui
 
 ## Project Overview
 
-OpenRSS is an RSS feed reader app designed with a hybrid architecture:
+OpenRSS is an RSS feed reader app with a hybrid architecture:
 
-- **Free tier**: Local RSS fetching with SwiftData storage and optional iCloud sync
+- **Free tier**: Local RSS fetching, SwiftData persistence, and optional iCloud sync
 - **Premium tier (planned)**: Cloud backend with AWS for advanced web scraping, AI-powered summaries, and real-time updates
 
-### Key Features
+---
+
+## Feature Status
 
 | Feature | Status |
 |---------|--------|
-| Tab-based navigation (Today, Discover, Saved, Sources, Settings) | Implemented |
-| Liquid glass UI with Apple News-style sliding tab bar | Implemented |
-| Article card feed with category filtering | Implemented |
-| Bookmark/save articles | Implemented |
-| Source management with expandable categories | Implemented |
-| Search & filter across articles and sources | Implemented |
-| Adaptive light/dark mode | Implemented |
-| Settings UI (appearance, reading, data) | Implemented |
-| Discover page with featured/trending content | Implemented |
-| Pull-to-refresh | Implemented |
-| RSS feed parsing & live fetching | Not started |
-| SwiftData persistence | Not started |
-| iCloud sync | Not started |
-| In-app article reader / WebView | Not started |
-| Share sheet integration | Not started |
-| Push notifications | Not started |
-| Cloud backend (AWS) | Not started |
-| AI summaries | Not started |
+| Tab-based navigation (Today, Discover, My Feeds, Sources, Settings) | ✅ Done |
+| Liquid glass UI with Apple News-style animated tab bar | ✅ Done |
+| Adaptive light / dark mode | ✅ Done |
+| Article card feed with category chip filtering | ✅ Done |
+| Search across articles (liquid glass search bar) | ✅ Done |
+| Filter sheet (Saved, Unread, Today) | ✅ Done |
+| Bookmark / save articles | ✅ Done |
+| Share articles via iOS share sheet | ✅ Done |
+| Pull-to-refresh | ✅ Done |
+| **Auto-refresh on launch (30-min staleness guard)** | ✅ Done |
+| **Local article cache (JSON, 7-day window)** | ✅ Done |
+| **Live RSS / Atom feed parsing (FeedKit)** | ✅ Done |
+| **In-app article reader (structured, no WebView)** | ✅ Done |
+| **YouTube RSS feed support** | ✅ Done |
+| **SwiftData persistence (feeds & folders)** | ✅ Done |
+| **Add / delete feeds and folders** | ✅ Done |
+| **Feed URL validation & title auto-fetch** | ✅ Done |
+| Settings UI (appearance, reading, data) | ✅ Done |
+| Discover page | ✅ Done |
+| Sources view with expandable categories | ✅ Done |
+| iCloud sync | 🔲 Not started |
+| Push notifications | 🔲 Not started |
+| Cloud backend (AWS) | 🔲 Not started |
+| AI summaries | 🔲 Not started |
 
-## Current Implementation Status
+---
 
-### Working Now
+## Architecture
 
-The full **UI/UX layer** is implemented with mock data:
+The project follows **MVVM** with a protocol-based service layer:
 
-- **5-tab navigation** with a custom liquid glass tab bar that features direct finger-tracking and spring animations
-- **Today view**: Scrollable article feed with category chip filtering, search, and pull-to-refresh
-- **Discover view**: Featured content, trending topics (horizontal scroll), and recommended sources
-- **Saved view**: Bookmarked articles with sort options (date saved, date published, source, read status)
-- **Sources view**: Expandable category sections, source search, floating add button, and add-source sheet
-- **Settings view**: Grouped settings for appearance, reading preferences, data/storage, and about info
-- **Reusable components**: ArticleCardView, CategoryChipView, SourceRowView, CategorySectionHeader
-- **Design system**: Centralized design tokens for colors, typography, spacing, shadows, and animations
+```
+SwiftData (SQLite) ──► SwiftDataService  ──► TodayViewModel ──► TodayView
+                       (FeedDataService)      MyFeedsViewModel    MyFeedsView
+                                              SourcesViewModel    SourcesView
 
-### In Progress / Stubbed
+Live RSS fetch ──► RSSService / FeedKit ──► SwiftDataService.refreshAllFeeds()
+                   YouTubeAtomParser                │
+                   YouTubeService                   ▼
+                                          ArticleCacheStore (JSON)
+                                          (7-day rolling cache)
 
-- Share actions (prints to console)
-- Add/delete source (UI exists, no persistence)
-- Settings toggles (UI-only, not persisted)
-- Clear cache button (no-op)
+Article tap ──► ArticleReaderHostView
+                ArticlePipelineService  (fetch → parse → normalize → render)
+                ContentFetcherService
+                ReadabilityExtractionService
+                ContentNormalizerService
+                ArticleReaderView  (structured SwiftUI blocks)
+```
 
-### Not Started
+### Key Design Decisions
 
-- RSS/Atom feed parsing and network fetching
-- SwiftData models and persistence layer
-- iCloud CloudKit sync
-- In-app browser / article detail view
-- Real notifications
-- Cloud backend infrastructure
+- **`FeedDataService` protocol** — `MockDataService` and `SwiftDataService` both conform; swap implementations without touching ViewModels.
+- **`ArticleCacheStore`** — thin static JSON cache (3 methods: `save`, `load`, `clear`). Migration path to SQLite/GRDB is a one-file swap.
+- **`Article: Codable`** — compatible with both the JSON cache and future SQLite/GRDB codegen.
+- **YouTube support** — `YouTubeService` resolves any channel URL format to an Atom RSS URL; `YouTubeAtomParser` (SAX) fills the gaps FeedKit leaves in `media:group` parsing.
+- **Article reader** — runs a full extraction pipeline (fetch full page → Readability parse → normalize to `ContentNode` tree → render block-by-block in SwiftUI). Falls back to `excerpt` if the pipeline fails.
+
+---
 
 ## Tech Stack
 
 | Technology | Usage |
 |------------|-------|
 | **Swift** | Primary language |
-| **SwiftUI** | UI framework (declarative views) |
-| **@Observable** | ViewModel state management (Swift 5.9 Observation framework) |
+| **SwiftUI** | Declarative UI framework |
+| **SwiftData** | Local persistence for feeds and folders |
+| **@Observable** | ViewModel state (Swift 5.9 Observation) |
+| **FeedKit** | RSS / Atom / JSON Feed parsing |
+| **Foundation XMLParser** | YouTube `media:group` SAX parsing |
 | **SF Symbols** | All iconography |
 | **iOS 18+** | Minimum deployment target |
 
-### Dependencies
+### Swift Package Dependencies
 
-**None currently.** The project has no Swift Package Manager dependencies. All UI and logic is built with native Apple frameworks.
+| Package | Purpose |
+|---------|---------|
+| **FeedKit** | RSS, Atom, and JSON Feed XML parsing |
 
-Planned dependencies (from tech survey):
-- RSS/Atom XML parser (e.g., FeedKit or custom)
-- Networking layer for feed fetching
-- AWS SDK (premium tier)
+---
 
 ## Project Structure
 
 ```
 OpenRSS/
-├── OpenRSSApp.swift              # App entry point
-├── Assets.xcassets/              # App icon, accent color
+├── OpenRSSApp.swift                   # App entry point, ModelContainer setup
+├── AppState.swift                     # Global app state
+│
 ├── Models/
-│   ├── Article.swift             # Article data model
-│   ├── Category.swift            # Category data model
-│   └── Source.swift              # RSS source data model
+│   ├── Article.swift                  # Article domain model (Identifiable, Hashable, Codable)
+│   ├── Category.swift                 # Folder/category domain model
+│   ├── Source.swift                   # RSS source domain model
+│   ├── FeedModel.swift                # SwiftData @Model for feed subscriptions
+│   ├── FolderModel.swift              # SwiftData @Model for folders
+│   ├── CachedArticle.swift            # SwiftData @Model for extracted article cache
+│   ├── ContentNode.swift              # Structured article content tree node
+│   ├── ReadableContent.swift          # Output of Readability extraction
+│   ├── ExtractedArticle.swift         # Pipeline extraction result
+│   └── RSSItem.swift                  # Intermediate RSS parse result
+│
 ├── ViewModels/
-│   ├── TodayViewModel.swift      # Today feed logic & state
-│   ├── SavedViewModel.swift      # Saved articles logic & state
-│   └── SourcesViewModel.swift    # Sources management logic & state
+│   ├── TodayViewModel.swift           # Today feed: filtering, refresh, auto-refresh
+│   ├── MyFeedsViewModel.swift         # Feed/folder CRUD and display logic
+│   ├── AddFeedViewModel.swift         # Add-feed form: URL validation, title fetch, YouTube resolution
+│   ├── SourcesViewModel.swift         # Sources tab state
+│   └── SearchViewModel.swift          # Search strategy (title-only / full-text)
+│
 ├── Views/
-│   ├── MainTabView.swift         # Tab bar with liquid glass pill animation
+│   ├── MainTabView.swift              # Liquid glass animated tab bar
 │   ├── Today/
-│   │   └── TodayView.swift       # Main feed with glass header & category chips
+│   │   └── TodayView.swift            # Article feed, glass header, category chips
+│   ├── MyFeeds/
+│   │   ├── MyFeedsView.swift          # Folder + feed list with swipe-to-delete
+│   │   ├── AddFeedView.swift          # Add feed / folder sheet
+│   │   └── FolderRowView.swift        # Expandable folder row
 │   ├── Discover/
-│   │   └── DiscoverView.swift    # Featured, trending, recommended sources
-│   ├── Saved/
-│   │   └── SavedView.swift       # Bookmarked articles with sort options
+│   │   └── DiscoverView.swift         # Featured, trending, recommended sources
 │   ├── Sources/
-│   │   └── SourcesView.swift     # Source management with expandable categories
+│   │   └── SourcesView.swift          # Source management
 │   ├── Settings/
-│   │   └── SettingsView.swift    # App settings & preferences
+│   │   └── SettingsView.swift         # Appearance, reading, data settings
+│   ├── ArticleReader/
+│   │   ├── ArticleReaderHostView.swift # Pipeline orchestrator + YouTube card
+│   │   ├── ArticleReaderView.swift     # Renders ContentNode tree
+│   │   ├── ArticleImageView.swift      # Hero / inline image blocks
+│   │   ├── HeadingView.swift           # H1–H6 blocks
+│   │   ├── ParagraphView.swift         # Paragraph blocks
+│   │   ├── BlockquoteView.swift        # Blockquote blocks
+│   │   ├── CodeBlockView.swift         # Code blocks
+│   │   ├── ListItemsView.swift         # Ordered / unordered list blocks
+│   │   └── TableView.swift             # Table blocks
 │   └── Components/
-│       ├── ArticleCardView.swift  # Reusable article card
-│       ├── CategoryChipView.swift # Category filter chip + chips row
-│       └── SourceRowView.swift    # Source row + category section header
+│       ├── ArticleCardView.swift        # Tappable article card with bookmark + share
+│       ├── CategoryChipView.swift       # Category filter chips
+│       ├── SourceRowView.swift          # Source row + category section header
+│       ├── LiquidGlassSearchBar.swift   # Animated glass search bar
+│       └── LiquidGlassFilterSheet.swift # Bottom sheet filter panel
+│
 ├── Services/
-│   └── MockDataService.swift     # Mock data with FeedDataService protocol
-├── Utilities/
-│   └── DesignSystem.swift        # Design tokens, Color hex extension, view modifiers
-└── Prompts/                      # Development prompt files (internal)
+│   ├── SwiftDataService.swift          # @Observable singleton: SwiftData CRUD + RSS refresh
+│   ├── MockDataService.swift           # Mock data (FeedDataService conformance)
+│   ├── RSSService.swift                # Network fetch + FeedKit parse
+│   ├── RSSParserService.swift          # RSS parse utilities
+│   ├── YouTubeService.swift            # Channel URL → RSS URL resolution, thumbnail helpers
+│   ├── YouTubeAtomParser.swift         # SAX parser for media:group fields FeedKit misses
+│   ├── ArticleCacheStore.swift         # JSON file cache (7-day rolling window)
+│   ├── ArticleCacheService.swift       # SwiftData extracted article cache CRUD
+│   ├── ArticlePipelineService.swift    # Orchestrates fetch → extract → normalize
+│   ├── ContentFetcherService.swift     # Downloads full article HTML
+│   ├── ReadabilityExtractionService.swift # Readability-style main content extraction
+│   └── ContentNormalizerService.swift  # HTML → ContentNode tree
+│
+└── Utilities/
+    ├── DesignSystem.swift              # Design tokens: colors, typography, spacing, animations
+    ├── FilterOption.swift              # FilterOption enum (Saved, Unread, Today)
+    └── SearchFilter.swift             # Search filter strategies
 ```
+
+---
 
 ## Setup & Installation
 
@@ -135,44 +191,72 @@ OpenRSS/
    cd OpenRSS
    ```
 
-2. Open the project in Xcode:
+2. Open the project:
    ```bash
    open OpenRSS.xcodeproj
    ```
 
-3. Select a signing team under **Signing & Capabilities** (required for device builds).
+3. Xcode will automatically resolve the **FeedKit** Swift Package dependency on first open.
 
-4. No additional configuration or dependency installation is needed.
+4. Select a signing team under **Signing & Capabilities** (required for device builds; not needed for Simulator).
 
-## How to Run
-
-1. Open `OpenRSS.xcodeproj` in Xcode
-2. Select an **iPhone 16** simulator (or any iOS 18+ simulator/device)
-3. Press **Cmd + R** to build and run
+5. Press **Cmd + R** to build and run.
 
 ### Notes
 
-- The app runs entirely on **mock data** — no network connection is required
-- Works on both Simulator and physical devices
-- Supports both **light and dark mode** (follows system setting)
-- No provisioning profile needed for Simulator builds
+- Select an **iPhone 16** simulator (or any iOS 18+ device/simulator)
+- Supports both **light and dark mode**
+- On first launch the feed list is empty — add feeds via the **My Feeds** tab
 
-## Architecture
+---
 
-The project follows an **MVVM (Model-View-ViewModel)** pattern:
+## How It Works
 
-- **Models** (`Article`, `Category`, `Source`): Plain Swift structs conforming to `Identifiable` and `Hashable`
-- **ViewModels** (`TodayViewModel`, `SavedViewModel`, `SourcesViewModel`): `@Observable` classes that hold state and business logic
-- **Views**: SwiftUI views that bind to ViewModels via `@State`
-- **Services**: `FeedDataService` protocol with `MockDataService` implementation — designed for easy swap to a real networking/persistence layer
+### Adding a Feed
 
-## Next Steps
+1. Open **My Feeds → +**
+2. Paste any RSS/Atom URL, or a YouTube channel URL (any format: `/@handle`, `/channel/UCxxx`, `/c/name`, `/user/name`)
+3. The app validates the URL, auto-fetches the feed title, and saves the subscription via SwiftData
+4. Optionally assign the feed to a folder
 
-1. **RSS feed parsing** — Integrate an XML parser to fetch and parse real RSS/Atom feeds
-2. **SwiftData persistence** — Convert models to `@Model` classes for local storage
-3. **Article detail view** — In-app WebView or reader mode for full article content
-4. **Real networking** — Replace `MockDataService` with a live `FeedDataService` implementation
-5. **iCloud sync** — Enable CloudKit for cross-device feed and bookmark sync
-6. **Share sheet** — Wire up `UIActivityViewController` for article sharing
-7. **Add source flow** — Implement feed URL validation and subscription
-8. **Premium tier backend** — AWS infrastructure for web scraping, AI summaries, and push notifications
+### Today Feed Lifecycle
+
+```
+App launch
+  │
+  ├─ SwiftDataService.configure()
+  │    ├─ loadFromSwiftData()      → feeds & folders from SQLite
+  │    └─ ArticleCacheStore.load() → articles from JSON cache (instant, no network)
+  │
+  └─ TodayView.task
+       └─ TodayViewModel.autoRefreshIfNeeded()
+            ├─ skip if last refresh < 30 min ago
+            └─ SwiftDataService.refreshAllFeeds()
+                 ├─ fetch + parse each feed via FeedKit
+                 ├─ YouTube feeds: supplement with YouTubeAtomParser
+                 ├─ update in-memory articles
+                 └─ ArticleCacheStore.save() → persist for next launch
+```
+
+### Article Reader Pipeline
+
+```
+Tap article card
+  └─ ArticlePipelineService.run()
+       ├─ ContentFetcherService     → download full article HTML
+       ├─ ReadabilityExtractionService → extract main content
+       ├─ ContentNormalizerService  → HTML → ContentNode tree
+       └─ ArticleReaderView         → render blocks in SwiftUI
+            (paragraphs, headings, images, blockquotes, code, lists, tables)
+
+YouTube articles → skip pipeline → show video card with thumbnail + description
+```
+
+---
+
+## Roadmap
+
+1. **iCloud sync** — CloudKit to sync subscriptions and read state across devices
+2. **SQLite article persistence** — Replace `ArticleCacheStore` (JSON) with GRDB for full-text search and richer queries
+3. **Notification support** — Background refresh + push notifications for new articles
+4. **Premium cloud backend** — AWS infrastructure for web scraping, AI article summaries, and server-side RSS aggregation

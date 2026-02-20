@@ -49,10 +49,21 @@ final class SwiftDataService: FeedDataService {
     // MARK: - Bootstrap
 
     /// Called once from `OpenRSSApp.init()` after the ModelContainer is created.
+    ///
+    /// Loads persisted feeds/folders from SwiftData, then immediately hydrates
+    /// the in-memory `articles` array from the JSON cache so the Today feed is
+    /// pre-populated before the first network refresh completes.
     @MainActor
     func configure(container: ModelContainer) {
         self.modelContext = container.mainContext
         loadFromSwiftData()
+
+        // Pre-populate articles from the local cache so the UI is non-empty
+        // on launch even before the first RSS refresh finishes.
+        let cached = ArticleCacheStore.load()
+        if !cached.isEmpty {
+            self.articles = cached
+        }
     }
 
     // MARK: - Load
@@ -275,6 +286,8 @@ final class SwiftDataService: FeedDataService {
 
         if !newArticles.isEmpty {
             self.articles = newArticles
+            // Persist to the local JSON cache so the next launch is pre-populated.
+            ArticleCacheStore.save(newArticles)
         } else {
             print("⚠️ refreshAllFeeds produced 0 articles; keeping existing.")
         }

@@ -44,14 +44,16 @@ struct LiquidGlassFilterSheet: View {
         VStack(spacing: 0) {
             sheetHeader
             filterRows
-            Spacer()
             doneButton
+                .padding(.top, 20)
         }
-        .padding(.bottom, 8)
+        // Pad to the bottom of the safe area so the glass card feels complete
+        .padding(.bottom, 24)
+        .safeAreaPadding(.bottom)
         // Glass material fills the entire sheet surface
         .presentationBackground(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
         .presentationCornerRadius(Design.Radius.glass)
-        .presentationDetents([.fraction(0.52)])
+        .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
     }
 
@@ -141,7 +143,6 @@ struct LiquidGlassFilterSheet: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)
-        .padding(.top, 20)
     }
 }
 

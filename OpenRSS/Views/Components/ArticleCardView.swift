@@ -15,12 +15,7 @@ struct ArticleCardView: View {
     let article: Article
     let source: Source?
     var onBookmarkTap: (() -> Void)?
-    var onShareTap: (() -> Void)?
     var onReadMoreTap: (() -> Void)?
-
-    // MARK: - State
-
-    @State private var isPressed: Bool = false
 
     // MARK: - Environment (Light/Dark Mode)
 
@@ -35,27 +30,18 @@ struct ArticleCardView: View {
 
             // Content
             VStack(alignment: .leading, spacing: Design.Spacing.small) {
-                // Source info row
                 sourceInfoRow
-
-                // Title
                 titleText
-
-                // Excerpt
                 excerptText
-
-                // Footer with actions
                 footerRow
             }
             .padding(Design.Spacing.cardPadding)
         }
         .cardStyle(for: colorScheme)
         .opacity(article.isRead ? 0.7 : 1.0)
-        .scaleEffect(isPressed ? Design.Animation.pressScale : 1.0)
-        .animation(Design.Animation.quick, value: isPressed)
-        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
-            isPressed = pressing
-        }, perform: {})
+        // Whole card is the tap target — child Buttons (bookmark, share) take priority.
+        .contentShape(Rectangle())
+        .onTapGesture { onReadMoreTap?() }
     }
 
     // MARK: - Subviews
@@ -144,23 +130,25 @@ struct ArticleCardView: View {
     }
 
     private var footerRow: some View {
-        HStack {
-            // Action buttons
-            HStack(spacing: 12) {
-                // Bookmark button
-                Button {
-                    onBookmarkTap?()
-                } label: {
-                    Image(systemName: article.isBookmarked ? Design.Icons.bookmarkFilled : Design.Icons.bookmark)
-                        .font(.system(size: 18))
-                        .foregroundStyle(article.isBookmarked ? Design.Colors.primary : Design.Colors.secondaryText)
-                }
-                .buttonStyle(.plain)
+        HStack(spacing: 16) {
+            // Bookmark button
+            Button {
+                onBookmarkTap?()
+            } label: {
+                Image(systemName: article.isBookmarked ? Design.Icons.bookmarkFilled : Design.Icons.bookmark)
+                    .font(.system(size: 18))
+                    .foregroundStyle(article.isBookmarked ? Design.Colors.primary : Design.Colors.secondaryText)
+            }
+            .buttonStyle(.plain)
 
-                // Share button
-                Button {
-                    onShareTap?()
-                } label: {
+            // Share button — uses native ShareLink so the iOS share sheet
+            // appears with the article URL + title pre-filled.
+            if let url = URL(string: article.articleURL) {
+                ShareLink(
+                    item: url,
+                    subject: Text(article.title),
+                    message: Text(article.title)
+                ) {
                     Image(systemName: Design.Icons.share)
                         .font(.system(size: 18))
                         .foregroundStyle(Design.Colors.secondaryText)
@@ -169,20 +157,6 @@ struct ArticleCardView: View {
             }
 
             Spacer()
-
-            // Read More button
-            Button {
-                onReadMoreTap?()
-            } label: {
-                Text("Read More")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Design.Colors.primary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Design.Colors.primary.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: Design.Radius.small))
-            }
-            .buttonStyle(.plain)
         }
         .padding(.top, Design.Spacing.small)
         .overlay(alignment: .top) {

@@ -90,6 +90,10 @@ final class TodayViewModel {
         loadArticles()
     }
 
+    // MARK: - Refresh Key
+
+    private static let lastRefreshKey = "openrss.lastRefresh"
+
     // MARK: - Actions
 
     /// Load articles from the data service
@@ -110,7 +114,23 @@ final class TodayViewModel {
         }
 
         loadArticles()
+        UserDefaults.standard.set(Date(), forKey: Self.lastRefreshKey)
         print("✅ loadArticles DONE. viewModel articles =", articles.count)
+    }
+
+    /// Called automatically on first appearance of TodayView (via .task).
+    ///
+    /// Skips the network fetch if a successful refresh happened within the last
+    /// 30 minutes — the cached articles already shown are fresh enough.
+    /// Skips entirely when the user has no subscribed feeds.
+    func autoRefreshIfNeeded() async {
+        guard hasSources else { return }
+
+        let lastRefresh = UserDefaults.standard.object(forKey: Self.lastRefreshKey) as? Date
+        let isStale = lastRefresh.map { Date().timeIntervalSince($0) > 1800 } ?? true
+        guard isStale else { return }
+
+        await refresh()
     }
 
 
