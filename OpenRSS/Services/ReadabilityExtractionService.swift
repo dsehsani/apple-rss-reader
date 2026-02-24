@@ -74,20 +74,36 @@ final class ReadabilityExtractionService: ReadabilityExtractionServiceProtocol {
     // MARK: - Public API
 
     func extract(sourceURL: URL) async throws -> ReadableContent {
+        try Task.checkCancellation()
+
         guard let jsURL = Bundle.main.url(forResource: "Readability", withExtension: "js"),
               let readabilityJS = try? String(contentsOf: jsURL, encoding: .utf8) else {
             throw ReadabilityError.readabilityJSNotFound
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            let coordinator = WebViewCoordinator(
-                sourceURL:      sourceURL,
-                readabilityJS:  readabilityJS,
-                jsSettleDelay:  jsSettleDelay,
-                timeoutInterval: timeoutInterval,
-                continuation:   continuation
-            )
-            coordinator.start()
+        // Thread-safe box so onCancel can reach the coordinator
+        // (onCancel may fire from any thread; we dispatch to main before calling cancel)
+        final class Box: @unchecked Sendable { var coordinator: WebViewCoordinator? }
+        let box = Box()
+
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let coordinator = WebViewCoordinator(
+                    sourceURL:       sourceURL,
+                    readabilityJS:   readabilityJS,
+                    jsSettleDelay:   jsSettleDelay,
+                    timeoutInterval: timeoutInterval,
+                    continuation:    continuation
+                )
+                box.coordinator = coordinator
+                coordinator.start()
+            }
+        } onCancel: {
+            // onCancel fires on arbitrary thread; dispatch to main because
+            // WebViewCoordinator is @MainActor
+            DispatchQueue.main.async {
+                box.coordinator?.cancel()
+            }
         }
     }
 }
@@ -119,6 +135,10 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
         self.jsSettleDelay   = jsSettleDelay
         self.timeoutInterval = timeoutInterval
         self.continuation    = continuation
+    }
+
+    func cancel() {
+        finish(throwing: CancellationError())
     }
 
     func start() {

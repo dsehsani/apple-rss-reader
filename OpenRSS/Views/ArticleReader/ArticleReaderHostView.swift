@@ -391,6 +391,8 @@ struct ArticleReaderHostView: View {
             let extracted = try await pipeline.process(item: item)
             loadState = .loaded(extracted)
         } catch {
+            // Don't show an error if the user simply navigated away
+            guard !Task.isCancelled else { return }
             loadState = .failed(error.localizedDescription)
         }
     }
