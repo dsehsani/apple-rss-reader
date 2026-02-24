@@ -44,22 +44,32 @@ final class YouTubeService {
             || host == "m.youtube.com" || host == "youtu.be"
     }
 
-    /// True if `urlString` is a YouTube video watch URL (youtube.com/watch?v=… or youtu.be/…).
+    /// True if `urlString` is a YouTube video URL (watch, shorts, or youtu.be).
     static func isYouTubeVideoURL(_ urlString: String) -> Bool {
         guard let url = URL(string: urlString),
               let host = url.host?.lowercased() else { return false }
         if host == "youtu.be" { return true }
-        if (host == "youtube.com" || host == "www.youtube.com") && url.path == "/watch" { return true }
+        if host == "youtube.com" || host == "www.youtube.com" || host == "m.youtube.com" {
+            if url.path == "/watch" { return true }
+            if url.path.hasPrefix("/shorts/") { return true }
+        }
         return false
     }
 
-    /// Extracts the video ID from a YouTube watch URL.
+    /// Extracts the video ID from a YouTube video URL (watch, shorts, or youtu.be).
     static func videoID(from urlString: String) -> String? {
         guard let url = URL(string: urlString),
               let host = url.host?.lowercased() else { return nil }
         if host == "youtu.be" {
             return url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         }
+        // /shorts/VIDEO_ID
+        if url.path.hasPrefix("/shorts/") {
+            let id = String(url.path.dropFirst("/shorts/".count))
+                .components(separatedBy: "/").first ?? ""
+            return id.isEmpty ? nil : id
+        }
+        // /watch?v=VIDEO_ID
         return URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "v" })?.value
     }
