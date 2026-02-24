@@ -146,6 +146,10 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
 
         // Give the WebView a realistic viewport so layout-dependent JS works.
         let config = WKWebViewConfiguration()
+        // Use an ephemeral data store so cached resources (HTML, JS bundles, images)
+        // are released when this WebView is deallocated instead of accumulating in
+        // the shared persistent store across article opens.
+        config.websiteDataStore = WKWebsiteDataStore.nonPersistent()
         config.preferences.javaScriptCanOpenWindowsAutomatically = false
 
         let wv = WKWebView(

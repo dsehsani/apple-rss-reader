@@ -385,7 +385,11 @@ struct ArticleReaderHostView: View {
             feedName:    feedName
         )
 
-        let pipeline = ArticlePipelineService(context: modelContext)
+        // Use a fresh context so every CachedArticle the pipeline saves or loads
+        // (including its serializedNodes Data blob) is released when the pipeline
+        // goes out of scope — rather than staying in the shared main context's
+        // row cache for the lifetime of the app.
+        let pipeline = ArticlePipelineService(context: ModelContext(modelContext.container))
 
         do {
             let extracted = try await pipeline.process(item: item)
