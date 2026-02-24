@@ -256,7 +256,7 @@ final class SwiftDataService: FeedDataService {
                     var imageURL = p.imageURL
                         ?? ytMeta?.thumbnailURL
                         ?? firstImageURL(in: p.description)
-                    if imageURL == nil, YouTubeService.isYouTubeVideoURL(linkKey) {
+                    if imageURL == nil, YouTubeService.isYouTubeVideoOrShortURL(linkKey) {
                         imageURL = YouTubeService.videoID(from: linkKey)
                             .flatMap { YouTubeService.thumbnailURL(videoID: $0)?.absoluteString }
                     }

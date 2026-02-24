@@ -43,18 +43,30 @@ final class TodayViewModel {
     /// Category logic lives here; search filtering is delegated to SearchViewModel.
     var filteredArticles: [Article] {
         var result = articles
+        print("📊 filteredArticles START: \(result.count) total articles")
 
-        // 1. Limit to the past 7 days
+        // 1. Limit to the past 7 days (exception: YouTube playlist feeds keep all articles)
         let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        result = result.filter { $0.publishedAt >= sevenDaysAgo }
+        result = result.filter { article in
+            if article.publishedAt >= sevenDaysAgo { return true }
+            if let source = dataService.source(for: article.sourceID),
+               source.feedURL.contains("playlist_id=") {
+                return true
+            }
+            return false
+        }
+        print("📊 after 7-day filter: \(result.count)")
 
         // 2. Filter by selected category
         if let category = selectedCategory, category.id != Category.allUpdates.id {
+            let before = result.count
             result = result.filter { $0.categoryID == category.id }
+            print("📊 after category filter (\(category.name)): \(before) → \(result.count)")
         }
 
         // 2. Delegate search filtering to SearchViewModel (Strategy Pattern)
         result = searchViewModel.filteredArticles(from: result)
+        print("📊 after search filter: \(result.count)")
 
         // 3. Apply each active filter option
         for filter in activeFilters {
@@ -67,6 +79,7 @@ final class TodayViewModel {
                 result = result.filter { Calendar.current.isDateInToday($0.publishedAt) }
             }
         }
+        print("📊 after active filters: \(result.count) (activeFilters: \(activeFilters))")
 
         return result.sorted { $0.publishedAt > $1.publishedAt }
     }
@@ -74,12 +87,22 @@ final class TodayViewModel {
     /// True when the user has at least one subscribed feed — drives the empty state in TodayView.
     var hasSources: Bool { !dataService.sources.isEmpty }
 
-    /// Unread count for a specific category
+    /// Unread count for a specific category (respects the same 7-day + playlist exception as the view).
     func unreadCount(for category: Category) -> Int {
-        if category.id == Category.allUpdates.id {
-            return dataService.articles.filter { !$0.isRead }.count
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let visible = dataService.articles.filter { article in
+            guard !article.isRead else { return false }
+            if article.publishedAt >= sevenDaysAgo { return true }
+            if let source = dataService.source(for: article.sourceID),
+               source.feedURL.contains("playlist_id=") {
+                return true
+            }
+            return false
         }
-        return dataService.unreadCountForCategory(category.id)
+        if category.id == Category.allUpdates.id {
+            return visible.count
+        }
+        return visible.filter { $0.categoryID == category.id }.count
     }
 
     // MARK: - Initialization

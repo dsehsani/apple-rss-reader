@@ -35,6 +35,57 @@ final class YouTubeService {
         }
     }
 
+    // MARK: - Resource Routing
+
+    /// Structured representation of a YouTube URL's content type.
+    enum YouTubeResource: Equatable {
+        case video(id: String)
+        case short(id: String)
+        case playlist(id: String)
+        case unknown
+    }
+
+    /// Classifies a YouTube URL into a typed resource.
+    static func route(for url: URL) -> YouTubeResource {
+        guard let host = url.host?.lowercased() else { return .unknown }
+
+        // youtu.be/VIDEO_ID
+        if host == "youtu.be" {
+            let id = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            return id.isEmpty ? .unknown : .video(id: id)
+        }
+
+        guard host == "youtube.com" || host == "www.youtube.com" || host == "m.youtube.com" else {
+            return .unknown
+        }
+
+        let path = url.path
+        let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
+
+        // /watch?v=ID (even if &list= is present, primary content is the video)
+        if path == "/watch",
+           let videoID = queryItems?.first(where: { $0.name == "v" })?.value,
+           !videoID.isEmpty {
+            return .video(id: videoID)
+        }
+
+        // /shorts/VIDEO_ID
+        if path.hasPrefix("/shorts/") {
+            let id = String(path.dropFirst("/shorts/".count))
+                .components(separatedBy: "/").first ?? ""
+            return id.isEmpty ? .unknown : .short(id: id)
+        }
+
+        // /playlist?list=PLAYLIST_ID
+        if path == "/playlist",
+           let listID = queryItems?.first(where: { $0.name == "list" })?.value,
+           !listID.isEmpty {
+            return .playlist(id: listID)
+        }
+
+        return .unknown
+    }
+
     // MARK: - Detection
 
     /// True if `url` points to any YouTube domain.
@@ -44,34 +95,40 @@ final class YouTubeService {
             || host == "m.youtube.com" || host == "youtu.be"
     }
 
-    /// True if `urlString` is a YouTube video URL (watch, shorts, or youtu.be).
-    static func isYouTubeVideoURL(_ urlString: String) -> Bool {
-        guard let url = URL(string: urlString),
-              let host = url.host?.lowercased() else { return false }
-        if host == "youtu.be" { return true }
-        if host == "youtube.com" || host == "www.youtube.com" || host == "m.youtube.com" {
-            if url.path == "/watch" { return true }
-            if url.path.hasPrefix("/shorts/") { return true }
+    /// True if the URL is a YouTube video, short, or playlist (all content handled by the YT card UI).
+    static func isYouTubeContentURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else { return false }
+        switch route(for: url) {
+        case .video, .short, .playlist: return true
+        case .unknown: return false
         }
-        return false
     }
 
-    /// Extracts the video ID from a YouTube video URL (watch, shorts, or youtu.be).
+    /// True if the URL is a YouTube video or short (content that has a video ID for thumbnail fallback).
+    static func isYouTubeVideoOrShortURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else { return false }
+        switch route(for: url) {
+        case .video, .short: return true
+        case .playlist, .unknown: return false
+        }
+    }
+
+    /// Extracts the video ID from a YouTube video or short URL.
     static func videoID(from urlString: String) -> String? {
-        guard let url = URL(string: urlString),
-              let host = url.host?.lowercased() else { return nil }
-        if host == "youtu.be" {
-            return url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard let url = URL(string: urlString) else { return nil }
+        switch route(for: url) {
+        case .video(let id), .short(let id): return id
+        case .playlist, .unknown: return nil
         }
-        // /shorts/VIDEO_ID
-        if url.path.hasPrefix("/shorts/") {
-            let id = String(url.path.dropFirst("/shorts/".count))
-                .components(separatedBy: "/").first ?? ""
-            return id.isEmpty ? nil : id
+    }
+
+    /// Extracts the playlist ID from a YouTube playlist URL.
+    static func playlistID(from urlString: String) -> String? {
+        guard let url = URL(string: urlString) else { return nil }
+        switch route(for: url) {
+        case .playlist(let id): return id
+        case .video, .short, .unknown: return nil
         }
-        // /watch?v=VIDEO_ID
-        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
-            .queryItems?.first(where: { $0.name == "v" })?.value
     }
 
     /// Returns a high-quality thumbnail URL for the given video ID.
@@ -88,6 +145,17 @@ final class YouTubeService {
         // Already an RSS feed URL
         if path.hasPrefix("/feeds/videos.xml") {
             return url
+        }
+
+        // Route structured content types first
+        switch Self.route(for: url) {
+        case .playlist(let id):
+            return try makePlaylistRSSURL(playlistID: id)
+        case .video, .short:
+            // Scrape the video/short page for the channel's channelId
+            return try await scrapeRSSLink(from: url)
+        case .unknown:
+            break
         }
 
         // /channel/UCxxxxxxxxxx — extract channel ID directly
@@ -107,6 +175,13 @@ final class YouTubeService {
 
     private func makeRSSURL(channelID: String) throws -> URL {
         guard let url = URL(string: "https://www.youtube.com/feeds/videos.xml?channel_id=\(channelID)") else {
+            throw YouTubeError.couldNotResolveChannelID
+        }
+        return url
+    }
+
+    private func makePlaylistRSSURL(playlistID: String) throws -> URL {
+        guard let url = URL(string: "https://www.youtube.com/feeds/videos.xml?playlist_id=\(playlistID)") else {
             throw YouTubeError.couldNotResolveChannelID
         }
         return url

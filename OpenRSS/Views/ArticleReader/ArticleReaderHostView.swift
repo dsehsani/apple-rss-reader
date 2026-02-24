@@ -29,6 +29,7 @@ struct ArticleReaderHostView: View {
         case loading
         case loaded(ExtractedArticle)
         case youtube(URL)
+        case playlist(URL)
         case failed(String)
     }
 
@@ -53,6 +54,9 @@ struct ArticleReaderHostView: View {
 
             case .youtube(let videoURL):
                 youtubeView(videoURL: videoURL)
+
+            case .playlist(let playlistURL):
+                playlistView(playlistURL: playlistURL)
 
             case .failed(let message):
                 errorView(message: message)
@@ -236,6 +240,119 @@ struct ArticleReaderHostView: View {
         .background(Color(.systemBackground))
     }
 
+    // MARK: - Playlist View
+
+    private func playlistView(playlistURL: URL) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+
+                // ── Playlist Icon ────────────────────────────────────
+                ZStack {
+                    Color(.secondarySystemBackground)
+                    Image(systemName: "list.and.film")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 210)
+
+                // ── Title & Channel ──────────────────────────────────
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(article.title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "list.bullet.rectangle")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.red)
+                        Text(feedName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(article.relativeTimeString)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 20)
+
+                Divider().padding(.horizontal, 20)
+
+                // ── Description ──────────────────────────────────────
+                if !article.excerpt.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("DESCRIPTION")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                            .tracking(0.8)
+
+                        Text(article.excerpt)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.primary)
+                            .lineSpacing(5)
+                            .lineLimit(isDescriptionExpanded ? nil : 6)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .animation(.easeInOut(duration: 0.2), value: isDescriptionExpanded)
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isDescriptionExpanded.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(isDescriptionExpanded ? "Show Less" : "Show More")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Image(systemName: isDescriptionExpanded
+                                      ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                            .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                }
+
+                // ── Actions ──────────────────────────────────────────
+                VStack(spacing: 12) {
+                    Link(destination: playlistURL) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 18))
+                            Text("Open Playlist on YouTube")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.red, in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    Link(destination: playlistURL) {
+                        Label("Open in Safari", systemImage: "safari")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 48)
+            }
+        }
+        .background(Color(.systemBackground))
+    }
+
     // MARK: - Pipeline
 
     @MainActor
@@ -245,10 +362,16 @@ struct ArticleReaderHostView: View {
             return
         }
 
-        // YouTube video watch pages: skip the pipeline and show the video card.
-        if YouTubeService.isYouTubeVideoURL(article.articleURL) {
+        // YouTube content: skip the pipeline and show the appropriate card.
+        switch YouTubeService.route(for: url) {
+        case .video, .short:
             loadState = .youtube(url)
             return
+        case .playlist:
+            loadState = .playlist(url)
+            return
+        case .unknown:
+            break
         }
 
         // Wrap the app's Article into the pipeline's RSSItem
