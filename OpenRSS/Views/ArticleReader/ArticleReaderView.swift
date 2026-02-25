@@ -43,25 +43,16 @@ struct ArticleReaderView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Hero image
             if let heroURL = extracted.heroImageURL {
-                AsyncImage(url: heroURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 220)
-                            .clipped()
-                    case .failure:
-                        EmptyView()
-                    case .empty:
-                        Rectangle()
-                            .fill(Color(.secondarySystemFill))
-                            .frame(height: 220)
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedImageView(
+                    url: heroURL,
+                    pointSize: CGSize(width: 400, height: 220),
+                    contentMode: .fill
+                ) {
+                    Rectangle().fill(Color(.secondarySystemFill))
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 220)
+                .clipped()
                 .padding(.bottom, 20)
             }
 

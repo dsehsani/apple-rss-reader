@@ -79,8 +79,6 @@ final class RSSService {
         }
 
         guard (200...299).contains(http.statusCode) else {
-            let preview = String(data: data.prefix(500), encoding: .utf8) ?? ""
-            print("⚠️ HTTP \(http.statusCode) for \(url.absoluteString)\n\(preview)\n")
             throw RSSServiceError.invalidResponse
         }
 

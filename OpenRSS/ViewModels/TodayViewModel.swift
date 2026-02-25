@@ -19,7 +19,6 @@ final class TodayViewModel {
     // MARK: - Published State
 
     var selectedCategory: Category?
-    var articles: [Article] = []
     var isRefreshing: Bool = false
 
     /// Dedicated search ViewModel — owns the query string and filter strategy.
@@ -39,49 +38,43 @@ final class TodayViewModel {
         [Category.allUpdates] + dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    /// Articles filtered by the selected category then by the search query.
-    /// Category logic lives here; search filtering is delegated to SearchViewModel.
+    /// Articles filtered by category, search, and active filters in a single pass.
+    /// Reads directly from `dataService.articles` — no duplicate array stored.
     var filteredArticles: [Article] {
-        var result = articles
-        print("📊 filteredArticles START: \(result.count) total articles")
-
-        // 1. Limit to the past 7 days (exception: YouTube playlist feeds keep all articles)
         let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        result = result.filter { article in
-            if article.publishedAt >= sevenDaysAgo { return true }
-            if let source = dataService.source(for: article.sourceID),
-               source.feedURL.contains("playlist_id=") {
-                return true
+        let category = selectedCategory
+        let isAllUpdates = category == nil || category?.id == Category.allUpdates.id
+        let filters = activeFilters
+        let checkToday = filters.contains(.today)
+        let checkSaved = filters.contains(.saved)
+        let checkUnread = filters.contains(.unread)
+
+        return dataService.articles.filter { article in
+            // 1. 7-day recency (exception: YouTube playlist feeds)
+            if article.publishedAt < sevenDaysAgo {
+                guard let source = dataService.source(for: article.sourceID),
+                      source.feedURL.contains("playlist_id=") else {
+                    return false
+                }
             }
-            return false
-        }
-        print("📊 after 7-day filter: \(result.count)")
 
-        // 2. Filter by selected category
-        if let category = selectedCategory, category.id != Category.allUpdates.id {
-            let before = result.count
-            result = result.filter { $0.categoryID == category.id }
-            print("📊 after category filter (\(category.name)): \(before) → \(result.count)")
-        }
-
-        // 2. Delegate search filtering to SearchViewModel (Strategy Pattern)
-        result = searchViewModel.filteredArticles(from: result)
-        print("📊 after search filter: \(result.count)")
-
-        // 3. Apply each active filter option
-        for filter in activeFilters {
-            switch filter {
-            case .saved:
-                result = result.filter { $0.isBookmarked }
-            case .unread:
-                result = result.filter { !$0.isRead }
-            case .today:
-                result = result.filter { Calendar.current.isDateInToday($0.publishedAt) }
+            // 2. Category
+            if !isAllUpdates, article.categoryID != category!.id {
+                return false
             }
-        }
-        print("📊 after active filters: \(result.count) (activeFilters: \(activeFilters))")
 
-        return result.sorted { $0.publishedAt > $1.publishedAt }
+            // 3. Search
+            if !searchViewModel.matches(article) {
+                return false
+            }
+
+            // 4. Active filters
+            if checkSaved && !article.isBookmarked { return false }
+            if checkUnread && article.isRead { return false }
+            if checkToday && !Calendar.current.isDateInToday(article.publishedAt) { return false }
+
+            return true
+        }.sorted { $0.publishedAt > $1.publishedAt }
     }
 
     /// True when the user has at least one subscribed feed — drives the empty state in TodayView.
@@ -110,7 +103,6 @@ final class TodayViewModel {
     init(dataService: FeedDataService = SwiftDataService.shared) {
         self.dataService = dataService
         self.selectedCategory = Category.allUpdates
-        loadArticles()
     }
 
     // MARK: - Refresh Key
@@ -119,14 +111,8 @@ final class TodayViewModel {
 
     // MARK: - Actions
 
-    /// Load articles from the data service
-    func loadArticles() {
-        articles = dataService.articles.sorted { $0.publishedAt > $1.publishedAt }
-    }
-
     /// Refresh articles from all subscribed feeds, then prune old cache.
     func refresh() async {
-        print("🔄 TodayViewModel.refresh() CALLED")
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -136,9 +122,7 @@ final class TodayViewModel {
             sds.purgeOldArticleCache(olderThan: 7)
         }
 
-        loadArticles()
         UserDefaults.standard.set(Date(), forKey: Self.lastRefreshKey)
-        print("✅ loadArticles DONE. viewModel articles =", articles.count)
     }
 
     /// Called automatically on first appearance of TodayView (via .task).
@@ -156,7 +140,6 @@ final class TodayViewModel {
         await refresh()
     }
 
-
     /// Select a category
     func selectCategory(_ category: Category) {
         withAnimation(Design.Animation.standard) {
@@ -166,23 +149,17 @@ final class TodayViewModel {
 
     /// Toggle bookmark status for an article
     func toggleBookmark(for article: Article) {
-        if let index = articles.firstIndex(where: { $0.id == article.id }) {
-            articles[index].isBookmarked.toggle()
-        }
+        dataService.toggleBookmark(for: article.id)
     }
 
     /// Mark an article as read
     func markAsRead(_ article: Article) {
-        if let index = articles.firstIndex(where: { $0.id == article.id }) {
-            articles[index].isRead = true
-        }
+        dataService.markAsRead(article.id)
     }
 
     /// Mark an article as unread
     func markAsUnread(_ article: Article) {
-        if let index = articles.firstIndex(where: { $0.id == article.id }) {
-            articles[index].isRead = false
-        }
+        dataService.markAsUnread(article.id)
     }
 
     // MARK: - Helper Methods

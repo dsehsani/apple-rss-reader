@@ -20,6 +20,11 @@ protocol FeedDataService {
     func articlesForSource(_ sourceID: UUID) -> [Article]
     func unreadCountForCategory(_ categoryID: UUID) -> Int
     func unreadCountForSource(_ sourceID: UUID) -> Int
+
+    // Article mutations
+    func toggleBookmark(for articleID: UUID)
+    func markAsRead(_ articleID: UUID)
+    func markAsUnread(_ articleID: UUID)
 }
 
 /// Mock data service providing sample RSS data for UI development
@@ -647,6 +652,24 @@ final class MockDataService: FeedDataService {
 
     func unreadCountForSource(_ sourceID: UUID) -> Int {
         articles.filter { $0.sourceID == sourceID && !$0.isRead }.count
+    }
+
+    func toggleBookmark(for articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isBookmarked.toggle()
+        }
+    }
+
+    func markAsRead(_ articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isRead = true
+        }
+    }
+
+    func markAsUnread(_ articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isRead = false
+        }
     }
 
     func bookmarkedArticles() -> [Article] {

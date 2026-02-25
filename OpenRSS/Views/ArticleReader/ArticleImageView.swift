@@ -14,31 +14,16 @@ struct ArticleImageView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                case .failure:
-                    // Silently skip broken images
-                    EmptyView()
-
-                case .empty:
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(.secondarySystemFill))
-                        .frame(height: 180)
-                        .overlay(
-                            ProgressView()
-                        )
-
-                @unknown default:
-                    EmptyView()
-                }
+            CachedImageView(
+                url: url,
+                pointSize: CGSize(width: 400, height: 300),
+                contentMode: .fit
+            ) {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.secondarySystemFill))
+                    .frame(height: 180)
             }
+            .clipShape(RoundedRectangle(cornerRadius: 10))
 
             if let caption, !caption.isEmpty {
                 Text(caption)

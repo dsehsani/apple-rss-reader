@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct OpenRSSApp: App {
@@ -16,6 +17,14 @@ struct OpenRSSApp: App {
     let container: ModelContainer
 
     init() {
+        // Bound the shared URLCache so AsyncImage doesn't accumulate images
+        // in memory indefinitely as the user scrolls.
+        URLCache.shared = URLCache(
+            memoryCapacity:  30 * 1024 * 1024,   // 30 MB in-memory
+            diskCapacity:   100 * 1024 * 1024,    // 100 MB on-disk
+            directory: nil                         // default location
+        )
+
         let schema = Schema([FolderModel.self, FeedModel.self, CachedArticle.self])
         let config = ModelConfiguration(schema: schema)
 
@@ -60,6 +69,13 @@ struct OpenRSSApp: App {
         WindowGroup {
             MainTabView()
                 .environment(appState)
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: UIApplication.didReceiveMemoryWarningNotification
+                    )
+                ) { _ in
+                    URLCache.shared.removeAllCachedResponses()
+                }
         }
         .modelContainer(container)
     }

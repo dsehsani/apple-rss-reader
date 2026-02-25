@@ -126,17 +126,16 @@ struct ArticleReaderHostView: View {
                 let videoID = YouTubeService.videoID(from: videoURL.absoluteString)
                 let thumbURL = videoID.flatMap { YouTubeService.thumbnailURL(videoID: $0) }
 
-                AsyncImage(url: thumbURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        ZStack {
-                            Color(.secondarySystemBackground)
-                            Image(systemName: "play.rectangle.fill")
-                                .font(.system(size: 48, weight: .ultraLight))
-                                .foregroundStyle(.secondary)
-                        }
+                CachedImageView(
+                    url: thumbURL,
+                    pointSize: CGSize(width: 400, height: 210),
+                    contentMode: .fill
+                ) {
+                    ZStack {
+                        Color(.secondarySystemBackground)
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 48, weight: .ultraLight))
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity)

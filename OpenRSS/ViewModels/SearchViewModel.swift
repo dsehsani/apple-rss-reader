@@ -60,6 +60,14 @@ final class SearchViewModel {
         return articles.filter { activeFilter.matches(article: $0, query: query.lowercased()) }
     }
 
+    /// Returns true if the article matches the current search query.
+    /// When the query is empty, all articles match.
+    func matches(_ article: Article) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return true }
+        return activeFilter.matches(article: article, query: query.lowercased())
+    }
+
     // MARK: - Helpers
 
     /// Clears the current search query.

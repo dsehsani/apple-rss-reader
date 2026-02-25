@@ -120,6 +120,24 @@ final class SwiftDataService: FeedDataService {
         articles.filter { $0.sourceID == sourceID && !$0.isRead }.count
     }
 
+    func toggleBookmark(for articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isBookmarked.toggle()
+        }
+    }
+
+    func markAsRead(_ articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isRead = true
+        }
+    }
+
+    func markAsUnread(_ articleID: UUID) {
+        if let i = articles.firstIndex(where: { $0.id == articleID }) {
+            articles[i].isRead = false
+        }
+    }
+
     // MARK: - CRUD: Folders
 
     /// Creates a new folder and persists it.
@@ -217,7 +235,7 @@ final class SwiftDataService: FeedDataService {
                 // YouTube) our custom media:group parser on the same bytes.
                 let feedData = try await rssService.fetchFeedData(from: url)
                 let parsed   = try await rssService.parseFeed(from: feedData)
-                print("🛰 Fetched \(parsed.count) articles from \(source.name)")
+
 
                 // For YouTube Atom feeds, FeedKit does not map media:description
                 // or media:thumbnail inside media:group. Run our lightweight SAX
@@ -276,7 +294,7 @@ final class SwiftDataService: FeedDataService {
                 newArticles.append(contentsOf: converted)
 
             } catch {
-                print("❌ Failed to fetch \(source.name): \(error)")
+                // Failed to fetch source; continue with remaining feeds
             }
 
             try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s throttle
@@ -289,7 +307,7 @@ final class SwiftDataService: FeedDataService {
             // Persist to the local JSON cache so the next launch is pre-populated.
             ArticleCacheStore.save(newArticles)
         } else {
-            print("⚠️ refreshAllFeeds produced 0 articles; keeping existing.")
+            // 0 articles fetched; keep existing articles
         }
     }
 

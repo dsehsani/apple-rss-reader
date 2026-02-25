@@ -49,15 +49,18 @@ final class ContentFetcherService: ContentFetcherServiceProtocol {
 
     // MARK: - Configuration
 
-    private let session: URLSession
     private let timeoutInterval: TimeInterval
 
-    init(timeoutInterval: TimeInterval = 15) {
+    /// Shared ephemeral session so every ContentFetcherService instance
+    /// doesn't allocate its own connection pool and TLS state.
+    private static let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest  = timeoutInterval
-        config.timeoutIntervalForResource = timeoutInterval * 3
-        // Follow redirects automatically (default behaviour)
-        self.session         = URLSession(configuration: config)
+        config.timeoutIntervalForRequest  = 15
+        config.timeoutIntervalForResource = 45
+        return URLSession(configuration: config)
+    }()
+
+    init(timeoutInterval: TimeInterval = 15) {
         self.timeoutInterval = timeoutInterval
     }
 
@@ -79,7 +82,7 @@ final class ContentFetcherService: ContentFetcherServiceProtocol {
         )
         request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
 
         // Validate HTTP status
         if let http = response as? HTTPURLResponse {
@@ -91,7 +94,7 @@ final class ContentFetcherService: ContentFetcherServiceProtocol {
             // some servers omit the header or set it loosely
             if let contentType = http.value(forHTTPHeaderField: "Content-Type"),
                !contentType.contains("text/html") && !contentType.contains("xhtml") {
-                print("⚠️ ContentFetcherService: unexpected Content-Type '\(contentType)' for \(url)")
+                // Non-HTML Content-Type; proceed anyway as some servers omit it
             }
         }
 

@@ -52,20 +52,12 @@ struct ArticleCardView: View {
             placeholderHero
 
             if let urlString = article.imageURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .empty:
-                        Color.clear
-                            .overlay(ProgressView().tint(.white.opacity(0.5)))
-                    case .failure:
-                        Color.clear   // placeholder already visible underneath
-                    @unknown default:
-                        Color.clear
-                    }
+                CachedImageView(
+                    url: url,
+                    pointSize: CGSize(width: 400, height: 180),
+                    contentMode: .fill
+                ) {
+                    Color.clear
                 }
             }
         }
