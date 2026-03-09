@@ -343,6 +343,13 @@ struct MyFeedsView: View {
 
             Spacer()
 
+            // Lock indicator when feed is manually marked as paywalled
+            if feed.isPaywalled && !isEditing {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.6))
+            }
+
             if isEditing {
                 Button {
                     withAnimation(Design.Animation.standard) {
@@ -360,6 +367,23 @@ struct MyFeedsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                viewModel.togglePaywalled(feed)
+            } label: {
+                Label(
+                    feed.isPaywalled ? "Remove Paywall Flag" : "Mark as Paywalled",
+                    systemImage: feed.isPaywalled ? "lock.slash" : "lock.fill"
+                )
+            }
+            Button(role: .destructive) {
+                withAnimation(Design.Animation.standard) {
+                    viewModel.deleteFeed(feed)
+                }
+            } label: {
+                Label("Delete Feed", systemImage: "trash")
+            }
+        }
     }
 
     // MARK: - Unfiled Card
@@ -488,6 +512,13 @@ struct MyFeedsView: View {
 
             Spacer()
 
+            // Lock indicator when feed is manually marked as paywalled
+            if feed.isPaywalled {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.6))
+            }
+
             Button {
                 withAnimation(Design.Animation.standard) {
                     viewModel.deleteFeed(feed)
@@ -502,6 +533,23 @@ struct MyFeedsView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                viewModel.togglePaywalled(feed)
+            } label: {
+                Label(
+                    feed.isPaywalled ? "Remove Paywall Flag" : "Mark as Paywalled",
+                    systemImage: feed.isPaywalled ? "lock.slash" : "lock.fill"
+                )
+            }
+            Button(role: .destructive) {
+                withAnimation(Design.Animation.standard) {
+                    viewModel.deleteFeed(feed)
+                }
+            } label: {
+                Label("Delete Feed", systemImage: "trash")
+            }
+        }
     }
 
     // MARK: - Add Source Button

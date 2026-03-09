@@ -105,18 +105,30 @@ final class RSSService {
     /// Extract articles from RSS feed
     private func extractRSS(_ rss: RSSFeed) -> [ParsedArticle] {
         guard let items = rss.items else { return [] }
-        
+
         return items.map { item in
             // Get description with fallback to content:encoded
             let description = item.description ?? item.content?.contentEncoded
-            
-            // Get image URL from media:content or enclosure
-            let imageURL = item.media?.mediaContents?.first?.attributes?.url
+
+            // Get image URL from media:content or enclosure.
+            // Upgrade http:// → https:// for ATS compatibility (e.g. Smashing Magazine
+            // enclosures use http:// which iOS blocks in AsyncImage).
+            var imageURL = item.media?.mediaContents?.first?.attributes?.url
                 ?? item.enclosure?.attributes?.url
-            
+            if let url = imageURL, url.hasPrefix("http://") {
+                imageURL = "https://" + url.dropFirst(7)
+            }
+
+            // If no image came from standard fields, search content:encoded for the
+            // first <img src>. Covers feeds like MIT Sloan that embed their lead image
+            // directly in the article body HTML without using media:content or enclosure.
+            if imageURL == nil {
+                imageURL = Self.firstImageURL(in: item.content?.contentEncoded)
+            }
+
             // Get author
             let author = item.author ?? item.dublinCore?.dcCreator
-            
+
             return ParsedArticle(
                 title: item.title,
                 link: item.link,
@@ -126,6 +138,25 @@ final class RSSService {
                 author: author
             )
         }
+    }
+
+    /// Finds the first absolute image URL from an `<img src>` attribute in raw HTML.
+    /// Handles both double- and single-quoted src values.
+    /// Returns nil if no absolute URL (starting with "http") is found.
+    private static func firstImageURL(in html: String?) -> String? {
+        guard let html else { return nil }
+        let pattern = #"<img\b[^>]*?\bsrc=(?:"([^"]+)"|'([^']+)')"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        else { return nil }
+        let nsRange = NSRange(html.startIndex..., in: html)
+        for match in regex.matches(in: html, range: nsRange) {
+            let srcRange = Range(match.range(at: 1), in: html)
+                        ?? Range(match.range(at: 2), in: html)
+            guard let srcRange else { continue }
+            let candidate = String(html[srcRange])
+            if candidate.hasPrefix("http") { return candidate }
+        }
+        return nil
     }
     
     /// Extract articles from Atom feed
@@ -146,8 +177,10 @@ final class RSSService {
             // Get author
             let author = entry.authors?.first?.name
             
-            // Get image from media or links
-            let imageURL = entry.media?.mediaThumbnails?.first?.attributes?.url
+            // Get image: prefer media:content (used by The Atlantic, many Atom feeds),
+            // then media:thumbnail, then an enclosure link.
+            let imageURL = entry.media?.mediaContents?.first?.attributes?.url
+                ?? entry.media?.mediaThumbnails?.first?.attributes?.url
                 ?? entry.links?.first(where: { $0.attributes?.rel == "enclosure" })?.attributes?.href
             
             return ParsedArticle(

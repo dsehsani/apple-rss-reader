@@ -192,6 +192,11 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
         let script = """
         (function() {
             try {
+                // Capture og:image from the live <head> before Readability modifies the DOM.
+                var ogEl = document.querySelector('meta[property="og:image"]')
+                        || document.querySelector('meta[name="og:image"]');
+                var ogImage = ogEl ? (ogEl.getAttribute('content') || null) : null;
+
                 \(readabilityJS)
                 var article = new Readability(document).parse();
                 if (!article) {
@@ -201,7 +206,8 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
                     title:   article.title   || "",
                     byline:  article.byline  || null,
                     content: article.content || "",
-                    excerpt: article.excerpt || null
+                    excerpt: article.excerpt || null,
+                    ogImage: ogImage
                 });
             } catch(e) {
                 return JSON.stringify({ error: e.toString() });
@@ -246,7 +252,10 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
             let content = (json["content"] as? String) ?? ""
             let excerpt =  json["excerpt"] as? String
 
-            let heroURL = extractHeroImageURL(from: content)
+            // Prefer og:image captured before Readability ran (most reliable),
+            // then fall back to the first filtered <img> in the cleaned HTML.
+            let ogImageURL = (json["ogImage"] as? String).flatMap { URL(string: $0) }
+            let heroURL = ogImageURL ?? extractHeroImageURL(from: content)
 
             finish(returning: ReadableContent(
                 title:        title,
@@ -263,11 +272,42 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     // MARK: - Hero Image
 
     private func extractHeroImageURL(from html: String) -> URL? {
-        guard let srcRange = html.range(of: "src=\"", options: .caseInsensitive) else { return nil }
-        let afterSrc = html[srcRange.upperBound...]
-        guard let endQuote = afterSrc.firstIndex(of: "\"") else { return nil }
-        let urlString = String(afterSrc[..<endQuote])
-        return URL(string: urlString)
+        guard let imgTagRegex = try? NSRegularExpression(
+                  pattern: #"<img\b([^>]*)>"#, options: .caseInsensitive),
+              let srcRegex = try? NSRegularExpression(
+                  pattern: #"\bsrc=["']([^"']+)["']"#, options: .caseInsensitive),
+              let dimRegex = try? NSRegularExpression(
+                  pattern: #"\b(?:width|height)=["']?(\d+)["']?"#, options: .caseInsensitive)
+        else { return nil }
+
+        let nsRange = NSRange(html.startIndex..., in: html)
+        for match in imgTagRegex.matches(in: html, range: nsRange) {
+            guard let attrRange = Range(match.range(at: 1), in: html) else { continue }
+            let attrs = String(html[attrRange])
+            let attrNS = NSRange(attrs.startIndex..., in: attrs)
+
+            // Extract src value (double- or single-quoted).
+            guard let srcMatch = srcRegex.firstMatch(in: attrs, range: attrNS),
+                  let srcRange = Range(srcMatch.range(at: 1), in: attrs)
+            else { continue }
+
+            let candidate = String(attrs[srcRange])
+            guard candidate.hasPrefix("https://") else { continue }
+
+            // Skip tracking pixels / icons: any explicit dimension < 100px.
+            var isTiny = false
+            for dimMatch in dimRegex.matches(in: attrs, range: attrNS) {
+                if let valRange = Range(dimMatch.range(at: 1), in: attrs),
+                   let val = Int(attrs[valRange]), val < 100 {
+                    isTiny = true
+                    break
+                }
+            }
+            if isTiny { continue }
+
+            return URL(string: candidate)
+        }
+        return nil
     }
 
     // MARK: - Continuation Helpers

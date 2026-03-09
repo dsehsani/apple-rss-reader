@@ -199,6 +199,28 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Toggles whether all articles from this feed are treated as paywalled.
+    @MainActor
+    func toggleFeedPaywalled(id: UUID) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.isPaywalled.toggle()
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    /// Marks the in-memory article with the given id as paywalled.
+    /// Called by ArticleReaderHostView when post-pipeline detection fires.
+    @MainActor
+    func markArticlePaywalled(id: UUID) {
+        guard let index = articles.firstIndex(where: { $0.id == id }) else { return }
+        articles[index].isPaywalled = true
+    }
+
     // MARK: - RSS Refresh
 
     /// Fetches live articles from every enabled source and updates the in-memory `articles` array.
@@ -305,15 +327,26 @@ final class SwiftDataService: FeedDataService {
 
     // MARK: - Private Helpers
 
-    /// Extracts the first `src="…"` URL from raw HTML (e.g. description field).
-    /// Returns nil if none found or the URL doesn't start with http.
+    /// Extracts the first `src` URL from an `<img>` tag in raw HTML.
+    /// Handles both single- and double-quoted src attributes.
+    /// Returns nil if no `<img>` with an absolute URL is found.
     private func firstImageURL(in html: String?) -> String? {
         guard let html else { return nil }
-        guard let srcRange = html.range(of: "src=\"", options: .caseInsensitive) else { return nil }
-        let afterSrc = html[srcRange.upperBound...]
-        guard let endQuote = afterSrc.firstIndex(of: "\"") else { return nil }
-        let candidate = String(afterSrc[..<endQuote])
-        return candidate.hasPrefix("http") ? candidate : nil
+        // Target only <img> tags to avoid picking up <script src> or <link src>.
+        // The alternation handles both double- and single-quoted src values.
+        let pattern = #"<img\b[^>]*?\bsrc=(?:"([^"]+)"|'([^']+)')"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        else { return nil }
+        let nsRange = NSRange(html.startIndex..., in: html)
+        for match in regex.matches(in: html, range: nsRange) {
+            // Group 1 = double-quoted value, group 2 = single-quoted value.
+            let srcRange = Range(match.range(at: 1), in: html)
+                        ?? Range(match.range(at: 2), in: html)
+            guard let srcRange else { continue }
+            let candidate = String(html[srcRange])
+            if candidate.hasPrefix("http") { return candidate }
+        }
+        return nil
     }
 
     private func plainText(_ html: String) -> String {
@@ -348,15 +381,16 @@ private extension Source {
     /// Feeds without a folder use the sentinel `unfiledFolderID` as their `categoryID`.
     init(from model: FeedModel) {
         self.init(
-            id:         model.id,
-            name:       model.title,
-            feedURL:    model.feedURL,
-            websiteURL: model.websiteURL,
-            icon:       "dot.radiowaves.left.and.right",
-            iconColor:  .blue,
-            categoryID: model.folder?.id ?? SwiftDataService.unfiledFolderID,
-            isEnabled:  model.isEnabled,
-            addedAt:    model.addedAt
+            id:          model.id,
+            name:        model.title,
+            feedURL:     model.feedURL,
+            websiteURL:  model.websiteURL,
+            icon:        "dot.radiowaves.left.and.right",
+            iconColor:   .blue,
+            categoryID:  model.folder?.id ?? SwiftDataService.unfiledFolderID,
+            isEnabled:   model.isEnabled,
+            isPaywalled: model.isPaywalled,
+            addedAt:     model.addedAt
         )
     }
 }

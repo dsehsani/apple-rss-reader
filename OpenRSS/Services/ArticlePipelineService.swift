@@ -55,6 +55,18 @@ final class ArticlePipelineService {
         // Phase 4 — normalise cleaned HTML into typed ContentNode array
         let nodes = try normalizer.normalize(content: readable)
 
+        // Deduplicate image nodes: the same image URL can appear multiple times
+        // in Readability output (e.g. The Verge places the lead image both at the
+        // top of the article and inline in the body). Also pre-seed with
+        // heroImageURL so the lead image isn't rendered again in the body zone
+        // when it's already displayed in the reader's header zone.
+        var seenImageURLs = Set<URL>()
+        if let heroURL = readable.heroImageURL { seenImageURLs.insert(heroURL) }
+        let dedupedNodes = nodes.filter { node in
+            guard case .image(let url, _) = node else { return true }
+            return seenImageURLs.insert(url).inserted
+        }
+
         // Build the ExtractedArticle
         let extracted = ExtractedArticle(
             id:           item.id,
@@ -64,7 +76,7 @@ final class ArticlePipelineService {
             publishDate:  item.publishDate,
             heroImageURL: readable.heroImageURL,
             feedName:     item.feedName,
-            nodes:        nodes,
+            nodes:        dedupedNodes,
             cachedAt:     Date()
         )
 

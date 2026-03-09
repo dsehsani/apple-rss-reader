@@ -84,4 +84,8 @@ final class MyFeedsViewModel {
     func toggleFeedEnabled(_ source: Source) {
         try? dataService.toggleFeedEnabled(id: source.id)
     }
+
+    func togglePaywalled(_ source: Source) {
+        try? dataService.toggleFeedPaywalled(id: source.id)
+    }
 }
