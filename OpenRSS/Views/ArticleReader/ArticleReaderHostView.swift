@@ -150,16 +150,7 @@ struct ArticleReaderHostView: View {
     // MARK: - Loading View
 
     private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.4)
-
-            Text("Loading article…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        ArticleSkeletonView()
     }
 
     // MARK: - Error View

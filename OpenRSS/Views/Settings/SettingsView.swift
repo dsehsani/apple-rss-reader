@@ -26,29 +26,49 @@ struct SettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack(alignment: .top) {
-            // Background - adaptive for light/dark mode
-            Design.Colors.background(for: colorScheme).ignoresSafeArea()
+        if #available(iOS 26.0, *) {
+            liquidGlassBody
+        } else {
+            legacyBody
+        }
+    }
 
-            // Main content — safeAreaInset adapts to any device automatically
+    // MARK: - iOS 26+ Liquid Glass Navigation Bar
+
+    @available(iOS 26.0, *)
+    private var liquidGlassBody: some View {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: Design.Spacing.section) {
-                    // Appearance section
                     appearanceSection
-
-                    // Reading section
                     readingSection
-
-                    // Data section
                     dataSection
+                    aboutSection
+                }
+                .padding(.top, Design.Spacing.edge)
+            }
+            .background(Design.Colors.background(for: colorScheme))
+            .navigationTitle("Settings")
+        }
+    }
 
-                    // About section
+    // MARK: - Legacy Body (iOS 17–25)
+
+    private var legacyBody: some View {
+        ZStack(alignment: .top) {
+            Design.Colors.background(for: colorScheme).ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: Design.Spacing.section) {
+                    appearanceSection
+                    readingSection
+                    dataSection
                     aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                headerView
+                legacyHeaderView
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
@@ -56,10 +76,9 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Header View
-    // .ignoresSafeArea(edges: .top) lets the material fill up to the Dynamic Island / notch.
+    // MARK: - Legacy Header View
 
-    private var headerView: some View {
+    private var legacyHeaderView: some View {
         Text("Settings")
             .font(Design.Typography.largeTitle)
             .foregroundStyle(Design.Colors.primaryText(for: colorScheme))

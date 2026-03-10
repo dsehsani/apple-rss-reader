@@ -47,6 +47,9 @@ struct OpenRSSApp: App {
         // @main App.init() is always called on the main thread, so assumeIsolated is safe.
         MainActor.assumeIsolated {
             SwiftDataService.shared.configure(container: container)
+
+            // Pre-warm the WKWebView pool so the first article open is fast.
+            WebViewPool.shared.warmUp()
         }
     }
 
