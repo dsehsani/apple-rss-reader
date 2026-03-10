@@ -15,6 +15,7 @@ import SwiftUI
 struct ArticleReaderView: View {
 
     let extracted: ExtractedArticle
+    var onSignIn: (() -> Void)? = nil
 
     // MARK: - Body
 
@@ -29,6 +30,10 @@ struct ArticleReaderView: View {
 
                 footerZone
                     .padding(.top, 32)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+
+                paywallFootnote
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
             }
@@ -122,6 +127,19 @@ struct ArticleReaderView: View {
         case .table(let headers, let rows):
             TableView(headers: headers, rows: rows)
         }
+    }
+
+    // MARK: - Paywall Footnote
+
+    private var paywallFootnote: some View {
+        Button {
+            onSignIn?()
+        } label: {
+            (Text("Hitting a paywall?  ") + Text("Sign in here").underline())
+                .font(.footnote)
+                .foregroundStyle(Color(.tertiaryLabel))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Footer Zone

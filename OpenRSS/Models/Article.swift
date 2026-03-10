@@ -20,6 +20,8 @@ struct Article: Identifiable, Hashable, Codable {
     var isRead: Bool
     var isBookmarked: Bool
     let readTimeMinutes: Int
+    /// Set to true when post-pipeline detection finds a subscription prompt in the article content.
+    var isPaywalled: Bool
 
     init(
         id: UUID = UUID(),
@@ -32,7 +34,8 @@ struct Article: Identifiable, Hashable, Codable {
         publishedAt: Date = Date(),
         isRead: Bool = false,
         isBookmarked: Bool = false,
-        readTimeMinutes: Int = 5
+        readTimeMinutes: Int = 5,
+        isPaywalled: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -45,6 +48,25 @@ struct Article: Identifiable, Hashable, Codable {
         self.isRead = isRead
         self.isBookmarked = isBookmarked
         self.readTimeMinutes = readTimeMinutes
+        self.isPaywalled = isPaywalled
+    }
+
+    // Custom decoder so that cached JSON written before `isPaywalled` existed
+    // still decodes correctly (defaults to false when the key is absent).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id              = try c.decode(UUID.self,   forKey: .id)
+        title           = try c.decode(String.self, forKey: .title)
+        excerpt         = try c.decode(String.self, forKey: .excerpt)
+        sourceID        = try c.decode(UUID.self,   forKey: .sourceID)
+        categoryID      = try c.decode(UUID.self,   forKey: .categoryID)
+        imageURL        = try c.decodeIfPresent(String.self, forKey: .imageURL)
+        articleURL      = try c.decode(String.self, forKey: .articleURL)
+        publishedAt     = try c.decode(Date.self,   forKey: .publishedAt)
+        isRead          = try c.decode(Bool.self,   forKey: .isRead)
+        isBookmarked    = try c.decode(Bool.self,   forKey: .isBookmarked)
+        readTimeMinutes = try c.decode(Int.self,    forKey: .readTimeMinutes)
+        isPaywalled     = try c.decodeIfPresent(Bool.self, forKey: .isPaywalled) ?? false
     }
 }
 

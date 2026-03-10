@@ -21,6 +21,12 @@ struct ArticleCardView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
+    // MARK: - State
+
+    /// Resolved og:image URL for articles whose RSS feed provided no image.
+    /// Set lazily when the card scrolls into view via OGImageService.
+    @State private var ogImageURL: String?
+
     // MARK: - Body
 
     var body: some View {
@@ -33,6 +39,7 @@ struct ArticleCardView: View {
                 sourceInfoRow
                 titleText
                 excerptText
+                if isPaywalled { paywallBadge }
                 footerRow
             }
             .padding(Design.Spacing.cardPadding)
@@ -42,6 +49,19 @@ struct ArticleCardView: View {
         // Whole card is the tap target — child Buttons (bookmark, share) take priority.
         .contentShape(Rectangle())
         .onTapGesture { onReadMoreTap?() }
+        // Lazily fetch the og:image when this card scrolls into view.
+        // Short-circuits immediately if the RSS feed already provided an image URL.
+        // Cancelled automatically if the card scrolls off screen before completing.
+        .task(id: article.id) {
+            guard article.imageURL == nil else { return }
+            // Serve from cache without a network round-trip whenever possible.
+            if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
+                ogImageURL = cached
+                return
+            }
+            await OGImageService.shared.prefetch(articleURL: article.articleURL)
+            ogImageURL = await OGImageService.shared.cachedImageURL(for: article.articleURL)
+        }
     }
 
     // MARK: - Subviews
@@ -51,13 +71,23 @@ struct ArticleCardView: View {
             // Always-visible placeholder so the frame never collapses
             placeholderHero
 
-            if let urlString = article.imageURL, let url = URL(string: urlString) {
-                CachedImageView(
-                    url: url,
-                    pointSize: CGSize(width: 400, height: 180),
-                    contentMode: .fill
-                ) {
-                    Color.clear
+            // Use the RSS-provided image URL, falling back to the lazily-fetched og:image.
+            let displayURL = article.imageURL ?? ogImageURL
+            if let urlString = displayURL, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty:
+                        Color.clear
+                            .overlay(ProgressView().tint(.white.opacity(0.5)))
+                    case .failure:
+                        Color.clear   // placeholder already visible underneath
+                    @unknown default:
+                        Color.clear
+                    }
                 }
             }
         }
@@ -119,6 +149,22 @@ struct ArticleCardView: View {
             .foregroundStyle(Design.Colors.secondaryText)
             .lineLimit(2)
             .lineSpacing(2)
+    }
+
+    // MARK: - Paywall Detection
+
+    private var isPaywalled: Bool {
+        article.isPaywalled || source?.isPaywalled == true
+    }
+
+    private var paywallBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 10))
+            Text("Subscription may be required")
+                .font(Design.Typography.caption)
+        }
+        .foregroundStyle(Design.Colors.secondaryText)
     }
 
     private var footerRow: some View {

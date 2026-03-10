@@ -21,63 +21,69 @@ struct SourcesView: View {
     // MARK: - Body
 
     var body: some View {
+        if #available(iOS 26.0, *) {
+            liquidGlassBody
+        } else {
+            legacyBody
+        }
+    }
+
+    // MARK: - iOS 26+ Liquid Glass Navigation Bar
+
+    @available(iOS 26.0, *)
+    private var liquidGlassBody: some View {
+        NavigationStack {
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        searchBar
+                            .padding(.horizontal, Design.Spacing.edge)
+                            .padding(.top, Design.Spacing.edge)
+                            .padding(.bottom, Design.Spacing.edge)
+
+                        sourceCategoryList
+
+                        manageCategoriesButton
+                            .padding(Design.Spacing.edge)
+                    }
+                }
+                .background(Design.Colors.background(for: colorScheme))
+
+                addButton
+            }
+            .navigationTitle("Sources")
+            .sheet(isPresented: $viewModel.showingAddSourceSheet) {
+                addSourceSheet
+            }
+        }
+    }
+
+    // MARK: - Legacy Body (iOS 17–25)
+
+    private var legacyBody: some View {
         ZStack(alignment: .top) {
-            // Background - adaptive for light/dark mode
             Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
-            // Main content — safeAreaInset adapts to any device automatically
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    // Search bar
                     searchBar
                         .padding(.horizontal, Design.Spacing.edge)
                         .padding(.top, Design.Spacing.edge)
                         .padding(.bottom, Design.Spacing.edge)
 
-                    // Category sections
-                    ForEach(viewModel.filteredCategories) { category in
-                        VStack(spacing: 0) {
-                            // Category header
-                            CategorySectionHeader(
-                                category: category,
-                                sourceCount: viewModel.sourceCount(for: category),
-                                unreadCount: viewModel.unreadCount(for: category),
-                                isExpanded: viewModel.isExpanded(category)
-                            ) {
-                                viewModel.toggleExpansion(for: category)
-                            }
+                    sourceCategoryList
 
-                            // Sources (if expanded)
-                            if viewModel.isExpanded(category) {
-                                ForEach(viewModel.filteredSources(for: category)) { source in
-                                    SourceRowView(
-                                        source: source,
-                                        unreadCount: viewModel.unreadCount(for: source)
-                                    )
-                                    .background(Design.Colors.cardBackground.opacity(0.3))
-                                }
-                            }
-
-                            // Divider
-                            Rectangle()
-                                .fill(Design.Colors.subtleBorder)
-                                .frame(height: 1)
-                        }
-                    }
-
-                    // Manage Categories button
                     manageCategoriesButton
                         .padding(Design.Spacing.edge)
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                headerView
+                legacyHeaderView
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
             }
 
-            // Floating add button
             addButton
         }
         .sheet(isPresented: $viewModel.showingAddSourceSheet) {
@@ -85,10 +91,40 @@ struct SourcesView: View {
         }
     }
 
-    // MARK: - Header View
-    // .ignoresSafeArea(edges: .top) lets the material fill up to the Dynamic Island / notch.
+    // MARK: - Shared Source Category List
 
-    private var headerView: some View {
+    private var sourceCategoryList: some View {
+        ForEach(viewModel.filteredCategories) { category in
+            VStack(spacing: 0) {
+                CategorySectionHeader(
+                    category: category,
+                    sourceCount: viewModel.sourceCount(for: category),
+                    unreadCount: viewModel.unreadCount(for: category),
+                    isExpanded: viewModel.isExpanded(category)
+                ) {
+                    viewModel.toggleExpansion(for: category)
+                }
+
+                if viewModel.isExpanded(category) {
+                    ForEach(viewModel.filteredSources(for: category)) { source in
+                        SourceRowView(
+                            source: source,
+                            unreadCount: viewModel.unreadCount(for: source)
+                        )
+                        .background(Design.Colors.cardBackground.opacity(0.3))
+                    }
+                }
+
+                Rectangle()
+                    .fill(Design.Colors.subtleBorder)
+                    .frame(height: 1)
+            }
+        }
+    }
+
+    // MARK: - Legacy Header View
+
+    private var legacyHeaderView: some View {
         Text("Sources")
             .font(Design.Typography.largeTitle)
             .foregroundStyle(Design.Colors.primaryText(for: colorScheme))

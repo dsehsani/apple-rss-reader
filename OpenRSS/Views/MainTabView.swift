@@ -7,19 +7,21 @@
 
 import SwiftUI
 
-/// Main tab bar container with Apple News-style liquid glass sliding pill
+/// Main tab bar container.
+///
+/// iOS 26+  → Native TabView with Liquid Glass treatment.
+/// iOS 17+  → Custom liquid glass sliding pill (Apple News-style).
 struct MainTabView: View {
 
     // MARK: - State
 
-    @State private var selectedTab: Tab = .today
+    @State private var selectedTab: AppTab = .today
 
-    // MARK: - Pill Position State (Apple News Style)
-    // The pill position is tracked directly - it follows your finger exactly
+    // MARK: - Pill Position State (Legacy Custom Tab Bar)
 
-    @State private var pillOffset: CGFloat = 0      // Current pill X offset from start
-    @State private var isDragging: Bool = false     // Whether user is currently dragging
-    @State private var pillStretch: CGFloat = 1.0   // Stretch factor for liquid effect
+    @State private var pillOffset: CGFloat = 0
+    @State private var isDragging: Bool = false
+    @State private var pillStretch: CGFloat = 1.0
 
     // MARK: - Environment
 
@@ -29,6 +31,47 @@ struct MainTabView: View {
     // MARK: - Body
 
     var body: some View {
+        if #available(iOS 26.0, *) {
+            liquidGlassTabView
+        } else {
+            legacyCustomTabView
+        }
+    }
+
+    // MARK: - iOS 26+ Liquid Glass Native TabView
+
+    @available(iOS 26.0, *)
+    private var liquidGlassTabView: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Today", systemImage: Design.Icons.today, value: .today) {
+                TodayView()
+            }
+
+            Tab("Discover", systemImage: Design.Icons.discover, value: .discover) {
+                DiscoverView()
+            }
+
+            Tab("My Feeds", systemImage: "list.bullet.below.rectangle", value: .saved) {
+                MyFeedsView()
+            }
+
+            Tab("Sources", systemImage: Design.Icons.sources, value: .sources) {
+                SourcesView()
+            }
+
+            Tab("Settings", systemImage: Design.Icons.settings, value: .settings) {
+                SettingsView()
+            }
+        }
+        .tabViewStyle(.tabBarOnly)
+    }
+
+    // MARK: - Legacy Custom Tab Bar (iOS 17–25)
+    // ============================================================================
+    // LIQUID GLASS TAB BAR - APPLE NEWS STYLE
+    // ============================================================================
+
+    private var legacyCustomTabView: some View {
         ZStack(alignment: .bottom) {
             // Tab content
             Group {
@@ -60,20 +103,11 @@ struct MainTabView: View {
     }
 
     // MARK: - Apple News Style Tab Bar
-    // ============================================================================
-    // LIQUID GLASS TAB BAR - APPLE NEWS STYLE
-    // ============================================================================
-    // How it works:
-    // 1. Pill position is tracked in absolute X coordinates
-    // 2. During drag, pill follows your finger EXACTLY (no animation delay)
-    // 3. On release, pill snaps to nearest tab with spring animation
-    // 4. Pill slightly stretches during fast movements for "liquid" feel
-    // ============================================================================
 
     private var appleNewsStyleTabBar: some View {
         GeometryReader { geo in
             let totalWidth = geo.size.width
-            let tabCount = CGFloat(Tab.allCases.count)
+            let tabCount = CGFloat(AppTab.allCases.count)
             let tabWidth = totalWidth / tabCount
             let pillWidth: CGFloat = 56
 
@@ -92,52 +126,43 @@ struct MainTabView: View {
 
                 // Tab icons and labels (touchable)
                 HStack(spacing: 0) {
-                    ForEach(Tab.allCases, id: \.self) { tab in
+                    ForEach(AppTab.allCases, id: \.self) { tab in
                         tabItemView(tab: tab, tabWidth: tabWidth)
                     }
                 }
             }
             .frame(height: 70)
             .contentShape(Rectangle())
-            // ============================================================
-            // THE KEY GESTURE - Makes the pill follow your finger
-            // ============================================================
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         if !isDragging {
                             isDragging = true
-                            // Initialize pillOffset to current tab position
                             pillOffset = tabCenterX(for: selectedTab, tabWidth: tabWidth)
                         }
 
-                        // DIRECT TRACKING: Pill X = Finger X (clamped to bounds)
                         let fingerX = value.location.x
                         let minX = pillWidth / 2
                         let maxX = totalWidth - pillWidth / 2
                         pillOffset = min(max(fingerX, minX), maxX)
 
-                        // Liquid stretch effect based on drag velocity
                         let velocity = abs(value.velocity.width)
-                        let stretchAmount = min(velocity / 2000, 0.15) // Max 15% stretch
+                        let stretchAmount = min(velocity / 2000, 0.15)
                         withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.7)) {
                             pillStretch = 1.0 + stretchAmount
                         }
                     }
                     .onEnded { value in
-                        // Calculate nearest tab based on final pill position
                         let nearestTabIndex = Int(round((pillOffset - tabWidth / 2) / tabWidth))
-                        let clampedIndex = min(max(nearestTabIndex, 0), Tab.allCases.count - 1)
-                        let nearestTab = Tab.allCases[clampedIndex]
+                        let clampedIndex = min(max(nearestTabIndex, 0), AppTab.allCases.count - 1)
+                        let nearestTab = AppTab.allCases[clampedIndex]
 
-                        // Snap to nearest tab with spring animation
                         withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
                             selectedTab = nearestTab
                             pillOffset = tabCenterX(for: nearestTab, tabWidth: tabWidth)
                             pillStretch = 1.0
                         }
 
-                        // Small delay before resetting drag state
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             isDragging = false
                         }
@@ -150,29 +175,25 @@ struct MainTabView: View {
     }
 
     // MARK: - Pill X Position
-    // Returns the pill's X position - either following finger or at selected tab
 
     private func pillXPosition(tabWidth: CGFloat, totalWidth: CGFloat, pillWidth: CGFloat) -> CGFloat {
         if isDragging {
-            // During drag: use direct finger position
             return pillOffset
         } else {
-            // Not dragging: center on selected tab
             return tabCenterX(for: selectedTab, tabWidth: tabWidth)
         }
     }
 
     // MARK: - Tab Center X Calculator
 
-    private func tabCenterX(for tab: Tab, tabWidth: CGFloat) -> CGFloat {
+    private func tabCenterX(for tab: AppTab, tabWidth: CGFloat) -> CGFloat {
         return CGFloat(tab.index) * tabWidth + tabWidth / 2
     }
 
     // MARK: - Tab Item View (Icon + Label)
 
-    private func tabItemView(tab: Tab, tabWidth: CGFloat) -> some View {
+    private func tabItemView(tab: AppTab, tabWidth: CGFloat) -> some View {
         Button {
-            // Tap to select tab directly
             withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
                 selectedTab = tab
                 pillOffset = tabCenterX(for: tab, tabWidth: tabWidth)
@@ -254,9 +275,9 @@ struct MainTabView: View {
     }
 }
 
-// MARK: - Tab Enum
+// MARK: - AppTab Enum
 
-enum Tab: CaseIterable {
+enum AppTab: CaseIterable {
     case today
     case discover
     case saved

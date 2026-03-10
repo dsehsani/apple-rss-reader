@@ -4,10 +4,9 @@
 //
 //  Phase 3 — Content Extraction
 //
-//  Spins up a hidden WKWebView, navigates it to the article URL (so the
-//  page's own JavaScript runs and renders dynamic content), waits for the
-//  DOM to settle, then injects Mozilla Readability.js and extracts the
-//  reader-mode content.
+//  Acquires a pre-warmed WKWebView from WebViewPool (Readability.js is
+//  already injected), navigates it to the article URL, waits for the DOM
+//  to settle, then runs Readability.parse() and returns ReadableContent.
 //
 //  Why load the URL directly instead of a pre-fetched HTML string?
 //  Single-page apps (e.g. RotoWire, ESPN, The Athletic) render their
@@ -25,8 +24,6 @@ import WebKit
 // MARK: - Protocol
 
 protocol ReadabilityExtractionServiceProtocol: Sendable {
-    /// Navigates to `sourceURL` in a hidden WebView and extracts
-    /// reader-mode content once the page has settled.
     @MainActor
     func extract(sourceURL: URL) async throws -> ReadableContent
 }
@@ -74,36 +71,32 @@ final class ReadabilityExtractionService: ReadabilityExtractionServiceProtocol {
     // MARK: - Public API
 
     func extract(sourceURL: URL) async throws -> ReadableContent {
-        try Task.checkCancellation()
+        // Acquire a pre-warmed WKWebView from the pool.
+        // Readability.js is already injected as a user script.
+        let webView = await WebViewPool.shared.acquire()
 
-        guard let jsURL = Bundle.main.url(forResource: "Readability", withExtension: "js"),
-              let readabilityJS = try? String(contentsOf: jsURL, encoding: .utf8) else {
-            throw ReadabilityError.readabilityJSNotFound
+        do {
+            let result = try await performExtraction(webView: webView, sourceURL: sourceURL)
+            WebViewPool.shared.returnToPool(webView)
+            return result
+        } catch {
+            WebViewPool.shared.returnToPool(webView)
+            throw error
         }
+    }
 
-        // Thread-safe box so onCancel can reach the coordinator
-        // (onCancel may fire from any thread; we dispatch to main before calling cancel)
-        final class Box: @unchecked Sendable { var coordinator: WebViewCoordinator? }
-        let box = Box()
+    // MARK: - Extraction
 
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                let coordinator = WebViewCoordinator(
-                    sourceURL:       sourceURL,
-                    readabilityJS:   readabilityJS,
-                    jsSettleDelay:   jsSettleDelay,
-                    timeoutInterval: timeoutInterval,
-                    continuation:    continuation
-                )
-                box.coordinator = coordinator
-                coordinator.start()
-            }
-        } onCancel: {
-            // onCancel fires on arbitrary thread; dispatch to main because
-            // WebViewCoordinator is @MainActor
-            DispatchQueue.main.async {
-                box.coordinator?.cancel()
-            }
+    private func performExtraction(webView: WKWebView, sourceURL: URL) async throws -> ReadableContent {
+        return try await withCheckedThrowingContinuation { continuation in
+            let coordinator = WebViewCoordinator(
+                webView:         webView,
+                sourceURL:       sourceURL,
+                jsSettleDelay:   jsSettleDelay,
+                timeoutInterval: timeoutInterval,
+                continuation:    continuation
+            )
+            coordinator.start()
         }
     }
 }
@@ -113,9 +106,8 @@ final class ReadabilityExtractionService: ReadabilityExtractionServiceProtocol {
 @MainActor
 private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
 
-    private var webView: WKWebView?
+    private let webView: WKWebView
     private let sourceURL:       URL
-    private let readabilityJS:   String
     private let jsSettleDelay:   TimeInterval
     private let timeoutInterval: TimeInterval
     private var continuation:    CheckedContinuation<ReadableContent, Error>?
@@ -124,14 +116,14 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     private var timeoutTask: DispatchWorkItem?
 
     init(
+        webView:         WKWebView,
         sourceURL:       URL,
-        readabilityJS:   String,
         jsSettleDelay:   TimeInterval,
         timeoutInterval: TimeInterval,
         continuation:    CheckedContinuation<ReadableContent, Error>
     ) {
+        self.webView         = webView
         self.sourceURL       = sourceURL
-        self.readabilityJS   = readabilityJS
         self.jsSettleDelay   = jsSettleDelay
         self.timeoutInterval = timeoutInterval
         self.continuation    = continuation
@@ -144,27 +136,7 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     func start() {
         selfRetain = self
 
-        // Give the WebView a realistic viewport so layout-dependent JS works.
-        let config = WKWebViewConfiguration()
-        // Use an ephemeral data store so cached resources (HTML, JS bundles, images)
-        // are released when this WebView is deallocated instead of accumulating in
-        // the shared persistent store across article opens.
-        config.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        config.preferences.javaScriptCanOpenWindowsAutomatically = false
-
-        let wv = WKWebView(
-            frame: CGRect(x: 0, y: 0, width: 390, height: 844),
-            configuration: config
-        )
-        wv.navigationDelegate = self
-
-        // Mobile user-agent so sites serve their standard layout
-        wv.customUserAgent =
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) " +
-            "AppleWebKit/605.1.15 (KHTML, like Gecko) " +
-            "Version/18.0 Mobile/15E148 Safari/604.1"
-
-        webView = wv
+        webView.navigationDelegate = self
 
         // Schedule a hard timeout
         let work = DispatchWorkItem { [weak self] in
@@ -180,7 +152,7 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
         // runs the page's JavaScript exactly as Safari would.
         var request = URLRequest(url: sourceURL)
         request.timeoutInterval = timeoutInterval
-        wv.load(request)
+        webView.load(request)
     }
 
     // MARK: - WKNavigationDelegate
@@ -213,10 +185,15 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     private func runReadability() {
         guard !hasFinished else { return }
 
+        // Readability.js is already injected as a user script via WebViewPool.
+        // We only need to invoke it here.
         let script = """
         (function() {
             try {
-                \(readabilityJS)
+                var ogEl = document.querySelector('meta[property="og:image"]')
+                        || document.querySelector('meta[name="og:image"]');
+                var ogImage = ogEl ? (ogEl.getAttribute('content') || null) : null;
+
                 var article = new Readability(document).parse();
                 if (!article) {
                     return JSON.stringify({ error: "parse_returned_null" });
@@ -225,7 +202,8 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
                     title:   article.title   || "",
                     byline:  article.byline  || null,
                     content: article.content || "",
-                    excerpt: article.excerpt || null
+                    excerpt: article.excerpt || null,
+                    ogImage: ogImage
                 });
             } catch(e) {
                 return JSON.stringify({ error: e.toString() });
@@ -233,7 +211,7 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
         })();
         """
 
-        webView?.evaluateJavaScript(script) { [weak self] result, error in
+        webView.evaluateJavaScript(script) { [weak self] result, error in
             guard let self, !self.hasFinished else { return }
 
             if let error {
@@ -270,7 +248,8 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
             let content = (json["content"] as? String) ?? ""
             let excerpt =  json["excerpt"] as? String
 
-            let heroURL = extractHeroImageURL(from: content)
+            let ogImageURL = (json["ogImage"] as? String).flatMap { URL(string: $0) }
+            let heroURL = ogImageURL ?? extractHeroImageURL(from: content)
 
             finish(returning: ReadableContent(
                 title:        title,
@@ -287,11 +266,40 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     // MARK: - Hero Image
 
     private func extractHeroImageURL(from html: String) -> URL? {
-        guard let srcRange = html.range(of: "src=\"", options: .caseInsensitive) else { return nil }
-        let afterSrc = html[srcRange.upperBound...]
-        guard let endQuote = afterSrc.firstIndex(of: "\"") else { return nil }
-        let urlString = String(afterSrc[..<endQuote])
-        return URL(string: urlString)
+        guard let imgTagRegex = try? NSRegularExpression(
+                  pattern: #"<img\b([^>]*)>"#, options: .caseInsensitive),
+              let srcRegex = try? NSRegularExpression(
+                  pattern: #"\bsrc=["']([^"']+)["']"#, options: .caseInsensitive),
+              let dimRegex = try? NSRegularExpression(
+                  pattern: #"\b(?:width|height)=["']?(\d+)["']?"#, options: .caseInsensitive)
+        else { return nil }
+
+        let nsRange = NSRange(html.startIndex..., in: html)
+        for match in imgTagRegex.matches(in: html, range: nsRange) {
+            guard let attrRange = Range(match.range(at: 1), in: html) else { continue }
+            let attrs = String(html[attrRange])
+            let attrNS = NSRange(attrs.startIndex..., in: attrs)
+
+            guard let srcMatch = srcRegex.firstMatch(in: attrs, range: attrNS),
+                  let srcRange = Range(srcMatch.range(at: 1), in: attrs)
+            else { continue }
+
+            let candidate = String(attrs[srcRange])
+            guard candidate.hasPrefix("https://") else { continue }
+
+            var isTiny = false
+            for dimMatch in dimRegex.matches(in: attrs, range: attrNS) {
+                if let valRange = Range(dimMatch.range(at: 1), in: attrs),
+                   let val = Int(attrs[valRange]), val < 100 {
+                    isTiny = true
+                    break
+                }
+            }
+            if isTiny { continue }
+
+            return URL(string: candidate)
+        }
+        return nil
     }
 
     // MARK: - Continuation Helpers
@@ -315,9 +323,9 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
     private func tearDown() {
         timeoutTask?.cancel()
         timeoutTask = nil
-        webView?.navigationDelegate = nil
-        webView?.stopLoading()
-        webView = nil
+        webView.navigationDelegate = nil
+        webView.stopLoading()
+        // Do NOT nil out webView — it's owned by the pool and will be returned.
         selfRetain = nil
     }
 }

@@ -8,7 +8,9 @@
 //  States:
 //    .loading  — spinner while pipeline fetches + extracts + normalises
 //    .loaded   — ArticleReaderView with the ExtractedArticle
-//    .failed   — error message + "Open in Safari" fallback button
+//    .youtube  — YouTube video card
+//    .playlist — YouTube playlist card
+//    .failed   — error message + "Open in Safari" fallback
 //
 
 import SwiftUI
@@ -18,9 +20,7 @@ struct ArticleReaderHostView: View {
 
     // MARK: - Input
 
-    /// The existing app Article (from the RSS feed card list).
     let article: Article
-    /// Human-readable feed name shown in the reader header.
     let feedName: String
 
     // MARK: - State
@@ -34,6 +34,7 @@ struct ArticleReaderHostView: View {
     }
 
     @State private var loadState: LoadState = .loading
+    @State private var showPaywallSafari = false
     @State private var isDescriptionExpanded = false
 
     // MARK: - Environment
@@ -50,7 +51,10 @@ struct ArticleReaderHostView: View {
                 loadingView
 
             case .loaded(let extracted):
-                ArticleReaderView(extracted: extracted)
+                ArticleReaderView(
+                    extracted: extracted,
+                    onSignIn: { showPaywallSafari = true }
+                )
 
             case .youtube(let videoURL):
                 youtubeView(videoURL: videoURL)
@@ -62,24 +66,91 @@ struct ArticleReaderHostView: View {
                 errorView(message: message)
             }
         }
+        // Sheet anchored here (on the stable outer Group) so it reliably presents
+        // regardless of which LoadState case is currently active.
+        // onDismiss re-asserts isReadingArticle so presenting the sheet doesn't
+        // accidentally trigger a navigation pop in the parent view.
+        .sheet(isPresented: $showPaywallSafari, onDismiss: {
+            appState.isReadingArticle = true
+        }) {
+            if let url = URL(string: article.articleURL) {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
         .task { await runPipeline() }
         .onAppear  { appState.isReadingArticle = true  }
-        .onDisappear { appState.isReadingArticle = false }
+        // Only clear the flag when we're truly leaving the reader, not when
+        // the paywall sheet slides in on top of us.
+        .onDisappear { if !showPaywallSafari { appState.isReadingArticle = false } }
+    }
+
+    // MARK: - Pipeline
+
+    @MainActor
+    private func runPipeline() async {
+        guard let url = URL(string: article.articleURL) else {
+            loadState = .failed("The article link is invalid.")
+            return
+        }
+
+        // YouTube content: skip the pipeline and show the appropriate card.
+        if YouTubeService.isYouTubeURL(url) {
+            let urlString = url.absoluteString
+            if YouTubeService.isYouTubeVideoURL(urlString) {
+                loadState = .youtube(url)
+                return
+            }
+            if urlString.contains("list=") {
+                loadState = .playlist(url)
+                return
+            }
+        }
+
+        // Wrap the app's Article into the pipeline's RSSItem
+        let item = RSSItem(
+            id:          article.id,
+            title:       article.title,
+            author:      nil,
+            publishDate: article.publishedAt,
+            summary:     article.excerpt,
+            sourceURL:   url,
+            feedName:    feedName
+        )
+
+        let pipeline = ArticlePipelineService(context: modelContext)
+
+        do {
+            var extracted = try await pipeline.process(item: item)
+
+            // If the pipeline found no hero image, fall back to the RSS image URL
+            // that was already fetched for the Today card (avoids showing nothing).
+            if extracted.heroImageURL == nil,
+               let rssImageURL = article.imageURL.flatMap({ URL(string: $0) }) {
+                extracted = ExtractedArticle(
+                    id:           extracted.id,
+                    sourceURL:    extracted.sourceURL,
+                    title:        extracted.title,
+                    author:       extracted.author,
+                    publishDate:  extracted.publishDate,
+                    heroImageURL: rssImageURL,
+                    feedName:     extracted.feedName,
+                    nodes:        extracted.nodes,
+                    cachedAt:     extracted.cachedAt
+                )
+            }
+
+            loadState = .loaded(extracted)
+        } catch {
+            guard !Task.isCancelled else { return }
+            loadState = .failed(error.localizedDescription)
+        }
     }
 
     // MARK: - Loading View
 
     private var loadingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.4)
-
-            Text("Loading article…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        ArticleSkeletonView()
     }
 
     // MARK: - Error View
@@ -126,16 +197,17 @@ struct ArticleReaderHostView: View {
                 let videoID = YouTubeService.videoID(from: videoURL.absoluteString)
                 let thumbURL = videoID.flatMap { YouTubeService.thumbnailURL(videoID: $0) }
 
-                CachedImageView(
-                    url: thumbURL,
-                    pointSize: CGSize(width: 400, height: 210),
-                    contentMode: .fill
-                ) {
-                    ZStack {
-                        Color(.secondarySystemBackground)
-                        Image(systemName: "play.rectangle.fill")
-                            .font(.system(size: 48, weight: .ultraLight))
-                            .foregroundStyle(.secondary)
+                AsyncImage(url: thumbURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    default:
+                        ZStack {
+                            Color(.secondarySystemBackground)
+                            Image(systemName: "play.rectangle.fill")
+                                .font(.system(size: 48, weight: .ultraLight))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -350,53 +422,5 @@ struct ArticleReaderHostView: View {
             }
         }
         .background(Color(.systemBackground))
-    }
-
-    // MARK: - Pipeline
-
-    @MainActor
-    private func runPipeline() async {
-        guard let url = URL(string: article.articleURL) else {
-            loadState = .failed("The article link is invalid.")
-            return
-        }
-
-        // YouTube content: skip the pipeline and show the appropriate card.
-        switch YouTubeService.route(for: url) {
-        case .video, .short:
-            loadState = .youtube(url)
-            return
-        case .playlist:
-            loadState = .playlist(url)
-            return
-        case .unknown:
-            break
-        }
-
-        // Wrap the app's Article into the pipeline's RSSItem
-        let item = RSSItem(
-            id:          article.id,
-            title:       article.title,
-            author:      nil,
-            publishDate: article.publishedAt,
-            summary:     article.excerpt,
-            sourceURL:   url,
-            feedName:    feedName
-        )
-
-        // Use a fresh context so every CachedArticle the pipeline saves or loads
-        // (including its serializedNodes Data blob) is released when the pipeline
-        // goes out of scope — rather than staying in the shared main context's
-        // row cache for the lifetime of the app.
-        let pipeline = ArticlePipelineService(context: ModelContext(modelContext.container))
-
-        do {
-            let extracted = try await pipeline.process(item: item)
-            loadState = .loaded(extracted)
-        } catch {
-            // Don't show an error if the user simply navigated away
-            guard !Task.isCancelled else { return }
-            loadState = .failed(error.localizedDescription)
-        }
     }
 }

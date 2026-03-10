@@ -18,6 +18,7 @@ struct Source: Identifiable, Hashable {
     let iconColor: Color          // Color for the icon background
     let categoryID: UUID
     var isEnabled: Bool           // Whether to fetch updates from this source
+    var isPaywalled: Bool         // Whether the user has manually marked this feed as paywalled
     let addedAt: Date
 
     init(
@@ -29,6 +30,7 @@ struct Source: Identifiable, Hashable {
         iconColor: Color = .blue,
         categoryID: UUID,
         isEnabled: Bool = true,
+        isPaywalled: Bool = false,
         addedAt: Date = Date()
     ) {
         self.id = id
@@ -39,6 +41,7 @@ struct Source: Identifiable, Hashable {
         self.iconColor = iconColor
         self.categoryID = categoryID
         self.isEnabled = isEnabled
+        self.isPaywalled = isPaywalled
         self.addedAt = addedAt
     }
 }

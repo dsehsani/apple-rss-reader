@@ -31,6 +31,10 @@ final class FeedModel {
     /// When false, this feed is skipped during refresh. Toggled via swipe action.
     var isEnabled: Bool
 
+    /// When true, all articles from this feed are treated as paywalled.
+    /// Set manually by the user as a fallback when automatic detection misses.
+    var isPaywalled: Bool
+
     /// Timestamp when the user subscribed.
     var addedAt: Date
 
@@ -43,13 +47,15 @@ final class FeedModel {
         feedURL: String,
         title: String,
         websiteURL: String = "",
-        isEnabled: Bool = true
+        isEnabled: Bool = true,
+        isPaywalled: Bool = false
     ) {
         self.id = UUID()
         self.feedURL = feedURL
         self.title = title.isEmpty ? feedURL : title
         self.websiteURL = websiteURL.isEmpty ? feedURL : websiteURL
         self.isEnabled = isEnabled
+        self.isPaywalled = isPaywalled
         self.addedAt = Date()
     }
 }
