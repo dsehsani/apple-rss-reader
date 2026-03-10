@@ -97,7 +97,7 @@ struct ArticleReaderHostView: View {
         // YouTube content: skip the pipeline and show the appropriate card.
         if YouTubeService.isYouTubeURL(url) {
             let urlString = url.absoluteString
-            if YouTubeService.isYouTubeVideoURL(urlString) {
+            if YouTubeService.isYouTubeVideoOrShortURL(urlString) {
                 loadState = .youtube(url)
                 return
             }
