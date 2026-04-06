@@ -284,7 +284,11 @@ final class SwiftDataService: FeedDataService {
                         ?? ""
                     let excerpt = plainText(rawExcerpt)
 
-                    let published = p.publicationDate ?? Date()
+                    let now = Date()
+                    let rawPublished = p.publicationDate ?? now
+                    let published = Article.validatedPublishDate(
+                        rawPublished, fetchedAt: now, feedName: source.name
+                    )
                     let wordCount = excerpt.split { $0.isWhitespace || $0.isNewline }.count
                     let minutes   = max(1, min(30, wordCount / 200))
 
@@ -309,6 +313,7 @@ final class SwiftDataService: FeedDataService {
                         imageURL: imageURL,
                         articleURL: linkKey.isEmpty ? "https://example.com" : linkKey,
                         publishedAt: published,
+                        fetchedAt: now,
                         isRead: false,
                         readTimeMinutes: minutes
                     )
@@ -337,7 +342,7 @@ final class SwiftDataService: FeedDataService {
 
     /// Purges extracted articles from the SwiftData cache that are older than `days` days.
     @MainActor
-    func purgeOldArticleCache(olderThan days: Int = 7) {
+    func purgeOldArticleCache(olderThan days: Int = CachePolicy.cacheRetentionDays) {
         guard let context = modelContext else { return }
         let service = ArticleCacheService(context: context)
         try? service.purgeOldCache(olderThan: days)

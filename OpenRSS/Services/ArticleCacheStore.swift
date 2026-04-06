@@ -21,8 +21,8 @@ import Foundation
 // MARK: - ArticleCacheStore
 
 /// Saves and loads the current in-memory article list to/from a JSON file
-/// in the system Caches directory. Articles older than 7 days are dropped on
-/// load to keep the cache from growing unboundedly.
+/// in the system Caches directory. Read, non-bookmarked articles older than
+/// `CachePolicy.cacheRetentionDays` are dropped on load.
 ///
 /// Thread-safety: all methods are synchronous and cheap; call them from a
 /// background context if the article count grows very large (10k+).
@@ -30,8 +30,7 @@ enum ArticleCacheStore {
 
     // MARK: - Constants
 
-    private static let fileName   = "openrss_articles.json"
-    private static let maxAgeDays = 7
+    private static let fileName = "openrss_articles.json"
 
     // MARK: - Cache URL
 
@@ -54,7 +53,9 @@ enum ArticleCacheStore {
         }
     }
 
-    /// Reads the JSON file and returns articles published within the past 7 days.
+    /// Reads the JSON file and purges stale articles.
+    /// Only removes articles that are older than `cacheRetentionDays`, already
+    /// read, and not bookmarked. Unread or bookmarked articles are never purged.
     /// Returns an empty array if the file doesn't exist or can't be decoded.
     static func load() -> [Article] {
         guard let data = try? Data(contentsOf: cacheURL) else { return [] }
@@ -62,9 +63,14 @@ enum ArticleCacheStore {
             return []
         }
         let cutoff = Calendar.current.date(
-            byAdding: .day, value: -maxAgeDays, to: Date()
+            byAdding: .day, value: -CachePolicy.cacheRetentionDays, to: Date()
         ) ?? Date()
-        return articles.filter { $0.publishedAt >= cutoff }
+        return articles.filter { article in
+            // Keep unread or bookmarked articles regardless of age
+            if !article.isRead || article.isBookmarked { return true }
+            // For read, non-bookmarked: keep if within retention window
+            return article.fetchedAt >= cutoff
+        }
     }
 
     /// Removes the cache file entirely.

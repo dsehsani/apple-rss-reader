@@ -151,7 +151,7 @@ final class ArticlePipelineService {
     // MARK: - Cache Maintenance
 
     /// Purges cached articles older than `days` days.
-    func purgeOldCache(olderThan days: Int = 7) throws {
+    func purgeOldCache(olderThan days: Int = CachePolicy.cacheRetentionDays) throws {
         try cache.purgeOldCache(olderThan: days)
     }
 }

@@ -21,6 +21,7 @@ protocol ArticleCacheServiceProtocol: Sendable {
     @MainActor func load(id: UUID) throws -> ExtractedArticle?
     @MainActor func isCached(id: UUID) -> Bool
     @MainActor func purgeOldCache(olderThan days: Int) throws
+
 }
 
 // MARK: - Errors
@@ -102,7 +103,7 @@ final class ArticleCacheService: ArticleCacheServiceProtocol {
 
     // MARK: - Purge
 
-    func purgeOldCache(olderThan days: Int) throws {
+    func purgeOldCache(olderThan days: Int = CachePolicy.cacheRetentionDays) throws {
         let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         let descriptor = FetchDescriptor<CachedArticle>(
             predicate: #Predicate { $0.cachedAt < cutoff }
