@@ -38,9 +38,20 @@ final class TodayViewModel {
         [Category.allUpdates] + dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
+    /// True when the search bar is active with a non-empty query.
+    var isSearchActive: Bool { searchViewModel.hasActiveQuery }
+
     /// Articles filtered by category, search, and active filters in a single pass.
     /// Reads directly from `dataService.articles` — no duplicate array stored.
     var filteredArticles: [Article] {
+        // Search mode: full 30-day cache, no filters, no decay sort
+        if isSearchActive {
+            return dataService.articles
+                .filter { searchViewModel.matches($0) }
+                .sorted { $0.publishedAt > $1.publishedAt }
+        }
+
+        // Normal mode: existing decay-scored, filtered, 7-day windowed logic
         let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let category = selectedCategory
         let isAllUpdates = category == nil || category?.id == Category.allUpdates.id

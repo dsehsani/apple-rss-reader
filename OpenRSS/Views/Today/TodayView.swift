@@ -18,6 +18,7 @@ struct TodayView: View {
 
     @State private var showingSearch = false
     @State private var showingFilter = false
+    @State private var showingArchive = false
     @State private var selectedArticle: Article? = nil
 
     // MARK: - Environment (Light/Dark Mode)
@@ -48,7 +49,7 @@ struct TodayView: View {
                             ArticleCardView(
                                 article: article,
                                 source: viewModel.source(for: article),
-                                decayScore: viewModel.decayScore(for: article),
+                                decayScore: viewModel.isSearchActive ? 1.0 : viewModel.decayScore(for: article),
                                 onBookmarkTap: {
                                     viewModel.toggleBookmark(for: article)
                                 },
@@ -58,6 +59,23 @@ struct TodayView: View {
                                 }
                             )
                             .padding(.horizontal, Design.Spacing.edge)
+                        }
+
+                        // Task 2: Sparse results indicator
+                        if viewModel.isSearchActive {
+                            let count = viewModel.filteredArticles.count
+                            if count > 0 && count < 5 {
+                                VStack(spacing: 4) {
+                                    Text("Only \(count) result\(count == 1 ? "" : "s") found")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                                    Text("across 30 days of cached articles")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                            }
                         }
                     }
                 }
@@ -82,6 +100,9 @@ struct TodayView: View {
                 article: article,
                 feedName: viewModel.source(for: article)?.name ?? "Article"
             )
+        }
+        .navigationDestination(isPresented: $showingArchive) {
+            ArchiveView()
         }
         // Auto-refresh on first appearance; skips if a refresh ran < 30 min ago.
         .task {
@@ -171,8 +192,19 @@ struct TodayView: View {
 
             Spacer()
 
-            // Controls: Filter + Search
+            // Controls: Archive + Filter + Search
             HStack(spacing: 12) {
+                // Archive button
+                Button {
+                    showingArchive = true
+                } label: {
+                    Image(systemName: "archivebox")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme).opacity(0.9))
+                        .glassButton(size: 38, colorScheme: colorScheme)
+                }
+                .buttonStyle(.plain)
+
                 // Filter button — blue badge dot appears when any filter is active
                 Button {
                     showingFilter = true

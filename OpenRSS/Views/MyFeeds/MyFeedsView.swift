@@ -23,6 +23,7 @@ struct MyFeedsView: View {
     @State private var searchText      = ""
     @State private var isSearching     = false
     @State private var expandedFolders = Set<UUID>()
+    @State private var selectedSourceID: UUID? = nil
 
     // MARK: - Environment
 
@@ -31,6 +32,7 @@ struct MyFeedsView: View {
     // MARK: - Body
 
     var body: some View {
+        NavigationStack {
         ZStack(alignment: .top) {
             // Flat color — matches TodayView/SourcesView pattern exactly (no size inflation)
             Design.Colors.background(for: colorScheme).ignoresSafeArea()
@@ -56,12 +58,16 @@ struct MyFeedsView: View {
                 Color.clear.frame(height: 94)
             }
         }
+        .navigationDestination(item: $selectedSourceID) { sourceID in
+            SourceFeedView(sourceID: sourceID)
+        }
         .sheet(isPresented: $viewModel.showingAddFeed) {
             AddFeedView()
         }
         .animation(Design.Animation.standard, value: isSearching)
         .animation(Design.Animation.standard, value: isEditing)
         .animation(Design.Animation.standard, value: viewModel.hasAnyFeeds)
+        } // NavigationStack
     }
 
     // MARK: - Floating Glass Header
@@ -369,6 +375,12 @@ struct MyFeedsView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button {
+                selectedSourceID = feed.id
+            } label: {
+                Label("View Feed", systemImage: "newspaper")
+            }
+
+            Button {
                 viewModel.togglePaywalled(feed)
             } label: {
                 Label(
@@ -563,6 +575,12 @@ struct MyFeedsView: View {
         .padding(.vertical, 11)
         .contentShape(Rectangle())
         .contextMenu {
+            Button {
+                selectedSourceID = feed.id
+            } label: {
+                Label("View Feed", systemImage: "newspaper")
+            }
+
             Button {
                 viewModel.togglePaywalled(feed)
             } label: {

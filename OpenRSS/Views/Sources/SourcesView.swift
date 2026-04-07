@@ -52,6 +52,9 @@ struct SourcesView: View {
                 addButton
             }
             .navigationTitle("Sources")
+            .navigationDestination(for: Source.self) { source in
+                SourceFeedView(sourceID: source.id)
+            }
             .sheet(isPresented: $viewModel.showingAddSourceSheet) {
                 addSourceSheet
             }
@@ -61,33 +64,38 @@ struct SourcesView: View {
     // MARK: - Legacy Body (iOS 17–25)
 
     private var legacyBody: some View {
-        ZStack(alignment: .top) {
-            Design.Colors.background(for: colorScheme).ignoresSafeArea()
+        NavigationStack {
+            ZStack(alignment: .top) {
+                Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    searchBar
-                        .padding(.horizontal, Design.Spacing.edge)
-                        .padding(.top, Design.Spacing.edge)
-                        .padding(.bottom, Design.Spacing.edge)
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        searchBar
+                            .padding(.horizontal, Design.Spacing.edge)
+                            .padding(.top, Design.Spacing.edge)
+                            .padding(.bottom, Design.Spacing.edge)
 
-                    sourceCategoryList
+                        sourceCategoryList
 
-                    manageCategoriesButton
-                        .padding(Design.Spacing.edge)
+                        manageCategoriesButton
+                            .padding(Design.Spacing.edge)
+                    }
                 }
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                legacyHeaderView
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: 94)
-            }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    legacyHeaderView
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: 94)
+                }
 
-            addButton
-        }
-        .sheet(isPresented: $viewModel.showingAddSourceSheet) {
-            addSourceSheet
+                addButton
+            }
+            .navigationDestination(for: Source.self) { source in
+                SourceFeedView(sourceID: source.id)
+            }
+            .sheet(isPresented: $viewModel.showingAddSourceSheet) {
+                addSourceSheet
+            }
         }
     }
 
@@ -107,12 +115,34 @@ struct SourcesView: View {
 
                 if viewModel.isExpanded(category) {
                     ForEach(viewModel.filteredSources(for: category)) { source in
-                        SourceRowView(
-                            source: source,
-                            unreadCount: viewModel.unreadCount(for: source)
-                        )
+                        NavigationLink(value: source) {
+                            SourceRowView(
+                                source: source,
+                                unreadCount: viewModel.unreadCount(for: source)
+                            )
+                        }
+                        .buttonStyle(.plain)
                         .background(Design.Colors.cardBackground.opacity(0.3))
                     }
+
+                    // View All link to FolderView
+                    NavigationLink {
+                        FolderView(categoryID: category.id)
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("View All Articles")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Design.Colors.primary)
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Design.Colors.primary)
+                            Spacer()
+                        }
+                        .padding(.vertical, 10)
+                        .background(Design.Colors.cardBackground.opacity(0.2))
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Rectangle()
