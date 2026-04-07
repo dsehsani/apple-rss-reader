@@ -11,15 +11,15 @@ import os
 // MARK: - CachePolicy
 
 /// Central constants for cache retention and date validation.
-enum CachePolicy: Sendable {
+enum CachePolicy {
     /// How long read, non-bookmarked articles stay in the cache (days).
-    static let cacheRetentionDays = 30
+    nonisolated(unsafe) static let cacheRetentionDays = 30
     /// How many days of articles the UI displays by default.
-    static let displayWindowDays = 7
+    nonisolated(unsafe) static let displayWindowDays = 7
     /// Maximum hours into the future a publication date may be before it's rejected.
-    static let maxFutureDateHours = 48
+    nonisolated(unsafe) static let maxFutureDateHours = 48
     /// Earliest plausible publication date for an RSS article.
-    static let minimumValidDate: Date = {
+    nonisolated(unsafe) static let minimumValidDate: Date = {
         var c = DateComponents()
         c.year = 2000; c.month = 1; c.day = 1
         return Calendar.current.date(from: c)!
@@ -43,6 +43,8 @@ struct Article: Identifiable, Hashable, Codable {
     let readTimeMinutes: Int
     /// Set to true when post-pipeline detection finds a subscription prompt in the article content.
     var isPaywalled: Bool
+    /// True when the article has fully decayed and aged out — excluded from the Today feed.
+    var isArchived: Bool
 
     init(
         id: UUID = UUID(),
@@ -57,7 +59,8 @@ struct Article: Identifiable, Hashable, Codable {
         isRead: Bool = false,
         isBookmarked: Bool = false,
         readTimeMinutes: Int = 5,
-        isPaywalled: Bool = false
+        isPaywalled: Bool = false,
+        isArchived: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -72,6 +75,7 @@ struct Article: Identifiable, Hashable, Codable {
         self.isBookmarked = isBookmarked
         self.readTimeMinutes = readTimeMinutes
         self.isPaywalled = isPaywalled
+        self.isArchived = isArchived
     }
 
     // Custom decoder so that cached JSON written before `isPaywalled` or
@@ -92,6 +96,7 @@ struct Article: Identifiable, Hashable, Codable {
         isBookmarked    = try c.decode(Bool.self,   forKey: .isBookmarked)
         readTimeMinutes = try c.decode(Int.self,    forKey: .readTimeMinutes)
         isPaywalled     = try c.decodeIfPresent(Bool.self, forKey: .isPaywalled) ?? false
+        isArchived      = try c.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
     }
 }
 
@@ -120,6 +125,21 @@ extension Article {
             return fetchedAt
         }
         return candidate
+    }
+}
+
+// MARK: - Decay Scoring
+
+extension Article {
+    /// Exponential decay score based on article age and the source's half-life.
+    /// Returns 1.0 for brand-new articles, 0.5 at one half-life, floored at 0.2.
+    static func decayScore(publishedAt: Date, halfLifeHours: Double) -> Double {
+        let hoursElapsed = max(0, Date().timeIntervalSince(publishedAt) / 3600)
+        let freshnessMultiplier = UserDefaults.standard.double(forKey: "openrss.freshnessMultiplier")
+        let multiplier = freshnessMultiplier > 0 ? freshnessMultiplier : 1.0
+        let effectiveHalfLife = halfLifeHours * multiplier
+        let lambda = log(2) / effectiveHalfLife
+        return max(0.2, exp(-lambda * hoursElapsed))
     }
 }
 

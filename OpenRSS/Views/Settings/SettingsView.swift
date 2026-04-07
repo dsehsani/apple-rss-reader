@@ -18,6 +18,9 @@ struct SettingsView: View {
     @State private var markAsReadOnScroll: Bool = false
     @State private var cacheEnabled: Bool = true
     @State private var notificationsEnabled: Bool = false
+    @State private var freshnessMultiplier: Double = UserDefaults.standard.double(forKey: "openrss.freshnessMultiplier") > 0
+        ? UserDefaults.standard.double(forKey: "openrss.freshnessMultiplier")
+        : 1.0
 
     // MARK: - Environment (Light/Dark Mode)
 
@@ -42,6 +45,7 @@ struct SettingsView: View {
                 VStack(spacing: Design.Spacing.section) {
                     appearanceSection
                     readingSection
+                    freshnessSection
                     dataSection
                     aboutSection
                 }
@@ -62,6 +66,7 @@ struct SettingsView: View {
                 VStack(spacing: Design.Spacing.section) {
                     appearanceSection
                     readingSection
+                    freshnessSection
                     dataSection
                     aboutSection
                 }
@@ -122,6 +127,57 @@ struct SettingsView: View {
                 settingsToggle(title: "Mark as Read on Scroll", isOn: $markAsReadOnScroll)
                 divider
                 settingsRow(title: "Text Size", value: "Medium")
+            }
+        }
+    }
+
+    // MARK: - Freshness Section
+
+    private var freshnessSection: some View {
+        settingsSection(title: "Freshness", icon: "clock.arrow.circlepath") {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: Design.Spacing.small) {
+                    Text("Content Freshness")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                    Slider(value: $freshnessMultiplier, in: 0.5...2.0, step: 0.75)
+                        .tint(Design.Colors.primary)
+                        .onChange(of: freshnessMultiplier) { _, newValue in
+                            UserDefaults.standard.set(newValue, forKey: "openrss.freshnessMultiplier")
+                        }
+
+                    HStack {
+                        Text("Relaxed")
+                            .foregroundStyle(freshnessMultiplier >= 1.75
+                                ? Design.Colors.primary
+                                : Design.Colors.secondaryText(for: colorScheme))
+                        Spacer()
+                        Text("Balanced")
+                            .foregroundStyle(freshnessMultiplier > 0.75 && freshnessMultiplier < 1.75
+                                ? Design.Colors.primary
+                                : Design.Colors.secondaryText(for: colorScheme))
+                        Spacer()
+                        Text("Aggressive")
+                            .foregroundStyle(freshnessMultiplier <= 0.75
+                                ? Design.Colors.primary
+                                : Design.Colors.secondaryText(for: colorScheme))
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+
+                divider
+
+                VStack(alignment: .leading) {
+                    Text("Controls how quickly articles fade. \"Relaxed\" keeps articles fresh longer. \"Aggressive\" prioritizes the newest content.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        .lineSpacing(2)
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 12)
             }
         }
     }

@@ -376,6 +376,35 @@ struct MyFeedsView: View {
                     systemImage: feed.isPaywalled ? "lock.slash" : "lock.fill"
                 )
             }
+
+            Menu {
+                Button {
+                    viewModel.setDecayOverride(feed, tier: nil)
+                } label: {
+                    HStack {
+                        Text("Auto (currently: \(feed.velocityTier.displayName))")
+                        if feed.decayOverride == nil {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                Divider()
+                ForEach(VelocityTier.allCases, id: \.self) { tier in
+                    Button {
+                        viewModel.setDecayOverride(feed, tier: tier)
+                    } label: {
+                        HStack {
+                            Text("\(tier.displayName) (\(tier.shortDescription))")
+                            if feed.decayOverride == tier {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                Label("Decay Rate", systemImage: "clock.arrow.circlepath")
+            }
+
             Button(role: .destructive) {
                 withAnimation(Design.Animation.standard) {
                     viewModel.deleteFeed(feed)
@@ -542,6 +571,35 @@ struct MyFeedsView: View {
                     systemImage: feed.isPaywalled ? "lock.slash" : "lock.fill"
                 )
             }
+
+            Menu {
+                Button {
+                    viewModel.setDecayOverride(feed, tier: nil)
+                } label: {
+                    HStack {
+                        Text("Auto (currently: \(feed.velocityTier.displayName))")
+                        if feed.decayOverride == nil {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                Divider()
+                ForEach(VelocityTier.allCases, id: \.self) { tier in
+                    Button {
+                        viewModel.setDecayOverride(feed, tier: tier)
+                    } label: {
+                        HStack {
+                            Text("\(tier.displayName) (\(tier.shortDescription))")
+                            if feed.decayOverride == tier {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                Label("Decay Rate", systemImage: "clock.arrow.circlepath")
+            }
+
             Button(role: .destructive) {
                 withAnimation(Design.Animation.standard) {
                     viewModel.deleteFeed(feed)

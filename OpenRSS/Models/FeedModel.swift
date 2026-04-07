@@ -38,8 +38,30 @@ final class FeedModel {
     /// Timestamp when the user subscribed.
     var addedAt: Date
 
+    /// Raw storage for auto-inferred posting frequency tier (SwiftData can't persist custom enums directly).
+    var velocityTierRaw: String
+
+    /// Raw storage for user decay override. Empty string means nil (auto).
+    var decayOverrideRaw: String
+
     /// The folder this feed belongs to. `nil` means the feed is "unfiled".
     var folder: FolderModel?
+
+    // MARK: - Computed Wrappers
+
+    /// Auto-inferred posting frequency tier, used to determine decay half-life.
+    @Transient
+    var velocityTier: VelocityTier {
+        get { VelocityTier(rawValue: velocityTierRaw) ?? .daily }
+        set { velocityTierRaw = newValue.rawValue }
+    }
+
+    /// User override for decay rate. When non-nil, takes priority over the auto-inferred tier.
+    @Transient
+    var decayOverride: VelocityTier? {
+        get { decayOverrideRaw.isEmpty ? nil : VelocityTier(rawValue: decayOverrideRaw) }
+        set { decayOverrideRaw = newValue?.rawValue ?? "" }
+    }
 
     // MARK: - Initialization
 
@@ -57,5 +79,7 @@ final class FeedModel {
         self.isEnabled = isEnabled
         self.isPaywalled = isPaywalled
         self.addedAt = Date()
+        self.velocityTierRaw = VelocityTier.daily.rawValue
+        self.decayOverrideRaw = ""
     }
 }

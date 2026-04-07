@@ -73,8 +73,29 @@ final class TodayViewModel {
             if checkUnread && article.isRead { return false }
             if checkToday && !Calendar.current.isDateInToday(article.publishedAt) { return false }
 
+            // 5. Exclude archived articles
+            if article.isArchived { return false }
+
             return true
-        }.sorted { $0.publishedAt > $1.publishedAt }
+        }.sorted { article1, article2 in
+            let source1 = dataService.source(for: article1.sourceID)
+            let source2 = dataService.source(for: article2.sourceID)
+
+            // Grace period articles sort chronologically at the top
+            let grace1 = source1?.isInGracePeriod ?? false
+            let grace2 = source2?.isInGracePeriod ?? false
+
+            if grace1 && !grace2 { return true }
+            if !grace1 && grace2 { return false }
+            if grace1 && grace2 { return article1.publishedAt > article2.publishedAt }
+
+            // Decay-scored articles sort by score descending
+            let hl1 = source1?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
+            let hl2 = source2?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
+            let score1 = Article.decayScore(publishedAt: article1.publishedAt, halfLifeHours: hl1)
+            let score2 = Article.decayScore(publishedAt: article2.publishedAt, halfLifeHours: hl2)
+            return score1 > score2
+        }
     }
 
     /// True when the user has at least one subscribed feed — drives the empty state in TodayView.
@@ -172,5 +193,13 @@ final class TodayViewModel {
     /// Get the category for an article
     func category(for article: Article) -> Category? {
         dataService.category(for: article.categoryID)
+    }
+
+    /// Returns the decay score for an article, accounting for grace period.
+    func decayScore(for article: Article) -> Double {
+        guard let source = dataService.source(for: article.sourceID) else { return 1.0 }
+        if source.isInGracePeriod { return 1.0 }
+        let halfLife = source.effectiveVelocityTier.halfLifeHours
+        return Article.decayScore(publishedAt: article.publishedAt, halfLifeHours: halfLife)
     }
 }

@@ -20,6 +20,18 @@ struct Source: Identifiable, Hashable {
     var isEnabled: Bool           // Whether to fetch updates from this source
     var isPaywalled: Bool         // Whether the user has manually marked this feed as paywalled
     let addedAt: Date
+    var velocityTier: VelocityTier    // Auto-inferred posting frequency
+    var decayOverride: VelocityTier?  // User override for decay rate
+
+    /// The effective tier used for decay scoring (override wins over auto-inferred).
+    var effectiveVelocityTier: VelocityTier {
+        decayOverride ?? velocityTier
+    }
+
+    /// True if this source was added less than 14 days ago — decay is skipped.
+    var isInGracePeriod: Bool {
+        addedAt > Calendar.current.date(byAdding: .day, value: -14, to: Date())!
+    }
 
     init(
         id: UUID = UUID(),
@@ -31,7 +43,9 @@ struct Source: Identifiable, Hashable {
         categoryID: UUID,
         isEnabled: Bool = true,
         isPaywalled: Bool = false,
-        addedAt: Date = Date()
+        addedAt: Date = Date(),
+        velocityTier: VelocityTier = .daily,
+        decayOverride: VelocityTier? = nil
     ) {
         self.id = id
         self.name = name
@@ -43,6 +57,8 @@ struct Source: Identifiable, Hashable {
         self.isEnabled = isEnabled
         self.isPaywalled = isPaywalled
         self.addedAt = addedAt
+        self.velocityTier = velocityTier
+        self.decayOverride = decayOverride
     }
 }
 

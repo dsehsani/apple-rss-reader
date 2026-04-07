@@ -231,6 +231,20 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Sets a per-feed decay override (or clears it with nil).
+    @MainActor
+    func setDecayOverride(feedID: UUID, tier: VelocityTier?) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.decayOverride = tier
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
     /// Marks the in-memory article with the given id as paywalled.
     /// Called by ArticleReaderHostView when post-pipeline detection fires.
     @MainActor
@@ -330,11 +344,78 @@ final class SwiftDataService: FeedDataService {
         newArticles.sort { $0.publishedAt > $1.publishedAt }
 
         if !newArticles.isEmpty {
+            // Auto-infer velocity tiers based on article frequency
+            recalculateVelocityTiers(articles: newArticles)
+
+            // Archive fully-decayed, old, unread, non-bookmarked articles
+            applyArchiveRule(&newArticles)
+
             self.articles = newArticles
             // Persist to the local JSON cache so the next launch is pre-populated.
             ArticleCacheStore.save(newArticles)
         } else {
             // 0 articles fetched; keep existing articles
+        }
+    }
+
+    // MARK: - Velocity Tier Inference (Task 2)
+
+    /// Recalculates the velocity tier for each feed based on articles fetched
+    /// in the last 30 days. Only writes to SwiftData when the tier actually changed.
+    @MainActor
+    private func recalculateVelocityTiers(articles: [Article]) {
+        guard let context = modelContext else { return }
+
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+
+        // Group articles by sourceID and count those within the last 30 days
+        var countBySource: [UUID: Int] = [:]
+        for article in articles {
+            if article.fetchedAt >= thirtyDaysAgo {
+                countBySource[article.sourceID, default: 0] += 1
+            }
+        }
+
+        let descriptor = FetchDescriptor<FeedModel>()
+        guard let feeds = try? context.fetch(descriptor) else { return }
+
+        var changed = false
+        for feed in feeds {
+            let count = countBySource[feed.id] ?? 0
+            let postsPerDay = Double(count) / 30.0
+            let newTier = VelocityTier.from(postsPerDay: postsPerDay)
+            if feed.velocityTier != newTier {
+                feed.velocityTier = newTier
+                changed = true
+            }
+        }
+
+        if changed {
+            try? context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    // MARK: - Archive Rule (Task 7)
+
+    /// Marks articles as archived when they are at the decay floor, older than
+    /// 30 days, unread, and not bookmarked.
+    private func applyArchiveRule(_ articles: inout [Article]) {
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+
+        for i in articles.indices {
+            let article = articles[i]
+            guard !article.isArchived,
+                  !article.isRead,
+                  !article.isBookmarked,
+                  article.fetchedAt < thirtyDaysAgo else { continue }
+
+            let source = self.source(for: article.sourceID)
+            let halfLife = source?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
+            let score = Article.decayScore(publishedAt: article.publishedAt, halfLifeHours: halfLife)
+            if score <= 0.2 {
+                articles[i].isArchived = true
+            }
         }
     }
 
@@ -413,7 +494,9 @@ private extension Source {
             categoryID:  model.folder?.id ?? SwiftDataService.unfiledFolderID,
             isEnabled:   model.isEnabled,
             isPaywalled: model.isPaywalled,
-            addedAt:     model.addedAt
+            addedAt:     model.addedAt,
+            velocityTier: model.velocityTier,
+            decayOverride: model.decayOverride
         )
     }
 }

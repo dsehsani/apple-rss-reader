@@ -14,6 +14,7 @@ struct ArticleCardView: View {
 
     let article: Article
     let source: Source?
+    var decayScore: Double = 1.0
     var onBookmarkTap: (() -> Void)?
     var onReadMoreTap: (() -> Void)?
 
@@ -45,7 +46,7 @@ struct ArticleCardView: View {
             .padding(Design.Spacing.cardPadding)
         }
         .cardStyle(for: colorScheme)
-        .opacity(article.isRead ? 0.7 : 1.0)
+        .opacity(article.isRead ? min(0.7, decayOpacity) : decayOpacity)
         // Whole card is the tap target — child Buttons (bookmark, share) take priority.
         .contentShape(Rectangle())
         .onTapGesture { onReadMoreTap?() }
@@ -62,6 +63,15 @@ struct ArticleCardView: View {
             await OGImageService.shared.prefetch(articleURL: article.articleURL)
             ogImageURL = await OGImageService.shared.cachedImageURL(for: article.articleURL)
         }
+    }
+
+    // MARK: - Decay Opacity
+
+    /// Maps the 0.2–1.0 decay score to a 0.5–1.0 opacity range.
+    private var decayOpacity: Double {
+        let minOpacity = 0.5
+        let normalizedScore = (decayScore - 0.2) / 0.8
+        return minOpacity + normalizedScore * (1.0 - minOpacity)
     }
 
     // MARK: - Subviews

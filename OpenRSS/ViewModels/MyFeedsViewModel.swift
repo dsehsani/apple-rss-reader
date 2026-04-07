@@ -88,4 +88,8 @@ final class MyFeedsViewModel {
     func togglePaywalled(_ source: Source) {
         try? dataService.toggleFeedPaywalled(id: source.id)
     }
+
+    func setDecayOverride(_ source: Source, tier: VelocityTier?) {
+        try? dataService.setDecayOverride(feedID: source.id, tier: tier)
+    }
 }

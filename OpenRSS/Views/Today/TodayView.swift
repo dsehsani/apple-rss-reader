@@ -48,6 +48,7 @@ struct TodayView: View {
                             ArticleCardView(
                                 article: article,
                                 source: viewModel.source(for: article),
+                                decayScore: viewModel.decayScore(for: article),
                                 onBookmarkTap: {
                                     viewModel.toggleBookmark(for: article)
                                 },
