@@ -7,6 +7,36 @@
 
 import SwiftUI
 
+// MARK: - ClusterBadge
+
+/// Small value type describing a cluster badge shown on an article card.
+/// Kept as a single parameter so `ArticleCardView`'s param list stays short.
+struct ClusterBadge {
+    /// One non-canonical member of a cluster, exposed so the card can render a
+    /// picker list when the chip is expanded. Source name is pre-resolved so
+    /// the view doesn't need a `FeedDataService` dependency.
+    struct Sibling: Identifiable {
+        let article: Article
+        let sourceName: String
+        var id: UUID { article.id }
+    }
+
+    enum Style {
+        case sources    // cross-source dedup → "N sources"
+        case updates    // same-source burst → "N updates"
+        case clustered  // non-canonical shown in source feed view → "Clustered"
+    }
+
+    let label: String
+    let style: Style
+    /// Sibling articles in this cluster (excluding the canonical shown on the card).
+    /// Empty → chip is not expandable and renders as a static pill.
+    var siblings: [Sibling] = []
+    /// Called when the user taps a sibling row to read that specific article.
+    /// When nil, the chip is not expandable even if `siblings` is non-empty.
+    var onSiblingTap: ((Article) -> Void)? = nil
+}
+
 /// Article card component matching the liquid glass design from the schematic
 struct ArticleCardView: View {
 
@@ -15,8 +45,10 @@ struct ArticleCardView: View {
     let article: Article
     let source: Source?
     var decayScore: Double = 1.0
+    var clusterBadge: ClusterBadge? = nil
     var onBookmarkTap: (() -> Void)?
     var onReadMoreTap: (() -> Void)?
+    var onSplitCluster: (() -> Void)? = nil
 
     // MARK: - Environment (Light/Dark Mode)
 
@@ -28,6 +60,9 @@ struct ArticleCardView: View {
     /// Set lazily when the card scrolls into view via OGImageService.
     @State private var ogImageURL: String?
 
+    /// Whether the expandable cluster chip is showing its sibling list.
+    @State private var isClusterExpanded: Bool = false
+
     // MARK: - Body
 
     var body: some View {
@@ -38,18 +73,54 @@ struct ArticleCardView: View {
             // Content
             VStack(alignment: .leading, spacing: Design.Spacing.small) {
                 sourceInfoRow
+                if let badge = clusterBadge {
+                    clusterBadgeChip(badge)
+                }
                 titleText
                 excerptText
+                if let badge = clusterBadge,
+                   isClusterExpanded,
+                   !badge.siblings.isEmpty {
+                    clusterSiblingList(badge)
+                }
                 if isPaywalled { paywallBadge }
                 footerRow
             }
             .padding(Design.Spacing.cardPadding)
         }
         .cardStyle(for: colorScheme)
+        .overlay(alignment: .leading) {
+            // "Developing story" accent border for same-source burst clusters.
+            if clusterBadge?.style == .updates {
+                Rectangle()
+                    .fill(source?.iconColor ?? Design.Colors.primary)
+                    .frame(width: 3)
+            }
+        }
         .opacity(article.isRead ? min(0.7, decayOpacity) : decayOpacity)
         // Whole card is the tap target — child Buttons (bookmark, share) take priority.
         .contentShape(Rectangle())
         .onTapGesture { onReadMoreTap?() }
+        .contextMenu {
+            if article.clusterSize > 1, let onSplitCluster {
+                Button {
+                    onSplitCluster()
+                } label: {
+                    Label("Show as separate stories", systemImage: "arrow.triangle.branch")
+                }
+            }
+
+            if let onBookmarkTap {
+                Button {
+                    onBookmarkTap()
+                } label: {
+                    Label(
+                        article.isBookmarked ? "Remove Bookmark" : "Bookmark",
+                        systemImage: article.isBookmarked ? "bookmark.slash" : "bookmark"
+                    )
+                }
+            }
+        }
         // Lazily fetch the og:image when this card scrolls into view.
         // Short-circuits immediately if the RSS feed already provided an image URL.
         // Cancelled automatically if the card scrolls off screen before completing.
@@ -143,6 +214,97 @@ struct ArticleCardView: View {
                 .textCase(.uppercase)
                 .tracking(0.5)
         }
+    }
+
+    @ViewBuilder
+    private func clusterBadgeChip(_ badge: ClusterBadge) -> some View {
+        let isExpandable = !badge.siblings.isEmpty && badge.onSiblingTap != nil
+
+        if isExpandable {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isClusterExpanded.toggle()
+                }
+            } label: {
+                clusterBadgeChipContent(badge, isExpandable: true)
+            }
+            .buttonStyle(.plain)
+        } else {
+            clusterBadgeChipContent(badge, isExpandable: false)
+        }
+    }
+
+    private func clusterBadgeChipContent(_ badge: ClusterBadge, isExpandable: Bool) -> some View {
+        let symbol: String = {
+            switch badge.style {
+            case .sources, .updates: return "newspaper.fill"
+            case .clustered:         return "link"
+            }
+        }()
+        let isMuted = badge.style == .clustered
+        let fg: Color = isMuted ? Design.Colors.secondaryText : Design.Colors.primary
+        let bg: Color = isMuted
+            ? Design.Colors.secondaryText.opacity(0.12)
+            : Design.Colors.primary.opacity(0.15)
+
+        return HStack(spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+            Text(badge.label)
+                .font(Design.Typography.caption)
+                .italic(isMuted)
+            if isExpandable {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+                    .rotationEffect(.degrees(isClusterExpanded ? 180 : 0))
+            }
+        }
+        .foregroundStyle(fg)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: Design.Radius.small)
+                .fill(bg)
+        )
+    }
+
+    /// Inline picker list shown when the cluster chip is expanded. Each row opens
+    /// a specific sibling article — the card's own tap target still opens the canonical.
+    private func clusterSiblingList(_ badge: ClusterBadge) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(badge.siblings) { sibling in
+                Button {
+                    badge.onSiblingTap?(sibling.article)
+                } label: {
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(Design.Colors.primary.opacity(0.6))
+                            .frame(width: 4, height: 4)
+                            .padding(.top, 7)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sibling.article.title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                            Text("\(sibling.sourceName) · \(sibling.article.relativeTimeString)")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Design.Colors.secondaryText)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Design.Colors.secondaryText.opacity(0.6))
+                            .padding(.top, 3)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 4)
+        .padding(.leading, 2)
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
     private var titleText: some View {

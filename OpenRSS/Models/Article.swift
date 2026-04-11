@@ -46,6 +46,17 @@ struct Article: Identifiable, Hashable, Codable {
     /// True when the article has fully decayed and aged out — excluded from the Today feed.
     var isArchived: Bool
 
+    /// The cluster this article belongs to. nil = unclustered (standalone).
+    /// Transient: not persisted to the JSON cache; recomputed on every refresh.
+    var clusterID: UUID?
+
+    /// Number of articles in this cluster (only meaningful on the canonical article).
+    var clusterSize: Int
+
+    /// True if this article is the representative card shown in the Today river.
+    /// Non-canonical articles are hidden from the Today feed but visible in source/archive views.
+    var isCanonical: Bool
+
     init(
         id: UUID = UUID(),
         title: String,
@@ -60,7 +71,10 @@ struct Article: Identifiable, Hashable, Codable {
         isBookmarked: Bool = false,
         readTimeMinutes: Int = 5,
         isPaywalled: Bool = false,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        clusterID: UUID? = nil,
+        clusterSize: Int = 1,
+        isCanonical: Bool = true
     ) {
         self.id = id
         self.title = title
@@ -76,6 +90,9 @@ struct Article: Identifiable, Hashable, Codable {
         self.readTimeMinutes = readTimeMinutes
         self.isPaywalled = isPaywalled
         self.isArchived = isArchived
+        self.clusterID = clusterID
+        self.clusterSize = clusterSize
+        self.isCanonical = isCanonical
     }
 
     // Custom decoder so that cached JSON written before `isPaywalled` or
@@ -97,6 +114,9 @@ struct Article: Identifiable, Hashable, Codable {
         readTimeMinutes = try c.decode(Int.self,    forKey: .readTimeMinutes)
         isPaywalled     = try c.decodeIfPresent(Bool.self, forKey: .isPaywalled) ?? false
         isArchived      = try c.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+        clusterID       = try c.decodeIfPresent(UUID.self, forKey: .clusterID)
+        clusterSize     = try c.decodeIfPresent(Int.self, forKey: .clusterSize) ?? 1
+        isCanonical     = try c.decodeIfPresent(Bool.self, forKey: .isCanonical) ?? true
     }
 }
 

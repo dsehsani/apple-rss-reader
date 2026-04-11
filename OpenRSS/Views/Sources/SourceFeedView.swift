@@ -46,6 +46,9 @@ struct SourceFeedView: View {
                                 article: article,
                                 source: viewModel.source,
                                 decayScore: 1.0,
+                                clusterBadge: article.isCanonical
+                                    ? nil
+                                    : ClusterBadge(label: "Clustered", style: .clustered),
                                 onBookmarkTap: {
                                     viewModel.toggleBookmark(for: article)
                                 },

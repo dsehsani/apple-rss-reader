@@ -87,6 +87,10 @@ final class TodayViewModel {
             // 5. Exclude archived articles
             if article.isArchived { return false }
 
+            // 6. Exclude non-canonical (clustered) articles in normal mode.
+            // Search mode above intentionally returns every match regardless of cluster status.
+            if !article.isCanonical { return false }
+
             return true
         }.sorted { article1, article2 in
             let source1 = dataService.source(for: article1.sourceID)
@@ -204,6 +208,41 @@ final class TodayViewModel {
     /// Get the category for an article
     func category(for article: Article) -> Category? {
         dataService.category(for: article.categoryID)
+    }
+
+    /// Returns a cluster badge describing how this canonical article groups siblings.
+    /// nil when the article is standalone (`clusterSize <= 1`).
+    ///
+    /// The returned badge is partially populated — `onSiblingTap` is left nil
+    /// so the view can wire up its own navigation closure (which needs access
+    /// to `@State` that the view model cannot see).
+    func clusterBadge(for article: Article) -> ClusterBadge? {
+        guard article.clusterSize > 1, let clusterID = article.clusterID else { return nil }
+        let allInCluster = dataService.articles.filter { $0.clusterID == clusterID }
+        let allSameSource = allInCluster.allSatisfy { $0.sourceID == article.sourceID }
+        let style: ClusterBadge.Style = allSameSource ? .updates : .sources
+        let noun = allSameSource ? "updates" : "sources"
+
+        let siblings: [ClusterBadge.Sibling] = allInCluster
+            .filter { $0.id != article.id }
+            .sorted { $0.publishedAt > $1.publishedAt }
+            .map { sib in
+                ClusterBadge.Sibling(
+                    article: sib,
+                    sourceName: dataService.source(for: sib.sourceID)?.name ?? "Unknown"
+                )
+            }
+
+        return ClusterBadge(
+            label: "\(article.clusterSize) \(noun)",
+            style: style,
+            siblings: siblings
+        )
+    }
+
+    /// Dissolves the cluster containing `article`. Reverts on next refresh.
+    func splitCluster(for article: Article) {
+        dataService.splitCluster(for: article.id)
     }
 
     /// Returns the decay score for an article, accounting for grace period.

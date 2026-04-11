@@ -40,6 +40,7 @@ final class FolderViewModel {
 
     var filteredArticles: [Article] {
         var articles = dataService.articlesForCategory(categoryID)
+            .filter { $0.isCanonical }
 
         switch activeFilter {
         case .all: break
@@ -106,5 +107,37 @@ final class FolderViewModel {
 
     func markAsRead(_ article: Article) {
         dataService.markAsRead(article.id)
+    }
+
+    /// Returns a cluster badge describing how this canonical article groups siblings.
+    /// nil when the article is standalone. `onSiblingTap` is left nil so the view
+    /// can wire up its own navigation closure.
+    func clusterBadge(for article: Article) -> ClusterBadge? {
+        guard article.clusterSize > 1, let clusterID = article.clusterID else { return nil }
+        let allInCluster = dataService.articles.filter { $0.clusterID == clusterID }
+        let allSameSource = allInCluster.allSatisfy { $0.sourceID == article.sourceID }
+        let style: ClusterBadge.Style = allSameSource ? .updates : .sources
+        let noun = allSameSource ? "updates" : "sources"
+
+        let siblings: [ClusterBadge.Sibling] = allInCluster
+            .filter { $0.id != article.id }
+            .sorted { $0.publishedAt > $1.publishedAt }
+            .map { sib in
+                ClusterBadge.Sibling(
+                    article: sib,
+                    sourceName: dataService.source(for: sib.sourceID)?.name ?? "Unknown"
+                )
+            }
+
+        return ClusterBadge(
+            label: "\(article.clusterSize) \(noun)",
+            style: style,
+            siblings: siblings
+        )
+    }
+
+    /// Dissolves the cluster containing `article`. Reverts on next refresh.
+    func splitCluster(for article: Article) {
+        dataService.splitCluster(for: article.id)
     }
 }

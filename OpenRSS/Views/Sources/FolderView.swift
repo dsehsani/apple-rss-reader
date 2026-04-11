@@ -49,12 +49,23 @@ struct FolderView: View {
                                 article: article,
                                 source: viewModel.source(for: article),
                                 decayScore: viewModel.decayScore(for: article),
+                                clusterBadge: viewModel.clusterBadge(for: article).map { badge in
+                                    var b = badge
+                                    b.onSiblingTap = { sibling in
+                                        viewModel.markAsRead(sibling)
+                                        selectedArticle = sibling
+                                    }
+                                    return b
+                                },
                                 onBookmarkTap: {
                                     viewModel.toggleBookmark(for: article)
                                 },
                                 onReadMoreTap: {
                                     viewModel.markAsRead(article)
                                     selectedArticle = article
+                                },
+                                onSplitCluster: {
+                                    viewModel.splitCluster(for: article)
                                 }
                             )
                             .padding(.horizontal, Design.Spacing.edge)

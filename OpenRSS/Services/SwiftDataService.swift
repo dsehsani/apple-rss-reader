@@ -60,8 +60,9 @@ final class SwiftDataService: FeedDataService {
 
         // Pre-populate articles from the local cache so the UI is non-empty
         // on launch even before the first RSS refresh finishes.
-        let cached = ArticleCacheStore.load()
+        var cached = ArticleCacheStore.load()
         if !cached.isEmpty {
+            ArticleClusteringService.shared.clusterArticles(&cached)
             self.articles = cached
         }
     }
@@ -135,6 +136,19 @@ final class SwiftDataService: FeedDataService {
     func markAsUnread(_ articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isRead = false
+        }
+    }
+
+    /// Dissolves the cluster containing the given article, making every member
+    /// appear as a standalone card. Transient — the next `refreshAllFeeds()`
+    /// will re-cluster everything. Intentionally does NOT rewrite the JSON cache.
+    func splitCluster(for articleID: UUID) {
+        guard let i = articles.firstIndex(where: { $0.id == articleID }),
+              let clusterID = articles[i].clusterID else { return }
+        for j in articles.indices where articles[j].clusterID == clusterID {
+            articles[j].clusterID = nil
+            articles[j].clusterSize = 1
+            articles[j].isCanonical = true
         }
     }
 
@@ -349,6 +363,10 @@ final class SwiftDataService: FeedDataService {
 
             // Archive fully-decayed, old, unread, non-bookmarked articles
             applyArchiveRule(&newArticles)
+
+            // Cluster near-duplicate stories and burst publishing events.
+            // Runs after archive rule — no point clustering what we're hiding.
+            ArticleClusteringService.shared.clusterArticles(&newArticles)
 
             self.articles = newArticles
             // Persist to the local JSON cache so the next launch is pre-populated.
