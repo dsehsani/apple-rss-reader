@@ -62,8 +62,16 @@ final class FolderViewModel {
 
             let hl1 = s1?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
             let hl2 = s2?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
-            let score1 = Article.decayScore(publishedAt: a1.publishedAt, halfLifeHours: hl1)
-            let score2 = Article.decayScore(publishedAt: a2.publishedAt, halfLifeHours: hl2)
+            let score1 = Article.riverScore(
+                decayScore: Article.decayScore(publishedAt: a1.publishedAt, halfLifeHours: hl1),
+                clusterSize: a1.clusterSize,
+                preferUniqueStories: s1?.preferUniqueStories ?? false
+            )
+            let score2 = Article.riverScore(
+                decayScore: Article.decayScore(publishedAt: a2.publishedAt, halfLifeHours: hl2),
+                clusterSize: a2.clusterSize,
+                preferUniqueStories: s2?.preferUniqueStories ?? false
+            )
             return score1 > score2
         }
     }

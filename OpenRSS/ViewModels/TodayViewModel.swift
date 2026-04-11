@@ -104,11 +104,19 @@ final class TodayViewModel {
             if !grace1 && grace2 { return false }
             if grace1 && grace2 { return article1.publishedAt > article2.publishedAt }
 
-            // Decay-scored articles sort by score descending
+            // River-scored articles sort by combined decay + cluster dominance descending
             let hl1 = source1?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
             let hl2 = source2?.effectiveVelocityTier.halfLifeHours ?? VelocityTier.daily.halfLifeHours
-            let score1 = Article.decayScore(publishedAt: article1.publishedAt, halfLifeHours: hl1)
-            let score2 = Article.decayScore(publishedAt: article2.publishedAt, halfLifeHours: hl2)
+            let score1 = Article.riverScore(
+                decayScore: Article.decayScore(publishedAt: article1.publishedAt, halfLifeHours: hl1),
+                clusterSize: article1.clusterSize,
+                preferUniqueStories: source1?.preferUniqueStories ?? false
+            )
+            let score2 = Article.riverScore(
+                decayScore: Article.decayScore(publishedAt: article2.publishedAt, halfLifeHours: hl2),
+                clusterSize: article2.clusterSize,
+                preferUniqueStories: source2?.preferUniqueStories ?? false
+            )
             return score1 > score2
         }
     }

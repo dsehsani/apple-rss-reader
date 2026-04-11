@@ -22,6 +22,7 @@ struct Source: Identifiable, Hashable {
     let addedAt: Date
     var velocityTier: VelocityTier    // Auto-inferred posting frequency
     var decayOverride: VelocityTier?  // User override for decay rate
+    var preferUniqueStories: Bool     // When true, clustered stories are down-weighted in the river
 
     /// The effective tier used for decay scoring (override wins over auto-inferred).
     var effectiveVelocityTier: VelocityTier {
@@ -45,7 +46,8 @@ struct Source: Identifiable, Hashable {
         isPaywalled: Bool = false,
         addedAt: Date = Date(),
         velocityTier: VelocityTier = .daily,
-        decayOverride: VelocityTier? = nil
+        decayOverride: VelocityTier? = nil,
+        preferUniqueStories: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -59,6 +61,7 @@ struct Source: Identifiable, Hashable {
         self.addedAt = addedAt
         self.velocityTier = velocityTier
         self.decayOverride = decayOverride
+        self.preferUniqueStories = preferUniqueStories
     }
 }
 

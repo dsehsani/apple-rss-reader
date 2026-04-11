@@ -259,6 +259,21 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Sets the per-feed "prefer unique stories" toggle — flips the cluster weight
+    /// from boost to penalty when ranking this source's articles in the river.
+    @MainActor
+    func setPreferUniqueStories(feedID: UUID, value: Bool) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.preferUniqueStories = value
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
     /// Marks the in-memory article with the given id as paywalled.
     /// Called by ArticleReaderHostView when post-pipeline detection fires.
     @MainActor
@@ -514,7 +529,8 @@ private extension Source {
             isPaywalled: model.isPaywalled,
             addedAt:     model.addedAt,
             velocityTier: model.velocityTier,
-            decayOverride: model.decayOverride
+            decayOverride: model.decayOverride,
+            preferUniqueStories: model.preferUniqueStories
         )
     }
 }

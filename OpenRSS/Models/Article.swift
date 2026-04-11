@@ -161,6 +161,20 @@ extension Article {
         let lambda = log(2) / effectiveHalfLife
         return max(0.2, exp(-lambda * hoursElapsed))
     }
+
+    /// Combines decay with cluster dominance into a single ranking score for the Today river.
+    /// Cluster of size 0 or 1 contributes nothing; the score equals `decayScore`.
+    /// Otherwise the score is boosted (or penalized, when the source prefers unique stories)
+    /// in proportion to cluster size, capped at a 10-article cluster.
+    static func riverScore(
+        decayScore: Double,
+        clusterSize: Int,
+        preferUniqueStories: Bool
+    ) -> Double {
+        let clusterSignal = clusterSize > 1 ? min(Double(clusterSize) / 10.0, 1.0) : 0.0
+        let weight = preferUniqueStories ? -0.4 : 0.4
+        return decayScore * (1.0 + weight * clusterSignal)
+    }
 }
 
 // MARK: - Date Formatting Extension

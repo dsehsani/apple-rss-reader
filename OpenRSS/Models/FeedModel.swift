@@ -35,6 +35,10 @@ final class FeedModel {
     /// Set manually by the user as a fallback when automatic detection misses.
     var isPaywalled: Bool
 
+    /// When true, clustered stories from this feed are penalized instead of boosted
+    /// in the Today river — surfacing the source's unique takes over widely-covered ones.
+    var preferUniqueStories: Bool = false
+
     /// Timestamp when the user subscribed.
     var addedAt: Date
 
@@ -78,6 +82,7 @@ final class FeedModel {
         self.websiteURL = websiteURL.isEmpty ? feedURL : websiteURL
         self.isEnabled = isEnabled
         self.isPaywalled = isPaywalled
+        self.preferUniqueStories = false
         self.addedAt = Date()
         self.velocityTierRaw = VelocityTier.daily.rawValue
         self.decayOverrideRaw = ""

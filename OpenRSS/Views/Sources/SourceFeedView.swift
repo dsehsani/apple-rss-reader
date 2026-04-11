@@ -105,6 +105,17 @@ struct SourceFeedView: View {
             Text("Subscribed \(source.addedAt.formatted(.dateTime.month(.abbreviated).day().year()))")
                 .font(.system(size: 12))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.7))
+
+            Toggle("Prefer unique stories", isOn: Binding(
+                get: { source.preferUniqueStories },
+                set: { newValue in
+                    try? SwiftDataService.shared.setPreferUniqueStories(feedID: source.id, value: newValue)
+                }
+            ))
+            .font(.system(size: 13))
+            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+            .tint(source.iconColor)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Design.Spacing.edge)
