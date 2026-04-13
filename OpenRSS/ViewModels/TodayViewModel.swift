@@ -74,6 +74,15 @@ final class TodayViewModel {
                 return false
             }
 
+            // 2b. Per-feed YouTube content-type filter — drops Shorts / Videos /
+            // Playlists the user unchecked in that feed's SourceFeedView.
+            if let src = dataService.source(for: article.sourceID),
+               !src.hiddenYouTubeKinds.isEmpty,
+               let kind = YouTubeService.contentKind(forArticleURL: article.articleURL),
+               src.hiddenYouTubeKinds.contains(kind) {
+                return false
+            }
+
             // 3. Search
             if !searchViewModel.matches(article) {
                 return false

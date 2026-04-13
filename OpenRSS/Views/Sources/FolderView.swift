@@ -80,6 +80,11 @@ struct FolderView: View {
         }
         .navigationTitle(viewModel.category?.name ?? "Folder")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(
+            text: $viewModel.searchViewModel.searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search \(viewModel.category?.name ?? "folder")"
+        )
         .navigationDestination(item: $selectedArticle) { article in
             ArticleReaderHostView(
                 article: article,
@@ -154,16 +159,19 @@ struct FolderView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: Design.Spacing.small) {
-            Image(systemName: "folder")
+        let isSearching = viewModel.searchViewModel.hasActiveQuery
+        return VStack(spacing: Design.Spacing.small) {
+            Image(systemName: isSearching ? "magnifyingglass" : "folder")
                 .font(.system(size: 36, weight: .ultraLight))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.6))
 
-            Text("No Articles")
+            Text(isSearching ? "No Results" : "No Articles")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-            Text("No articles match the current filter.")
+            Text(isSearching
+                ? "No matches for \"\(viewModel.searchViewModel.searchText)\"."
+                : "No articles match the current filter.")
                 .font(.system(size: 14))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
         }

@@ -26,6 +26,12 @@ final class FolderViewModel {
 
     var activeFilter: FolderFilter = .all
 
+    // MARK: - Search
+
+    /// Title-only fuzzy search over this folder's canonical articles.
+    /// Applied after the filter chip, before decay sort.
+    var searchViewModel = SearchViewModel(mode: .titleOnly)
+
     // MARK: - Computed Properties
 
     var category: Category? {
@@ -47,6 +53,10 @@ final class FolderViewModel {
         case .unread: articles = articles.filter { !$0.isRead }
         case .saved: articles = articles.filter { $0.isBookmarked }
         }
+
+        // Title-only search applied after the filter chip so a query respects
+        // the user's current All/Unread/Saved selection.
+        articles = articles.filter { searchViewModel.matches($0) }
 
         // Decay sort over full 30-day window
         return articles.sorted { a1, a2 in

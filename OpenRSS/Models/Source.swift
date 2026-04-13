@@ -23,6 +23,7 @@ struct Source: Identifiable, Hashable {
     var velocityTier: VelocityTier    // Auto-inferred posting frequency
     var decayOverride: VelocityTier?  // User override for decay rate
     var preferUniqueStories: Bool     // When true, clustered stories are down-weighted in the river
+    var hiddenYouTubeKinds: Set<YouTubeService.YouTubeContentKind>  // Per-feed YouTube content-type filter
 
     /// The effective tier used for decay scoring (override wins over auto-inferred).
     var effectiveVelocityTier: VelocityTier {
@@ -47,7 +48,8 @@ struct Source: Identifiable, Hashable {
         addedAt: Date = Date(),
         velocityTier: VelocityTier = .daily,
         decayOverride: VelocityTier? = nil,
-        preferUniqueStories: Bool = false
+        preferUniqueStories: Bool = false,
+        hiddenYouTubeKinds: Set<YouTubeService.YouTubeContentKind> = []
     ) {
         self.id = id
         self.name = name
@@ -62,6 +64,7 @@ struct Source: Identifiable, Hashable {
         self.velocityTier = velocityTier
         self.decayOverride = decayOverride
         self.preferUniqueStories = preferUniqueStories
+        self.hiddenYouTubeKinds = hiddenYouTubeKinds
     }
 }
 

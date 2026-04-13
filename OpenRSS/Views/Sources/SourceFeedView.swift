@@ -69,6 +69,11 @@ struct SourceFeedView: View {
         }
         .navigationTitle(viewModel.source?.name ?? "Source")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(
+            text: $viewModel.searchViewModel.searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search \(viewModel.source?.name ?? "articles")"
+        )
         .navigationDestination(item: $selectedArticle) { article in
             ArticleReaderHostView(
                 article: article,
@@ -116,6 +121,38 @@ struct SourceFeedView: View {
             .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
             .tint(source.iconColor)
             .padding(.top, 4)
+
+            // YouTube-only: per-feed content-type checklist.
+            // Lets the user pick which kinds (Videos / Shorts / Playlists) they
+            // want to see from this channel — hidden kinds are dropped in both
+            // the per-source list and the Today river.
+            if let feedURL = URL(string: source.feedURL),
+               YouTubeService.isYouTubeURL(feedURL) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Show content")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        .padding(.top, 4)
+
+                    ForEach(YouTubeService.YouTubeContentKind.allCases, id: \.self) { kind in
+                        Toggle(isOn: Binding(
+                            get: { !source.hiddenYouTubeKinds.contains(kind) },
+                            set: { showIt in
+                                try? SwiftDataService.shared.setHiddenYouTubeKind(
+                                    feedID: source.id,
+                                    kind: kind,
+                                    hidden: !showIt
+                                )
+                            }
+                        )) {
+                            Label(kind.displayName, systemImage: kind.icon)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                        }
+                        .tint(source.iconColor)
+                    }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Design.Spacing.edge)
@@ -125,16 +162,19 @@ struct SourceFeedView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: Design.Spacing.small) {
-            Image(systemName: "doc.text")
+        let isSearching = viewModel.searchViewModel.hasActiveQuery
+        return VStack(spacing: Design.Spacing.small) {
+            Image(systemName: isSearching ? "magnifyingglass" : "doc.text")
                 .font(.system(size: 36, weight: .ultraLight))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.6))
 
-            Text("No Articles")
+            Text(isSearching ? "No Results" : "No Articles")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-            Text("No cached articles from this source.")
+            Text(isSearching
+                ? "No matches for \"\(viewModel.searchViewModel.searchText)\"."
+                : "No cached articles from this source.")
                 .font(.system(size: 14))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
         }

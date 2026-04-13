@@ -124,6 +124,9 @@ final class SwiftDataService: FeedDataService {
     func toggleBookmark(for articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isBookmarked.toggle()
+            // Persist immediately so the bookmark survives an app kill before
+            // the next refresh would otherwise save it as a side effect.
+            ArticleCacheStore.save(articles)
         }
     }
 
@@ -274,6 +277,32 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Adds or removes a YouTube content-type kind from the feed's hidden set.
+    /// Used by the per-feed checklist on YouTube sources to filter out Shorts,
+    /// regular videos, or playlist items.
+    @MainActor
+    func setHiddenYouTubeKind(
+        feedID: UUID,
+        kind: YouTubeService.YouTubeContentKind,
+        hidden: Bool
+    ) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            var kinds = feed.hiddenYouTubeKinds
+            if hidden {
+                kinds.insert(kind)
+            } else {
+                kinds.remove(kind)
+            }
+            feed.hiddenYouTubeKinds = kinds
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
     /// Marks the in-memory article with the given id as paywalled.
     /// Called by ArticleReaderHostView when post-pipeline detection fires.
     @MainActor
@@ -371,6 +400,37 @@ final class SwiftDataService: FeedDataService {
         }
 
         newArticles.sort { $0.publishedAt > $1.publishedAt }
+
+        // Preserve user/system state from the previous articles array so that
+        // bookmarks, read marks, archives, and paywall detections survive a
+        // refresh. Match on the same composite key the refresh loop uses for
+        // dedup above: "sourceID|articleURL" (or "sourceID|title" when the
+        // link is empty / the sentinel placeholder).
+        func carryoverKey(sourceID: UUID, articleURL: String, title: String) -> String {
+            let link = articleURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if link.isEmpty || link == "https://example.com" {
+                return "\(sourceID.uuidString)|\(title)"
+            }
+            return "\(sourceID.uuidString)|\(link)"
+        }
+        let carryover: [String: Article] = Dictionary(
+            self.articles.map { old in
+                (carryoverKey(sourceID: old.sourceID, articleURL: old.articleURL, title: old.title), old)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        if !carryover.isEmpty {
+            newArticles = newArticles.map { fresh in
+                let key = carryoverKey(sourceID: fresh.sourceID, articleURL: fresh.articleURL, title: fresh.title)
+                guard let old = carryover[key] else { return fresh }
+                var merged = fresh
+                merged.isRead       = old.isRead
+                merged.isBookmarked = old.isBookmarked
+                merged.isArchived   = old.isArchived
+                merged.isPaywalled  = old.isPaywalled
+                return merged
+            }
+        }
 
         if !newArticles.isEmpty {
             // Auto-infer velocity tiers based on article frequency
@@ -530,7 +590,8 @@ private extension Source {
             addedAt:     model.addedAt,
             velocityTier: model.velocityTier,
             decayOverride: model.decayOverride,
-            preferUniqueStories: model.preferUniqueStories
+            preferUniqueStories: model.preferUniqueStories,
+            hiddenYouTubeKinds: model.hiddenYouTubeKinds
         )
     }
 }

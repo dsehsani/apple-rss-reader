@@ -45,6 +45,42 @@ final class YouTubeService {
         case unknown
     }
 
+    /// Coarse content-type categories used by the per-feed checklist filter.
+    /// Collapses `YouTubeResource` to a value that's easy to persist and toggle in the UI.
+    enum YouTubeContentKind: String, CaseIterable, Codable, Hashable {
+        case video
+        case short
+        case playlist
+
+        var displayName: String {
+            switch self {
+            case .video:    return "Videos"
+            case .short:    return "Shorts"
+            case .playlist: return "Playlists"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .video:    return "play.rectangle"
+            case .short:    return "bolt.square"
+            case .playlist: return "list.and.film"
+            }
+        }
+    }
+
+    /// Classifies an article URL into a `YouTubeContentKind`.
+    /// Returns `nil` for non-YouTube URLs (which should always be shown).
+    static func contentKind(forArticleURL urlString: String) -> YouTubeContentKind? {
+        guard let url = URL(string: urlString) else { return nil }
+        switch route(for: url) {
+        case .video:    return .video
+        case .short:    return .short
+        case .playlist: return .playlist
+        case .unknown:  return nil
+        }
+    }
+
     /// Classifies a YouTube URL into a typed resource.
     static func route(for url: URL) -> YouTubeResource {
         guard let host = url.host?.lowercased() else { return .unknown }
