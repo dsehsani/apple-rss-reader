@@ -21,7 +21,7 @@ import Foundation
 // MARK: - ArticleCacheStore
 
 /// Saves and loads the current in-memory article list to/from a JSON file
-/// in the system Caches directory. Articles older than 7 days are dropped on
+/// in the system Caches directory. Articles older than 30 days are dropped on
 /// load to keep the cache from growing unboundedly.
 ///
 /// Thread-safety: all methods are synchronous and cheap; call them from a
@@ -31,7 +31,7 @@ enum ArticleCacheStore {
     // MARK: - Constants
 
     private static let fileName   = "openrss_articles.json"
-    private static let maxAgeDays = 7
+    private static let maxAgeDays = 30
 
     // MARK: - Cache URL
 
@@ -54,7 +54,7 @@ enum ArticleCacheStore {
         }
     }
 
-    /// Reads the JSON file and returns articles published within the past 7 days.
+    /// Reads the JSON file and returns articles published within the past 30 days.
     /// Returns an empty array if the file doesn't exist or can't be decoded.
     static func load() -> [Article] {
         guard let data = try? Data(contentsOf: cacheURL) else { return [] }

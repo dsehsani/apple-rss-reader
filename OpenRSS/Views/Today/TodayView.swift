@@ -4,15 +4,17 @@
 //
 //  Created by Darius Ehsani on 2/3/26.
 //
+//  Phase 2a — Now driven by RiverViewModel with decay-based opacity.
+//
 
 import SwiftUI
 
 /// Main Today feed view with articles and category filtering
 struct TodayView: View {
 
-    // MARK: - ViewModel
+    // MARK: - ViewModel (Phase 2a: switched from TodayViewModel to RiverViewModel)
 
-    @State private var viewModel = TodayViewModel()
+    @State private var viewModel = RiverViewModel()
 
     // MARK: - State
 
@@ -36,27 +38,97 @@ struct TodayView: View {
             ScrollView {
                 LazyVStack(spacing: Design.Spacing.cardGap) {
                     // Empty states
-                    if viewModel.filteredArticles.isEmpty {
+                    if viewModel.filteredRiverItems.isEmpty {
                         if !viewModel.hasSources {
                             noFeedsPrompt
                         } else {
                             noResultsPrompt
                         }
                     } else {
-                        // Articles
-                        ForEach(viewModel.filteredArticles) { article in
-                            ArticleCardView(
-                                article: article,
-                                source: viewModel.source(for: article),
-                                onBookmarkTap: {
-                                    viewModel.toggleBookmark(for: article)
-                                },
-                                onReadMoreTap: {
-                                    viewModel.markAsRead(article)
-                                    selectedArticle = article
+                        // River items: articles, clusters, nudges
+                        ForEach(viewModel.filteredRiverItems) { riverItem in
+                            let relevance = riverItem.relevanceScore
+                            let decayOpacity = DecayScoringService.opacity(for: relevance)
+                            let fontScale = DecayScoringService.fontScale(for: relevance)
+
+                            Group {
+                                switch riverItem {
+                                case .article(let feedItem):
+                                    if let source = viewModel.source(for: feedItem) {
+                                        let article = feedItem.toArticle(categoryID: source.categoryID)
+                                        ArticleCardView(
+                                            article: article,
+                                            source: source,
+                                            onBookmarkTap: {
+                                                viewModel.toggleBookmark(for: article)
+                                                // Phase 2d — track share/bookmark as articleShare
+                                                AffinityTracker.shared.record(
+                                                    .articleShare,
+                                                    sourceID: article.sourceID,
+                                                    itemID: article.id
+                                                )
+                                            },
+                                            onReadMoreTap: {
+                                                viewModel.markAsRead(article)
+                                                selectedArticle = article
+                                                // Phase 2d — track article open
+                                                AffinityTracker.shared.record(
+                                                    .articleOpen,
+                                                    sourceID: article.sourceID,
+                                                    itemID: article.id
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                case .cluster(let card):
+                                    ClusterCardView(
+                                        cluster: card,
+                                        source: viewModel.source(for: card.canonicalItem),
+                                        onArticleTap: { feedItem in
+                                            if let source = viewModel.source(for: feedItem) {
+                                                let article = feedItem.toArticle(categoryID: source.categoryID)
+                                                viewModel.markAsRead(article)
+                                                selectedArticle = article
+                                            }
+                                        },
+                                        sourceForItem: { feedItem in
+                                            viewModel.source(for: feedItem)
+                                        }
+                                    )
+
+                                case .digest(let digestCard):
+                                    DigestCardView(
+                                        digest: digestCard,
+                                        source: viewModel.source(forSourceID: digestCard.sourceID)
+                                    )
+
+                                case .nudge(let nudgeCard):
+                                    NudgeCardView(
+                                        nudge: nudgeCard,
+                                        source: viewModel.source(forSourceID: nudgeCard.sourceID)
+                                    )
                                 }
-                            )
+                            }
+                            .opacity(decayOpacity)
+                            .scaleEffect(x: 1, y: fontScale, anchor: .top)
                             .padding(.horizontal, Design.Spacing.edge)
+                            // Phase 2d — scroll velocity tracking
+                            .modifier(ScrollDwellModifier(riverItem: riverItem))
+                            // Phase 2d — explicit dismiss via context menu
+                            .contextMenu {
+                                if case .article(let feedItem) = riverItem {
+                                    Button(role: .destructive) {
+                                        AffinityTracker.shared.record(
+                                            .explicitDismiss,
+                                            sourceID: feedItem.sourceID,
+                                            itemID: feedItem.id
+                                        )
+                                    } label: {
+                                        Label("Not interested", systemImage: "hand.thumbsdown")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -120,7 +192,28 @@ struct TodayView: View {
             }
             .animation(Design.Animation.standard, value: showingSearch)
 
-            // Category chips — always visible
+            // Archive link + Category chips
+            HStack {
+                NavigationLink(destination: ArchiveView()) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "archivebox")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Archive")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: Design.Radius.small)
+                            .fill(Design.Colors.secondaryText(for: colorScheme).opacity(0.1))
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 20)
+                Spacer()
+            }
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(viewModel.allCategories) { category in
@@ -260,6 +353,46 @@ struct TodayView: View {
         .frame(maxWidth: .infinity)
     }
 
+}
+
+// MARK: - Scroll Dwell Tracking (Phase 2d)
+
+/// Measures how long a river item card stays on screen during scrolling.
+/// - Visible < 1s → scrollFastPast (user zipped past)
+/// - Visible 2–8s → scrollSlow (user paused / read headline)
+/// Items opened via tap are excluded (handled by articleOpen / dwell events).
+private struct ScrollDwellModifier: ViewModifier {
+    let riverItem: RiverItem
+
+    @State private var appearedAt: Date?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { appearedAt = Date() }
+            .onDisappear {
+                guard let appeared = appearedAt else { return }
+                let visibleSeconds = Date().timeIntervalSince(appeared)
+
+                // Only track for article items (clusters/digests have their own events)
+                guard case .article(let feedItem) = riverItem else { return }
+
+                if visibleSeconds < 1.0 {
+                    AffinityTracker.shared.record(
+                        .scrollFastPast,
+                        sourceID: feedItem.sourceID,
+                        itemID: feedItem.id
+                    )
+                } else if visibleSeconds >= 2.0 && visibleSeconds <= 8.0 {
+                    AffinityTracker.shared.record(
+                        .scrollSlow,
+                        sourceID: feedItem.sourceID,
+                        itemID: feedItem.id
+                    )
+                }
+                // 1-2s is ambiguous (normal scroll speed) — no event fired.
+                // >8s likely means the card stayed on screen while idle — no event.
+            }
+    }
 }
 
 // MARK: - Preview

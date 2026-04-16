@@ -21,6 +21,32 @@ struct Source: Identifiable, Hashable {
     var isPaywalled: Bool         // Whether the user has manually marked this feed as paywalled
     let addedAt: Date
 
+    // Phase 2a — River pipeline fields
+    /// Manual velocity tier override. When nil, the pipeline infers from publish frequency.
+    var velocityTierOverride: VelocityTier?
+    /// Effective daily slot limit for rate-gating. Derived from velocity tier if not set.
+    var defaultSlotLimit: Int?
+
+    // Phase 2 merge — Josh's fields
+    /// Auto-inferred posting frequency for decay scoring.
+    var velocityTier: VelocityTier
+    /// User override for decay rate (overrides velocityTier when set).
+    var decayOverride: VelocityTier?
+    /// When true, clustered stories are down-weighted in the river.
+    var preferUniqueStories: Bool
+    /// Per-feed YouTube content-type filter.
+    var hiddenYouTubeKinds: Set<YouTubeService.YouTubeContentKind>
+
+    /// The effective tier used for decay scoring (override wins over auto-inferred).
+    var effectiveVelocityTier: VelocityTier {
+        decayOverride ?? velocityTierOverride ?? velocityTier
+    }
+
+    /// True if this source was added less than 14 days ago — decay is skipped.
+    var isInGracePeriod: Bool {
+        addedAt > Calendar.current.date(byAdding: .day, value: -14, to: Date())!
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -31,7 +57,13 @@ struct Source: Identifiable, Hashable {
         categoryID: UUID,
         isEnabled: Bool = true,
         isPaywalled: Bool = false,
-        addedAt: Date = Date()
+        addedAt: Date = Date(),
+        velocityTierOverride: VelocityTier? = nil,
+        defaultSlotLimit: Int? = nil,
+        velocityTier: VelocityTier = .article,
+        decayOverride: VelocityTier? = nil,
+        preferUniqueStories: Bool = false,
+        hiddenYouTubeKinds: Set<YouTubeService.YouTubeContentKind> = []
     ) {
         self.id = id
         self.name = name
@@ -43,6 +75,12 @@ struct Source: Identifiable, Hashable {
         self.isEnabled = isEnabled
         self.isPaywalled = isPaywalled
         self.addedAt = addedAt
+        self.velocityTierOverride = velocityTierOverride
+        self.defaultSlotLimit = defaultSlotLimit
+        self.velocityTier = velocityTier
+        self.decayOverride = decayOverride
+        self.preferUniqueStories = preferUniqueStories
+        self.hiddenYouTubeKinds = hiddenYouTubeKinds
     }
 }
 

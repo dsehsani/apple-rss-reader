@@ -40,8 +40,11 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Prompts/AddRSSFeed.md,
+				Prompts/BackgroundRefreshPrompt.md,
+				"Prompts/flow-arch.md",
 				Prompts/LiquidGlass.md,
 				Prompts/NavigationBarPrompt.md,
+				Prompts/OPMLPrompt.md,
 				Prompts/SearchBarImplementation.md,
 				Prompts/stitchCSS.md,
 				Prompts/TextRenderingOptimizationPrompt.md,
@@ -49,6 +52,8 @@
 				Prompts/tweakingUI.md,
 				Prompts/UIPrompt.md,
 				Prompts/UpdateUI.md,
+				tasks/lesson.md,
+				tasks/todo.md,
 			);
 			target = 3D147CA02F32B35E00748E17 /* OpenRSS */;
 		};
@@ -447,8 +452,10 @@
 				DEVELOPMENT_TEAM = H8GRXJ93NR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = com.openrss.riverRefresh;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = fetch;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -482,8 +489,10 @@
 				DEVELOPMENT_TEAM = H8GRXJ93NR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = com.openrss.riverRefresh;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = fetch;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -7,6 +7,28 @@
 
 import SwiftUI
 
+// MARK: - ClusterBadge
+
+/// Small value type describing a cluster badge shown on an article card.
+struct ClusterBadge {
+    struct Sibling: Identifiable {
+        let article: Article
+        let sourceName: String
+        var id: UUID { article.id }
+    }
+
+    enum Style {
+        case sources    // cross-source dedup → "N sources"
+        case updates    // same-source burst → "N updates"
+        case clustered  // non-canonical shown in source feed view → "Clustered"
+    }
+
+    let label: String
+    let style: Style
+    var siblings: [Sibling] = []
+    var onSiblingTap: ((Article) -> Void)? = nil
+}
+
 /// Article card component matching the liquid glass design from the schematic
 struct ArticleCardView: View {
 
@@ -14,8 +36,11 @@ struct ArticleCardView: View {
 
     let article: Article
     let source: Source?
+    var decayScore: Double = 1.0
+    var clusterBadge: ClusterBadge? = nil
     var onBookmarkTap: (() -> Void)?
     var onReadMoreTap: (() -> Void)?
+    var onSplitCluster: (() -> Void)? = nil
 
     // MARK: - Environment (Light/Dark Mode)
 
@@ -24,8 +49,10 @@ struct ArticleCardView: View {
     // MARK: - State
 
     /// Resolved og:image URL for articles whose RSS feed provided no image.
-    /// Set lazily when the card scrolls into view via OGImageService.
     @State private var ogImageURL: String?
+
+    /// Whether the expandable cluster chip is showing its sibling list.
+    @State private var isClusterExpanded: Bool = false
 
     // MARK: - Body
 
@@ -37,24 +64,54 @@ struct ArticleCardView: View {
             // Content
             VStack(alignment: .leading, spacing: Design.Spacing.small) {
                 sourceInfoRow
+                if let badge = clusterBadge {
+                    clusterBadgeChip(badge)
+                }
                 titleText
                 excerptText
+                if let badge = clusterBadge,
+                   isClusterExpanded,
+                   !badge.siblings.isEmpty {
+                    clusterSiblingList(badge)
+                }
                 if isPaywalled { paywallBadge }
                 footerRow
             }
             .padding(Design.Spacing.cardPadding)
         }
         .cardStyle(for: colorScheme)
-        .opacity(article.isRead ? 0.7 : 1.0)
-        // Whole card is the tap target — child Buttons (bookmark, share) take priority.
+        .overlay(alignment: .leading) {
+            if clusterBadge?.style == .updates {
+                Rectangle()
+                    .fill(source?.iconColor ?? Design.Colors.primary)
+                    .frame(width: 3)
+            }
+        }
+        .opacity(article.isRead ? min(0.7, decayOpacity) : decayOpacity)
         .contentShape(Rectangle())
         .onTapGesture { onReadMoreTap?() }
-        // Lazily fetch the og:image when this card scrolls into view.
-        // Short-circuits immediately if the RSS feed already provided an image URL.
-        // Cancelled automatically if the card scrolls off screen before completing.
+        .contextMenu {
+            if article.clusterSize > 1, let onSplitCluster {
+                Button {
+                    onSplitCluster()
+                } label: {
+                    Label("Show as separate stories", systemImage: "arrow.triangle.branch")
+                }
+            }
+
+            if let onBookmarkTap {
+                Button {
+                    onBookmarkTap()
+                } label: {
+                    Label(
+                        article.isBookmarked ? "Remove Bookmark" : "Bookmark",
+                        systemImage: article.isBookmarked ? "bookmark.slash" : "bookmark"
+                    )
+                }
+            }
+        }
         .task(id: article.id) {
             guard article.imageURL == nil else { return }
-            // Serve from cache without a network round-trip whenever possible.
             if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
                 ogImageURL = cached
                 return
@@ -64,14 +121,20 @@ struct ArticleCardView: View {
         }
     }
 
+    // MARK: - Decay Opacity
+
+    private var decayOpacity: Double {
+        let minOpacity = 0.5
+        let normalizedScore = (decayScore - 0.2) / 0.8
+        return minOpacity + normalizedScore * (1.0 - minOpacity)
+    }
+
     // MARK: - Subviews
 
     private var heroImage: some View {
         ZStack {
-            // Always-visible placeholder so the frame never collapses
             placeholderHero
 
-            // Use the RSS-provided image URL, falling back to the lazily-fetched og:image.
             let displayURL = article.imageURL ?? ogImageURL
             if let urlString = displayURL, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
@@ -84,7 +147,7 @@ struct ArticleCardView: View {
                         Color.clear
                             .overlay(ProgressView().tint(.white.opacity(0.5)))
                     case .failure:
-                        Color.clear   // placeholder already visible underneath
+                        Color.clear
                     @unknown default:
                         Color.clear
                     }
@@ -115,7 +178,6 @@ struct ArticleCardView: View {
 
     private var sourceInfoRow: some View {
         HStack(spacing: Design.Spacing.small) {
-            // Source icon
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
                     .fill((source?.iconColor ?? .blue).opacity(0.2))
@@ -126,13 +188,104 @@ struct ArticleCardView: View {
                     .foregroundStyle(source?.iconColor ?? .blue)
             }
 
-            // Source name and time
             Text("\(source?.name ?? "Unknown") • \(article.relativeTimeString)")
                 .font(Design.Typography.caption)
                 .foregroundStyle(Design.Colors.secondaryText)
                 .textCase(.uppercase)
                 .tracking(0.5)
         }
+    }
+
+    // MARK: - Cluster Badge
+
+    @ViewBuilder
+    private func clusterBadgeChip(_ badge: ClusterBadge) -> some View {
+        let isExpandable = !badge.siblings.isEmpty && badge.onSiblingTap != nil
+
+        if isExpandable {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isClusterExpanded.toggle()
+                }
+            } label: {
+                clusterBadgeChipContent(badge, isExpandable: true)
+            }
+            .buttonStyle(.plain)
+        } else {
+            clusterBadgeChipContent(badge, isExpandable: false)
+        }
+    }
+
+    private func clusterBadgeChipContent(_ badge: ClusterBadge, isExpandable: Bool) -> some View {
+        let symbol: String = {
+            switch badge.style {
+            case .sources, .updates: return "newspaper.fill"
+            case .clustered:         return "link"
+            }
+        }()
+        let isMuted = badge.style == .clustered
+        let fg: Color = isMuted ? Design.Colors.secondaryText : Design.Colors.primary
+        let bg: Color = isMuted
+            ? Design.Colors.secondaryText.opacity(0.12)
+            : Design.Colors.primary.opacity(0.15)
+
+        return HStack(spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+            Text(badge.label)
+                .font(Design.Typography.caption)
+                .italic(isMuted)
+            if isExpandable {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+                    .rotationEffect(.degrees(isClusterExpanded ? 180 : 0))
+            }
+        }
+        .foregroundStyle(fg)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: Design.Radius.small)
+                .fill(bg)
+        )
+    }
+
+    /// Inline picker list shown when the cluster chip is expanded.
+    private func clusterSiblingList(_ badge: ClusterBadge) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(badge.siblings) { sibling in
+                Button {
+                    badge.onSiblingTap?(sibling.article)
+                } label: {
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(Design.Colors.primary.opacity(0.6))
+                            .frame(width: 4, height: 4)
+                            .padding(.top, 7)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sibling.article.title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                            Text("\(sibling.sourceName) · \(sibling.article.relativeTimeString)")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Design.Colors.secondaryText)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Design.Colors.secondaryText.opacity(0.6))
+                            .padding(.top, 3)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 4)
+        .padding(.leading, 2)
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
     private var titleText: some View {
@@ -169,7 +322,6 @@ struct ArticleCardView: View {
 
     private var footerRow: some View {
         HStack(spacing: 16) {
-            // Bookmark button
             Button {
                 onBookmarkTap?()
             } label: {
@@ -179,8 +331,6 @@ struct ArticleCardView: View {
             }
             .buttonStyle(.plain)
 
-            // Share button — uses native ShareLink so the iOS share sheet
-            // appears with the article URL + title pre-filled.
             if let url = URL(string: article.articleURL) {
                 ShareLink(
                     item: url,

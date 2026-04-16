@@ -60,9 +60,63 @@ final class SwiftDataService: FeedDataService {
 
         // Pre-populate articles from the local cache so the UI is non-empty
         // on launch even before the first RSS refresh finishes.
-        let cached = ArticleCacheStore.load()
+        var cached = ArticleCacheStore.load()
         if !cached.isEmpty {
+            ArticleClusteringService.shared.clusterArticles(&cached)
             self.articles = cached
+        }
+
+        // One-time migration: seed SQLite with cached articles so the River
+        // pipeline has data from the very first launch after the Phase 2 update.
+        migrateArticlesToSQLiteIfNeeded(cached)
+    }
+
+    // MARK: - SwiftData → SQLite Migration
+
+    private static let migrationKey = "openrss.swiftdata-sqlite-migration-done"
+
+    /// Seeds the SQLite `feed_items` table from the JSON article cache on first launch
+    /// after the Phase 2 update. Runs once; subsequent launches skip via UserDefaults flag.
+    @MainActor
+    private func migrateArticlesToSQLiteIfNeeded(_ cachedArticles: [Article]) {
+        guard !UserDefaults.standard.bool(forKey: Self.migrationKey) else { return }
+        defer { UserDefaults.standard.set(true, forKey: Self.migrationKey) }
+
+        guard !cachedArticles.isEmpty else { return }
+
+        let store = SQLiteStore.shared
+        let existingCount = store.totalItemCount()
+        guard existingCount == 0 else {
+            // SQLite already has data — skip migration
+            return
+        }
+
+        let feedItems: [FeedItem] = cachedArticles.compactMap { article in
+            guard let link = URL(string: article.articleURL) else { return nil }
+            guard let source = source(for: article.sourceID) else { return nil }
+
+            // Generate a stable ID matching FeedIngestService's key format
+            let stableKey = "\(source.id.uuidString)|\(article.articleURL)"
+            let id = UUID(name: stableKey)
+
+            return FeedItem(
+                id: id,
+                sourceID: article.sourceID,
+                title: article.title,
+                link: link,
+                publishedAt: article.publishedAt,
+                fetchedAt: article.publishedAt,
+                excerpt: article.excerpt,
+                imageURL: article.imageURL,
+                author: nil,
+                velocityTier: .article,
+                simhashValue: SimHash.compute(article.title)
+            )
+        }
+
+        if !feedItems.isEmpty {
+            store.upsertFeedItems(feedItems)
+            print("Migrated \(feedItems.count) articles from cache to SQLite")
         }
     }
 
@@ -135,6 +189,19 @@ final class SwiftDataService: FeedDataService {
     func markAsUnread(_ articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isRead = false
+        }
+    }
+
+    /// Dissolves the cluster containing the given article, making every member
+    /// appear as a standalone card. Transient — the next `refreshAllFeeds()`
+    /// will re-cluster everything. Intentionally does NOT rewrite the JSON cache.
+    func splitCluster(for articleID: UUID) {
+        guard let i = articles.firstIndex(where: { $0.id == articleID }),
+              let clusterID = articles[i].clusterID else { return }
+        for j in articles.indices where articles[j].clusterID == clusterID {
+            articles[j].clusterID = nil
+            articles[j].clusterSize = 1
+            articles[j].isCanonical = true
         }
     }
 
@@ -231,12 +298,86 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Sets a per-feed decay override (or clears it with nil).
+    @MainActor
+    func setDecayOverride(feedID: UUID, tier: VelocityTier?) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.decayOverride = tier
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    /// Sets the per-feed "prefer unique stories" toggle.
+    @MainActor
+    func setPreferUniqueStories(feedID: UUID, value: Bool) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            feed.preferUniqueStories = value
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
+    /// Adds or removes a YouTube content-type kind from the feed's hidden set.
+    @MainActor
+    func setHiddenYouTubeKind(
+        feedID: UUID,
+        kind: YouTubeService.YouTubeContentKind,
+        hidden: Bool
+    ) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.id == feedID }
+        )
+        if let feed = try context.fetch(descriptor).first {
+            var kinds = feed.hiddenYouTubeKinds
+            if hidden {
+                kinds.insert(kind)
+            } else {
+                kinds.remove(kind)
+            }
+            feed.hiddenYouTubeKinds = kinds
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
     /// Marks the in-memory article with the given id as paywalled.
     /// Called by ArticleReaderHostView when post-pipeline detection fires.
     @MainActor
     func markArticlePaywalled(id: UUID) {
         guard let index = articles.firstIndex(where: { $0.id == id }) else { return }
         articles[index].isPaywalled = true
+    }
+
+    // MARK: - OPML Helpers
+
+    /// Returns all FeedModels that have no folder assigned.
+    @MainActor
+    func unfiledFeedModels() -> [FeedModel] {
+        guard let context = modelContext else { return [] }
+        let descriptor = FetchDescriptor<FeedModel>(
+            predicate: #Predicate { $0.folder == nil }
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Returns all FolderModels currently persisted.
+    @MainActor
+    func allFolderModels() -> [FolderModel] {
+        guard let context = modelContext else { return [] }
+        let descriptor = FetchDescriptor<FolderModel>(
+            sortBy: [SortDescriptor(\.sortOrder, order: .forward)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
     }
 
     // MARK: - RSS Refresh
@@ -325,12 +466,42 @@ final class SwiftDataService: FeedDataService {
         newArticles.sort { $0.publishedAt > $1.publishedAt }
 
         if !newArticles.isEmpty {
+            // Cluster related articles before displaying
+            ArticleClusteringService.shared.clusterArticles(&newArticles)
             self.articles = newArticles
             // Persist to the local JSON cache so the next launch is pre-populated.
             ArticleCacheStore.save(newArticles)
         } else {
             // 0 articles fetched; keep existing articles
         }
+    }
+
+    // MARK: - Pipeline Sync
+
+    /// Updates the in-memory articles array from pipeline FeedItems without re-fetching feeds.
+    /// Called by RiverViewModel after a pipeline cycle to keep legacy views in sync.
+    @MainActor
+    func syncArticles(_ pipelineArticles: [Article]) {
+        guard !pipelineArticles.isEmpty else { return }
+
+        // Preserve read/bookmark state from existing articles
+        let existingState = Dictionary(
+            articles.map { ($0.id, (isRead: $0.isRead, isBookmarked: $0.isBookmarked)) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        let merged = pipelineArticles.map { article -> Article in
+            if let state = existingState[article.id] {
+                var updated = article
+                updated.isRead = state.isRead
+                updated.isBookmarked = state.isBookmarked
+                return updated
+            }
+            return article
+        }.sorted { $0.publishedAt > $1.publishedAt }
+
+        self.articles = merged
+        ArticleCacheStore.save(merged)
     }
 
     // MARK: - Cache Maintenance
@@ -399,16 +570,19 @@ private extension Source {
     /// Feeds without a folder use the sentinel `unfiledFolderID` as their `categoryID`.
     init(from model: FeedModel) {
         self.init(
-            id:          model.id,
-            name:        model.title,
-            feedURL:     model.feedURL,
-            websiteURL:  model.websiteURL,
-            icon:        "dot.radiowaves.left.and.right",
-            iconColor:   .blue,
-            categoryID:  model.folder?.id ?? SwiftDataService.unfiledFolderID,
-            isEnabled:   model.isEnabled,
-            isPaywalled: model.isPaywalled,
-            addedAt:     model.addedAt
+            id:                  model.id,
+            name:                model.title,
+            feedURL:             model.feedURL,
+            websiteURL:          model.websiteURL,
+            icon:                "dot.radiowaves.left.and.right",
+            iconColor:           .blue,
+            categoryID:          model.folder?.id ?? SwiftDataService.unfiledFolderID,
+            isEnabled:           model.isEnabled,
+            isPaywalled:         model.isPaywalled,
+            addedAt:             model.addedAt,
+            decayOverride:       model.decayOverride,
+            preferUniqueStories: model.preferUniqueStories,
+            hiddenYouTubeKinds:  model.hiddenYouTubeKinds
         )
     }
 }

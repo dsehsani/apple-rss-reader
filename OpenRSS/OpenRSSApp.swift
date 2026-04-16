@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import BackgroundTasks
 
 @main
 struct OpenRSSApp: App {
@@ -60,6 +61,53 @@ struct OpenRSSApp: App {
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
         }
+
+        // Phase 2a — Register BGTask for background river refresh
+        Self.registerBackgroundTasks()
+    }
+
+    // MARK: - Background Task Registration
+
+    private static let riverRefreshIdentifier = "com.openrss.riverRefresh"
+
+    private static func registerBackgroundTasks() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: riverRefreshIdentifier,
+            using: nil
+        ) { task in
+            guard let bgTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handleRiverRefresh(task: bgTask)
+        }
+    }
+
+    private static func handleRiverRefresh(task: BGAppRefreshTask) {
+        // Schedule the next refresh before starting work
+        scheduleNextRiverRefresh()
+
+        let workTask = Task {
+            let sources = await MainActor.run { SwiftDataService.shared.sources }
+            await RiverPipeline.shared.runCycle(sources: sources)
+            task.setTaskCompleted(success: true)
+        }
+
+        // If the system kills the background task, cancel our work
+        task.expirationHandler = {
+            workTask.cancel()
+        }
+    }
+
+    /// Schedules the next background river refresh.
+    static func scheduleNextRiverRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: riverRefreshIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 30 * 60) // 30 minutes
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("BGTask scheduling failed: \(error)")
+        }
     }
 
     // MARK: - App State
@@ -78,6 +126,14 @@ struct OpenRSSApp: App {
                     )
                 ) { _ in
                     URLCache.shared.removeAllCachedResponses()
+                }
+                // Schedule background refresh when the app moves to background
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: UIApplication.didEnterBackgroundNotification
+                    )
+                ) { _ in
+                    Self.scheduleNextRiverRefresh()
                 }
         }
         .modelContainer(container)
