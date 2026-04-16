@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import BackgroundTasks
+import Network
 
 @main
 struct OpenRSSApp: App {
@@ -88,8 +89,31 @@ struct OpenRSSApp: App {
         scheduleNextRiverRefresh()
 
         let workTask = Task {
+            // Network check — skip the pipeline if there is no connection
+            guard await isNetworkAvailable() else {
+                print("BGTask: skipping refresh — no network")
+                task.setTaskCompleted(success: false)
+                return
+            }
+
             let sources = await MainActor.run { SwiftDataService.shared.sources }
+
+            // Snapshot count before
+            let countBefore = SQLiteStore.shared.totalItemCount()
+
             await RiverPipeline.shared.runCycle(sources: sources)
+
+            // Snapshot count after — detect empty cycle
+            let countAfter = SQLiteStore.shared.totalItemCount()
+            let store = RefreshStateStore.shared
+            if countAfter > countBefore {
+                store.consecutiveEmptyRefreshes = 0
+            } else {
+                store.consecutiveEmptyRefreshes += 1
+            }
+
+            store.lastRefreshedAt = Date()
+
             task.setTaskCompleted(success: true)
         }
 
@@ -99,10 +123,26 @@ struct OpenRSSApp: App {
         }
     }
 
+    /// Returns true if the device has any usable network path.
+    private static func isNetworkAvailable() async -> Bool {
+        await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            let queue = DispatchQueue(label: "com.openrss.networkCheck")
+            monitor.pathUpdateHandler = { path in
+                monitor.cancel()
+                continuation.resume(returning: path.status == .satisfied)
+            }
+            monitor.start(queue: queue)
+        }
+    }
+
     /// Schedules the next background river refresh.
     static func scheduleNextRiverRefresh() {
+        let interval = RefreshStateStore.shared.nextIntervalSeconds
+        guard interval.isFinite else { return }  // .manual — do not schedule
+
         let request = BGAppRefreshTaskRequest(identifier: riverRefreshIdentifier)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 30 * 60) // 30 minutes
+        request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {

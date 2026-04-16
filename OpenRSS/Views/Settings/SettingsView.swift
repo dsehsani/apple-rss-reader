@@ -13,7 +13,7 @@ struct SettingsView: View {
 
     // MARK: - State
 
-    @State private var refreshInterval: RefreshInterval = .hourly
+    private var refreshStore = RefreshStateStore.shared
     @State private var showImages: Bool = true
     @State private var openLinksInApp: Bool = true
     @State private var markAsReadOnScroll: Bool = false
@@ -168,7 +168,23 @@ struct SettingsView: View {
     private var dataSection: some View {
         settingsSection(title: "Data & Storage", icon: "externaldrive.fill") {
             VStack(spacing: 0) {
-                settingsPicker(title: "Refresh Interval", selection: $refreshInterval)
+                settingsPicker(title: "Refresh Interval", selection: Binding(
+                    get: { refreshStore.refreshInterval },
+                    set: { refreshStore.refreshInterval = $0 }
+                ))
+                divider
+                divider
+                HStack {
+                    Text("Last Updated")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Text(refreshStore.lastRefreshedString)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
                 divider
                 settingsToggle(title: "Cache Articles", isOn: $cacheEnabled)
                 divider
@@ -380,11 +396,21 @@ struct SettingsView: View {
 // MARK: - Supporting Types
 
 enum RefreshInterval: String, CaseIterable {
-    case manual = "Manual"
+    case manual         = "Manual"
     case fifteenMinutes = "15 Minutes"
-    case thirtyMinutes = "30 Minutes"
-    case hourly = "Hourly"
-    case daily = "Daily"
+    case thirtyMinutes  = "30 Minutes"
+    case hourly         = "Hourly"
+    case daily          = "Daily"
+
+    var intervalSeconds: TimeInterval {
+        switch self {
+        case .manual:         return .infinity
+        case .fifteenMinutes: return 15 * 60
+        case .thirtyMinutes:  return 30 * 60
+        case .hourly:         return 60 * 60
+        case .daily:          return 24 * 60 * 60
+        }
+    }
 }
 
 // MARK: - OPML Supporting Types

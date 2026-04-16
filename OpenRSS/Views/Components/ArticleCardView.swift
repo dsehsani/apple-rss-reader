@@ -51,6 +51,9 @@ struct ArticleCardView: View {
     /// Resolved og:image URL for articles whose RSS feed provided no image.
     @State private var ogImageURL: String?
 
+    /// Whether the hero image loaded successfully, hiding the placeholder.
+    @State private var heroImageLoaded: Bool = false
+
     /// Whether the expandable cluster chip is showing its sibling list.
     @State private var isClusterExpanded: Bool = false
 
@@ -133,7 +136,9 @@ struct ArticleCardView: View {
 
     private var heroImage: some View {
         ZStack {
-            placeholderHero
+            if !heroImageLoaded {
+                placeholderHero
+            }
 
             let displayURL = article.imageURL ?? ogImageURL
             if let urlString = displayURL, let url = URL(string: urlString) {
@@ -143,6 +148,7 @@ struct ArticleCardView: View {
                         image
                             .resizable()
                             .scaledToFill()
+                            .onAppear { heroImageLoaded = true }
                     case .empty:
                         Color.clear
                             .overlay(ProgressView().tint(.white.opacity(0.5)))

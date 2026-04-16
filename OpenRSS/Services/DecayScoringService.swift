@@ -77,22 +77,21 @@ final class DecayScoringService: Sendable {
     // MARK: - Opacity Mapping
 
     /// Maps a relevance score to an opacity value for the UI.
+    /// Floor of 0.7 so cards always remain clearly readable.
     static func opacity(for relevanceScore: Double) -> Double {
         switch relevanceScore {
         case fullOpacityThreshold...:
             return 1.0
         case mediumOpacityThreshold..<fullOpacityThreshold:
-            return 0.6
-        case lowOpacityThreshold..<mediumOpacityThreshold:
-            return 0.35
+            return 0.85
         default:
-            return 0.2
+            return 0.7
         }
     }
 
     /// Maps a relevance score to a font-size scale factor.
     static func fontScale(for relevanceScore: Double) -> Double {
-        relevanceScore < mediumOpacityThreshold ? 0.92 : 1.0
+        return 1.0
     }
 
     // MARK: - Affinity Boost
