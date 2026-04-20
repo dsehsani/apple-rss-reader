@@ -27,7 +27,12 @@ struct OpenRSSApp: App {
             directory: nil                         // default location
         )
 
-        let schema = Schema([FolderModel.self, FeedModel.self, CachedArticle.self])
+        let schema = Schema([
+            FolderModel.self,
+            FeedModel.self,
+            CachedArticle.self,
+            UserProfile.self,
+        ])
         let config = ModelConfiguration(schema: schema)
 
         do {
@@ -58,6 +63,7 @@ struct OpenRSSApp: App {
         // @main App.init() is always called on the main thread, so assumeIsolated is safe.
         MainActor.assumeIsolated {
             SwiftDataService.shared.configure(container: container)
+            AuthenticationManager.shared.configure(container: container)
 
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
@@ -153,12 +159,13 @@ struct OpenRSSApp: App {
     // MARK: - App State
 
     @State private var appState = AppState()
+    @State private var hasCheckedAuth = false
 
     // MARK: - Body
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            rootView
                 .environment(appState)
                 .onReceive(
                     NotificationCenter.default.publisher(
@@ -175,7 +182,44 @@ struct OpenRSSApp: App {
                 ) { _ in
                     Self.scheduleNextRiverRefresh()
                 }
+                .task {
+                    guard !hasCheckedAuth else { return }
+                    hasCheckedAuth = true
+                    await AuthenticationManager.shared.checkExistingCredential()
+                }
         }
         .modelContainer(container)
+    }
+
+    // MARK: - Root View
+
+    /// Decides whether to show onboarding or the main app.
+    ///
+    /// - `.unknown`   → blank screen (auth check in-flight, prevents onboarding flash)
+    /// - `.signedOut` + never skipped → OnboardingView
+    /// - `.signedOut` + guest mode    → MainTabView
+    /// - `.signedIn`  → MainTabView
+    @ViewBuilder
+    private var rootView: some View {
+        let auth = AuthenticationManager.shared
+
+        switch auth.state {
+        case .unknown:
+            Color.clear
+
+        case .signedOut:
+            if auth.shouldShowOnboarding {
+                OnboardingView()
+            } else {
+                mainApp
+            }
+
+        case .signedIn:
+            mainApp
+        }
+    }
+
+    private var mainApp: some View {
+        MainTabView()
     }
 }

@@ -26,6 +26,10 @@ struct SettingsView: View {
     @State private var exportItem: ExportFileItem? = nil
     @State private var opmlAlert: OPMLAlertItem? = nil
 
+    // Account
+    @State private var showAccountView: Bool = false
+    private var authManager: AuthenticationManager { .shared }
+
     // MARK: - Environment (Light/Dark Mode)
 
     @Environment(\.colorScheme) private var colorScheme
@@ -47,6 +51,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Design.Spacing.section) {
+                    accountSection
                     appearanceSection
                     readingSection
                     affinitySection
@@ -57,6 +62,9 @@ struct SettingsView: View {
             }
             .background(Design.Colors.background(for: colorScheme))
             .navigationTitle("Settings")
+            .sheet(isPresented: $showAccountView) {
+                AccountView()
+            }
         }
     }
 
@@ -68,6 +76,7 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(spacing: Design.Spacing.section) {
+                    accountSection
                     appearanceSection
                     readingSection
                     affinitySection
@@ -81,6 +90,9 @@ struct SettingsView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
+            }
+            .sheet(isPresented: $showAccountView) {
+                AccountView()
             }
         }
     }
@@ -105,6 +117,54 @@ struct SettingsView: View {
                     }
                     .ignoresSafeArea(edges: .top)
             )
+    }
+
+    // MARK: - Account Section
+
+    private var accountSection: some View {
+        settingsSection(title: "Account", icon: "person.circle.fill") {
+            Button {
+                showAccountView = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: authManager.isSignedIn
+                        ? "person.crop.circle.fill"
+                        : "person.crop.circle.badge.plus")
+                        .font(.system(size: 32))
+                        .foregroundStyle(authManager.isSignedIn
+                            ? Design.Colors.primary
+                            : Design.Colors.secondaryText(for: colorScheme))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        if authManager.isSignedIn {
+                            Text(authManager.currentUser?.displayName ?? "Apple ID User")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                            Text("iCloud sync available")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        } else {
+                            Text("Sign In")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                            Text("Sync feeds across your devices")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Appearance Section
