@@ -163,6 +163,8 @@ final class AuthenticationManager {
         hasSkippedSignIn = false
 
         state = .signedIn(appleUserID: userID)
+
+        NotificationCenter.default.post(name: Notification.Name("OpenRSS.AuthStateChanged"), object: nil)
     }
 
     // MARK: - Sign Out
@@ -173,6 +175,8 @@ final class AuthenticationManager {
         KeychainService.deleteAppleUserID()
         currentUser = nil
         state = .signedOut
+
+        NotificationCenter.default.post(name: Notification.Name("OpenRSS.AuthStateChanged"), object: nil)
     }
 
     // MARK: - Guest Mode

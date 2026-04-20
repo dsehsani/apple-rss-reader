@@ -41,6 +41,7 @@
 			membershipExceptions = (
 				Prompts/AddRSSFeed.md,
 				Prompts/BackgroundRefreshPrompt.md,
+				Prompts/CloudKitPrompt.md,
 				"Prompts/flow-arch.md",
 				Prompts/LiquidGlass.md,
 				Prompts/NavigationBarPrompt.md,

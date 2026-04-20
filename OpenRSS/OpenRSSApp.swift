@@ -10,6 +10,7 @@ import SwiftData
 import UIKit
 import BackgroundTasks
 import Network
+import CryptoKit
 
 @main
 struct OpenRSSApp: App {
@@ -32,8 +33,18 @@ struct OpenRSSApp: App {
             FeedModel.self,
             CachedArticle.self,
             UserProfile.self,
+            ArticleState.self,
+            UserPreferences.self,
         ])
-        let config = ModelConfiguration(schema: schema)
+
+        // Check Keychain directly — AuthenticationManager isn't configured yet.
+        // If an Apple user ID is stored, the user was previously signed in.
+        let isSignedIn = KeychainService.loadAppleUserID() != nil
+
+        let config = ModelConfiguration(
+            schema: schema,
+            cloudKitDatabase: isSignedIn ? .automatic : .none
+        )
 
         do {
             container = try ModelContainer(for: schema, configurations: config)
@@ -67,6 +78,8 @@ struct OpenRSSApp: App {
 
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
+
+            SyncService.shared.startMonitoring(isCloudKitEnabled: isSignedIn)
         }
 
         // Phase 2a — Register BGTask for background river refresh
@@ -181,6 +194,14 @@ struct OpenRSSApp: App {
                     )
                 ) { _ in
                     Self.scheduleNextRiverRefresh()
+                }
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: Notification.Name("OpenRSS.AuthStateChanged")
+                    )
+                ) { _ in
+                    let isNowSignedIn = AuthenticationManager.shared.isSignedIn
+                    SyncService.shared.startMonitoring(isCloudKitEnabled: isNowSignedIn)
                 }
                 .task {
                     guard !hasCheckedAuth else { return }

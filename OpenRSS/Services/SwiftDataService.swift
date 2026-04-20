@@ -13,6 +13,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import CryptoKit
 
 // MARK: - SwiftDataService
 
@@ -177,18 +178,26 @@ final class SwiftDataService: FeedDataService {
     func toggleBookmark(for articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isBookmarked.toggle()
+            upsertArticleState(
+                articleURL: articles[i].articleURL,
+                isBookmarked: articles[i].isBookmarked
+            )
         }
     }
 
     func markAsRead(_ articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isRead = true
+            upsertArticleState(articleURL: articles[i].articleURL, isRead: true)
         }
     }
 
     func markAsUnread(_ articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isRead = false
+            // Note: isRead in ArticleState is monotonic for sync purposes.
+            // We update the in-memory state but do NOT flip ArticleState.isRead to false.
+            // This prevents a locally un-read article from un-reading it on another device.
         }
     }
 
@@ -356,6 +365,7 @@ final class SwiftDataService: FeedDataService {
     func markArticlePaywalled(id: UUID) {
         guard let index = articles.firstIndex(where: { $0.id == id }) else { return }
         articles[index].isPaywalled = true
+        upsertArticleState(articleURL: articles[index].articleURL, isPaywalled: true)
     }
 
     // MARK: - OPML Helpers
@@ -484,20 +494,29 @@ final class SwiftDataService: FeedDataService {
     func syncArticles(_ pipelineArticles: [Article]) {
         guard !pipelineArticles.isEmpty else { return }
 
-        // Preserve read/bookmark state from existing articles
-        let existingState = Dictionary(
-            articles.map { ($0.id, (isRead: $0.isRead, isBookmarked: $0.isBookmarked)) },
+        // Preserve read/bookmark state — check in-memory first, then ArticleState
+        let existingInMemory = Dictionary(
+            articles.map { ($0.articleURL, (isRead: $0.isRead, isBookmarked: $0.isBookmarked)) },
             uniquingKeysWith: { first, _ in first }
         )
 
         let merged = pipelineArticles.map { article -> Article in
-            if let state = existingState[article.id] {
-                var updated = article
-                updated.isRead = state.isRead
-                updated.isBookmarked = state.isBookmarked
-                return updated
+            var updated = article
+
+            if let mem = existingInMemory[article.articleURL] {
+                // In-memory state takes precedence (most recent)
+                updated.isRead = mem.isRead
+                updated.isBookmarked = mem.isBookmarked
+            } else {
+                // Fall back to ArticleState (synced from another device)
+                if let state = fetchArticleState(for: article.articleURL) {
+                    updated.isRead = state.isRead
+                    updated.isBookmarked = state.isBookmarked
+                    updated.isPaywalled = state.isPaywalled
+                }
             }
-            return article
+
+            return updated
         }.sorted { $0.publishedAt > $1.publishedAt }
 
         self.articles = merged
@@ -536,6 +555,79 @@ final class SwiftDataService: FeedDataService {
             if candidate.hasPrefix("http") { return candidate }
         }
         return nil
+    }
+
+    // MARK: - ArticleState Persistence
+
+    /// Upserts an ArticleState record for the given article URL.
+    /// Pass only the flags you want to update; nil values are left unchanged.
+    @MainActor
+    private func upsertArticleState(
+        articleURL: String,
+        isRead: Bool? = nil,
+        isBookmarked: Bool? = nil,
+        isPaywalled: Bool? = nil
+    ) {
+        guard let context = modelContext else { return }
+        let hash = ArticleState.hash(articleURL)
+
+        let descriptor = FetchDescriptor<ArticleState>(
+            predicate: #Predicate { $0.articleURLHash == hash }
+        )
+
+        let state: ArticleState
+        if let existing = try? context.fetch(descriptor).first {
+            state = existing
+        } else {
+            state = ArticleState(articleURL: articleURL)
+            context.insert(state)
+        }
+
+        // isRead is monotonic — only ever set to true, never back to false
+        if let isRead, isRead == true { state.isRead = true }
+        if let isBookmarked { state.isBookmarked = isBookmarked }
+        if let isPaywalled { state.isPaywalled = isPaywalled }
+        state.lastModifiedAt = Date()
+
+        try? context.save()
+    }
+
+    /// Fetches the ArticleState for a given article URL, or nil if not found.
+    @MainActor
+    private func fetchArticleState(for articleURL: String) -> ArticleState? {
+        guard let context = modelContext else { return nil }
+        let hash = ArticleState.hash(articleURL)
+        let descriptor = FetchDescriptor<ArticleState>(
+            predicate: #Predicate { $0.articleURLHash == hash }
+        )
+        return try? context.fetch(descriptor).first
+    }
+
+    // MARK: - UserPreferences
+
+    /// Returns the singleton UserPreferences record, creating it if needed.
+    @MainActor
+    func userPreferences() -> UserPreferences {
+        guard let context = modelContext else { return UserPreferences() }
+        let descriptor = FetchDescriptor<UserPreferences>()
+        if let existing = try? context.fetch(descriptor).first {
+            return existing
+        }
+        let prefs = UserPreferences()
+        context.insert(prefs)
+        try? context.save()
+        return prefs
+    }
+
+    /// Updates UserProfile.lastSyncedAt after a successful CloudKit export.
+    @MainActor
+    func updateProfileSyncDate() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<UserProfile>()
+        if let profile = try? context.fetch(descriptor).first {
+            profile.lastSyncedAt = Date()
+            try? context.save()
+        }
     }
 
     private func plainText(_ html: String) -> String {

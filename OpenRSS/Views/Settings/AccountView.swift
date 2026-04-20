@@ -27,6 +27,7 @@ struct AccountView: View {
     @State private var errorMessage = ""
 
     private var authManager: AuthenticationManager { .shared }
+    private var syncService: SyncService { .shared }
 
     // MARK: - Body
 
@@ -124,37 +125,59 @@ struct AccountView: View {
     private var syncSection: some View {
         settingsSection(title: "iCloud Sync", icon: "icloud.fill") {
             VStack(spacing: 0) {
+                // Sync status row
                 HStack {
-                    Text("Sync Enabled")
+                    Image(systemName: syncService.syncState.icon)
+                        .font(.system(size: 16))
+                        .foregroundStyle(syncStateColor)
+
+                    Text(syncService.syncState.label)
                         .font(.system(size: 16))
                         .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
                     Spacer()
 
-                    // Placeholder toggle — functional sync comes in Phase 2
-                    Image(systemName: "checkmark.icloud")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Design.Colors.primary)
+                    if syncService.syncState == .syncing {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
                 }
                 .padding(.horizontal, Design.Spacing.edge)
                 .padding(.vertical, 14)
 
                 divider
 
+                // Last synced row
                 HStack {
-                    Text("Status")
+                    Text("Last Synced")
                         .font(.system(size: 16))
                         .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
                     Spacer()
 
-                    Text("Coming soon")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    if let date = syncService.lastSyncDate {
+                        Text(date, style: .relative)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    } else {
+                        Text("Never")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    }
                 }
                 .padding(.horizontal, Design.Spacing.edge)
                 .padding(.vertical, 14)
             }
+        }
+    }
+
+    private var syncStateColor: Color {
+        switch syncService.syncState {
+        case .synced:   return .green
+        case .syncing:  return Design.Colors.primary
+        case .waiting:  return .gray
+        case .error:    return .red
+        case .disabled: return .gray
         }
     }
 

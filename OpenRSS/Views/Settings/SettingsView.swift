@@ -14,10 +14,7 @@ struct SettingsView: View {
     // MARK: - State
 
     private var refreshStore = RefreshStateStore.shared
-    @State private var showImages: Bool = true
-    @State private var openLinksInApp: Bool = true
-    @State private var markAsReadOnScroll: Bool = false
-    @State private var cacheEnabled: Bool = true
+    @State private var userPrefs: UserPreferences? = nil
     @State private var notificationsEnabled: Bool = false
 
     // OPML
@@ -62,6 +59,9 @@ struct SettingsView: View {
             }
             .background(Design.Colors.background(for: colorScheme))
             .navigationTitle("Settings")
+            .onAppear {
+                userPrefs = SwiftDataService.shared.userPreferences()
+            }
             .sheet(isPresented: $showAccountView) {
                 AccountView()
             }
@@ -90,6 +90,9 @@ struct SettingsView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
+            }
+            .onAppear {
+                userPrefs = SwiftDataService.shared.userPreferences()
             }
             .sheet(isPresented: $showAccountView) {
                 AccountView()
@@ -176,7 +179,10 @@ struct SettingsView: View {
                 divider
                 settingsRow(title: "Theme", value: "System")
                 divider
-                settingsToggle(title: "Show Article Images", isOn: $showImages)
+                settingsToggle(title: "Show Article Images", isOn: Binding(
+                    get: { userPrefs?.showImages ?? true },
+                    set: { userPrefs?.showImages = $0 }
+                ))
             }
         }
     }
@@ -186,9 +192,15 @@ struct SettingsView: View {
     private var readingSection: some View {
         settingsSection(title: "Reading", icon: "book.fill") {
             VStack(spacing: 0) {
-                settingsToggle(title: "Open Links in App", isOn: $openLinksInApp)
+                settingsToggle(title: "Open Links in App", isOn: Binding(
+                    get: { userPrefs?.openLinksInApp ?? true },
+                    set: { userPrefs?.openLinksInApp = $0 }
+                ))
                 divider
-                settingsToggle(title: "Mark as Read on Scroll", isOn: $markAsReadOnScroll)
+                settingsToggle(title: "Mark as Read on Scroll", isOn: Binding(
+                    get: { userPrefs?.markAsReadOnScroll ?? false },
+                    set: { userPrefs?.markAsReadOnScroll = $0 }
+                ))
                 divider
                 settingsRow(title: "Text Size", value: "Medium")
             }
@@ -230,7 +242,10 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 settingsPicker(title: "Refresh Interval", selection: Binding(
                     get: { refreshStore.refreshInterval },
-                    set: { refreshStore.refreshInterval = $0 }
+                    set: {
+                        refreshStore.refreshInterval = $0
+                        userPrefs?.refreshInterval = $0
+                    }
                 ))
                 divider
                 divider
@@ -246,7 +261,10 @@ struct SettingsView: View {
                 .padding(.horizontal, Design.Spacing.edge)
                 .padding(.vertical, 14)
                 divider
-                settingsToggle(title: "Cache Articles", isOn: $cacheEnabled)
+                settingsToggle(title: "Cache Articles", isOn: Binding(
+                    get: { userPrefs?.cacheEnabled ?? true },
+                    set: { userPrefs?.cacheEnabled = $0 }
+                ))
                 divider
                 settingsButton(title: "Clear Cache", subtitle: "124 MB", color: .red) {
                     // Clear cache action
