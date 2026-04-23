@@ -56,6 +56,15 @@ final class RiverViewModel {
         [Category.allUpdates] + dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
+    /// All articles from river items, unfiltered. Used by SearchView.
+    var allArticles: [Article] {
+        riverItems.compactMap { riverItem in
+            guard case .article(let feedItem) = riverItem else { return nil }
+            guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
+            return feedItem.toArticle(categoryID: source.categoryID)
+        }
+    }
+
     /// Articles converted from river items, filtered by category, search, and active filters.
     /// This is the primary data source for the view.
     var filteredArticles: [Article] {
@@ -100,8 +109,11 @@ final class RiverViewModel {
     var filteredRiverItems: [RiverItem] {
         let category = selectedCategory
         let isAllUpdates = category == nil || category?.id == Category.allUpdates.id
+        let checkSaved  = activeFilters.contains(.saved)
+        let checkUnread = activeFilters.contains(.unread)
+        let checkToday  = activeFilters.contains(.today)
 
-        return riverItems.compactMap { riverItem -> (RiverItem, Double)? in
+        let sorted: [RiverItem] = riverItems.compactMap { riverItem -> (RiverItem, Double)? in
             switch riverItem {
             case .article(let feedItem):
                 guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
@@ -115,6 +127,11 @@ final class RiverViewModel {
                 if !searchViewModel.matches(article) {
                     return nil
                 }
+                // Active filters
+                if checkSaved  && !article.isBookmarked { return nil }
+                if checkUnread && article.isRead        { return nil }
+                if checkToday  && !Calendar.current.isDateInToday(article.publishedAt) { return nil }
+
                 return (riverItem, riverItem.relevanceScore)
 
             case .cluster(let card):
@@ -142,6 +159,9 @@ final class RiverViewModel {
         }
         .sorted { $0.1 > $1.1 }
         .map(\.0)
+
+        // Break up runs of 3+ consecutive items from the same source
+        return interleaveBySource(sorted, maxConsecutive: 3)
     }
 
     /// True when the user has at least one subscribed feed.
@@ -215,6 +235,59 @@ final class RiverViewModel {
         )
     }
 
+    // MARK: - Source Diversity
+
+    /// Walks a pre-sorted list and ensures no more than `maxConsecutive` items
+    /// from the same source appear back-to-back. When a run hits the limit, the
+    /// next item from a different source is pulled forward.
+    private func interleaveBySource(_ items: [RiverItem], maxConsecutive: Int) -> [RiverItem] {
+        var result: [RiverItem] = []
+        result.reserveCapacity(items.count)
+        var remaining = items
+        var consecutiveCount = 0
+        var lastSourceID: UUID? = nil
+
+        while !remaining.isEmpty {
+            let candidate = remaining[0]
+            let candidateSource = riverItemSourceID(candidate)
+
+            if consecutiveCount >= maxConsecutive,
+               let last = lastSourceID, candidateSource == last {
+                // Pull forward the first item from any other source
+                if let idx = remaining.firstIndex(where: { riverItemSourceID($0) != last }) {
+                    let different = remaining.remove(at: idx)
+                    result.append(different)
+                    consecutiveCount = 1
+                    lastSourceID = riverItemSourceID(different)
+                } else {
+                    // All remaining items are from the same source — drain them
+                    result.append(remaining.removeFirst())
+                    consecutiveCount += 1
+                }
+            } else {
+                remaining.removeFirst()
+                if candidateSource == lastSourceID {
+                    consecutiveCount += 1
+                } else {
+                    consecutiveCount = 1
+                    lastSourceID = candidateSource
+                }
+                result.append(candidate)
+            }
+        }
+
+        return result
+    }
+
+    private func riverItemSourceID(_ item: RiverItem) -> UUID? {
+        switch item {
+        case .article(let feedItem): return feedItem.sourceID
+        case .cluster(let card):     return card.canonicalItem.sourceID
+        case .digest(let card):      return card.sourceID
+        case .nudge(let card):       return card.sourceID
+        }
+    }
+
     /// Unread count for a specific category.
     func unreadCount(for category: Category) -> Int {
         // Use the data service's articles for unread counts (consistent with bookmark/read state)
@@ -261,11 +334,10 @@ final class RiverViewModel {
         let sources = dataService.sources
         await pipeline.runCycle(sources: sources)
 
-        // Sync pipeline FeedItems back to SwiftDataService as Articles
-        // so legacy views (bookmark state, read state) stay in sync
-        // without making a second round of HTTP requests.
+        // Sync the full 30-day cache back to SwiftDataService so source/folder
+        // views show all retained content, not just river-visible items.
         if let sds = dataService as? SwiftDataService {
-            let feedItems = SQLiteStore.shared.fetchRiverItems()
+            let feedItems = SQLiteStore.shared.fetchAllRecentItems()
             let articles: [Article] = feedItems.compactMap { feedItem in
                 guard let source = sds.source(for: feedItem.sourceID) else { return nil }
                 return feedItem.toArticle(categoryID: source.categoryID)

@@ -41,7 +41,10 @@ final class RiverSnapshotService: @unchecked Sendable {
     /// - Parameter rateGateResult: Output from Stage 3 (may be nil on scoring-only cycles).
     /// - Returns: A `RiverSnapshot` containing the sorted river items.
     func assembleSnapshot(rateGateResult: RateGateResult?) -> RiverSnapshot {
-        let riverItems = store.fetchRiverItems()
+        // Use the full 30-day history so the feed is scrollable beyond the current
+        // ~7-day aged-out window. river_visible=1 still respects rate gating.
+        // Decay opacity in the UI provides the recency hierarchy — no hard cutoff needed.
+        let riverItems = store.fetchRiverItemsAllHistory()
 
         // Group clustered items by clusterID
         var clusterBuckets: [UUID: [FeedItem]] = [:]

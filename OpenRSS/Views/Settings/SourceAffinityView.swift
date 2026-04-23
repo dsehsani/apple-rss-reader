@@ -17,6 +17,8 @@ struct SourceAffinityView: View {
 
     @State private var records: [SourceAffinityRecord] = []
     @State private var showResetAllConfirmation = false
+    @AppStorage("openrss.readingSignalsExplanationDismissed") private var explanationDismissed = false
+    @State private var showExplanationSheet = false
 
     // MARK: - Environment
 
@@ -32,7 +34,10 @@ struct SourceAffinityView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Design.Spacing.section) {
-                headerDescription
+                if !explanationDismissed {
+                    headerDescription
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 sourcesList
                 resetAllSection
             }
@@ -41,6 +46,22 @@ struct SourceAffinityView: View {
         .background(Design.Colors.background(for: colorScheme))
         .navigationTitle("Reading Signals")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if explanationDismissed {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showExplanationSheet = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(Design.Colors.primary)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showExplanationSheet) {
+            explanationSheet
+        }
         .onAppear { loadRecords() }
         .confirmationDialog(
             "Reset All Reading Signals",
@@ -59,24 +80,132 @@ struct SourceAffinityView: View {
     // MARK: - Header Description
 
     private var headerDescription: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.small) {
-            HStack(spacing: 8) {
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Design.Colors.primary)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Design.Colors.primary.opacity(0.12))
+                        .frame(width: 34, height: 34)
 
-                Text("READING SIGNALS")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
-                    .tracking(0.5)
+                    Image(systemName: "waveform.path.ecg")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Design.Colors.primary)
+                }
+
+                Text("How Reading Signals Work")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                Spacer()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        explanationDismissed = true
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+                        .frame(width: 26, height: 26)
+                        .background(
+                            Circle()
+                                .fill(Design.Colors.secondaryText(for: colorScheme).opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
-            Text("OpenRSS learns from your reading habits to surface articles you care about. All data stays on your device.")
-                .font(.system(size: 14))
-                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
-                .lineSpacing(2)
+            VStack(alignment: .leading, spacing: 12) {
+                signalRow(icon: "hand.tap", text: "Tracks which articles you open and how long you read them")
+                signalRow(icon: "heart", text: "Boosts feeds you engage with most")
+                signalRow(icon: "lock.shield", text: "All data stays on your device — never shared")
+            }
+        }
+        .padding(Design.Spacing.edge)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Design.Colors.cardBackground(for: colorScheme))
+        .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+        .overlay(
+            RoundedRectangle(cornerRadius: Design.Radius.standard)
+                .stroke(
+                    colorScheme == .dark
+                        ? Design.Colors.subtleBorder
+                        : Color.black.opacity(0.08),
+                    lineWidth: 1
+                )
+        )
+        .padding(.horizontal, Design.Spacing.edge)
+    }
+
+    // MARK: - Explanation Sheet
+
+    private var explanationSheet: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Drag indicator
+            Capsule()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: 36, height: 4)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
+
+            // Title
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Design.Colors.primary.opacity(0.12))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "waveform.path.ecg")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Design.Colors.primary)
+                }
+
+                Text("How Reading Signals Work")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+            }
+
+            // Rows
+            VStack(alignment: .leading, spacing: 14) {
+                signalRow(icon: "hand.tap", text: "Tracks which articles you open and how long you read them")
+                signalRow(icon: "heart", text: "Boosts feeds you engage with most")
+                signalRow(icon: "lock.shield", text: "All data stays on your device — never shared")
+            }
+
+            // Dismiss button
+            Button {
+                showExplanationSheet = false
+            } label: {
+                Text("Got it")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Design.Colors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, Design.Spacing.edge)
+        .padding(.bottom, Design.Spacing.edge)
+        .fixedSize(horizontal: false, vertical: true)
+        .presentationDetents([.height(310)])
+        .presentationDragIndicator(.hidden)
+        .presentationBackground(Design.Colors.background(for: colorScheme))
+    }
+
+    private func signalRow(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Design.Colors.primary)
+                .frame(width: 22)
+
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     // MARK: - Sources List
@@ -88,7 +217,7 @@ struct SourceAffinityView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Design.Colors.primary)
 
-                Text("PER-SOURCE AFFINITY")
+                Text("YOUR FEEDS")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                     .tracking(0.5)
@@ -284,7 +413,11 @@ struct SourceAffinityView: View {
     // MARK: - Actions
 
     private func loadRecords() {
-        records = store.fetchAllAffinities()
+        // Only show records for feeds the user is currently subscribed to.
+        // This hides stale entries with opaque UUID-like IDs.
+        records = store.fetchAllAffinities().filter { record in
+            dataService.source(for: record.sourceID) != nil
+        }
     }
 
     private func resetAffinity(for sourceID: UUID) {

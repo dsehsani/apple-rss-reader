@@ -42,9 +42,10 @@ struct ArticleCardView: View {
     var onReadMoreTap: (() -> Void)?
     var onSplitCluster: (() -> Void)? = nil
 
-    // MARK: - Environment (Light/Dark Mode)
+    // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppState.self)  private var appState
 
     // MARK: - State
 
@@ -61,8 +62,10 @@ struct ArticleCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Hero Image
-            heroImage
+            // Hero image — hidden when the user has turned off article images
+            if appState.showImages {
+                heroImage
+            }
 
             // Content
             VStack(alignment: .leading, spacing: Design.Spacing.small) {
@@ -71,7 +74,10 @@ struct ArticleCardView: View {
                     clusterBadgeChip(badge)
                 }
                 titleText
-                excerptText
+                // Excerpt only shown alongside images; compact mode is title-only
+                if appState.showImages {
+                    excerptText
+                }
                 if let badge = clusterBadge,
                    isClusterExpanded,
                    !badge.siblings.isEmpty {
@@ -298,7 +304,7 @@ struct ArticleCardView: View {
         Text(article.title)
             .font(Design.Typography.cardTitle)
             .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
-            .lineLimit(2)
+            .lineLimit(appState.showImages ? 2 : 3)
             .tracking(-0.3)
     }
 
@@ -371,6 +377,20 @@ struct ArticleCardView: View {
             VStack(spacing: Design.Spacing.cardGap) {
                 ArticleCardView(
                     article: Article(
+                        title: "Compact Row — No Images",
+                        excerpt: "This preview tests the compact list format.",
+                        sourceID: UUID(), categoryID: UUID(),
+                        publishedAt: Date(), isRead: false, isBookmarked: false, readTimeMinutes: 3
+                    ),
+                    source: Source(
+                        name: "Wired", feedURL: "https://wired.com/feed/",
+                        icon: "wifi", iconColor: .purple, categoryID: UUID()
+                    )
+                )
+                .environment(AppState())
+
+                ArticleCardView(
+                    article: Article(
                         title: "The Future of AI is Local",
                         excerpt: "Privacy-focused on-device processing is becoming the new standard for modern mobile applications.",
                         sourceID: UUID(),
@@ -388,6 +408,7 @@ struct ArticleCardView: View {
                         categoryID: UUID()
                     )
                 )
+                .environment(AppState())
 
                 ArticleCardView(
                     article: Article(
@@ -408,6 +429,7 @@ struct ArticleCardView: View {
                         categoryID: UUID()
                     )
                 )
+                .environment(AppState())
             }
             .padding(Design.Spacing.edge)
         }

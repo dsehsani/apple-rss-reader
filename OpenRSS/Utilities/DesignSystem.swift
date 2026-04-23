@@ -16,20 +16,23 @@ enum Design {
     // MARK: - Colors
 
     enum Colors {
-        /// Primary accent color (#137cec from schematic)
-        static let primary = Color(hex: "137cec")
+        /// Primary accent — Apple's refined CTA blue (#0071E3, used on apple.com buy buttons).
+        /// Deeper and more deliberate than a flat system blue; reads as intentional, not default.
+        static let primary = Color(hex: "0071E3")
 
-        /// Card background color (#1c2127 from schematic)
-        static let cardBackground = Color(hex: "1c2127")
+        /// Card background (dark mode) — Apple's standard system card surface (#1C1C1E).
+        /// Neutral charcoal, no blue tint. Depth comes from contrast against the near-black bg.
+        static let cardBackground = Color(hex: "1C1C1E")
 
-        /// Secondary text color (#9daab9 from schematic)
-        static let secondaryText = Color(hex: "9daab9")
+        /// Secondary text (dark mode) — pure neutral gray (#8E8E93, Apple system secondary).
+        /// Replacing the old blue-tinted #9daab9 which made everything feel "developer default".
+        static let secondaryText = Color(hex: "8E8E93")
 
-        /// Subtle border color
-        static let subtleBorder = Color.white.opacity(0.05)
+        /// Subtle border — barely-there, used to separate cards in dark mode
+        static let subtleBorder = Color.white.opacity(0.07)
 
         /// Glass border color
-        static let glassBorder = Color.white.opacity(0.1)
+        static let glassBorder = Color.white.opacity(0.08)
 
         // MARK: - Adaptive Colors (Light/Dark Mode)
 
@@ -47,35 +50,47 @@ enum Design {
 
         /// Fallback adaptive colors using system colors
         /// Adaptive background color
-        /// Light Mode: STRICTLY Pure White as per design spec
-        /// Dark Mode: Deep Midnight Blue/Black
+        /// Page background.
+        /// Dark: near-black #0C0C0E — refined, no blue tint, depth from card contrast not hue.
+        /// Light: Apple systemGroupedBackground #F2F2F7 — cards pop as white against this.
         static func background(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "0a0e14") : Color.white
+            colorScheme == .dark ? Color(hex: "0C0C0E") : Color(hex: "F2F2F7")
         }
 
+        /// Primary text — near-black Apple ink in light; true white in dark.
         static func primaryText(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? .white : Color(hex: "1d1d1f")
+            colorScheme == .dark ? .white : Color(hex: "1D1D1F")
         }
 
+        /// Secondary text — pure neutral gray. No blue tint, no color bias.
         static func secondaryText(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "9daab9") : Color(hex: "6e6e73")
+            colorScheme == .dark ? Color(hex: "8E8E93") : Color(hex: "6E6E73")
         }
 
-        /// Card background - light gray in light mode to separate from pure white background
+        /// Card / list-row surface.
+        /// Dark: #1C1C1E (Apple standard — warm charcoal, not blue-gray).
+        /// Light: pure white against the F2F2F7 background.
         static func cardBackground(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "1c2127") : Color(hex: "f8f8fa")
+            colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white
         }
 
+        /// Hairline border. Barely visible — just enough to separate surfaces, not grid-like.
         static func glassBorder(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.08)
+            colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05)
         }
 
         static func glassHighlight(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color.white.opacity(0.25) : Color.white.opacity(0.8)
+            colorScheme == .dark ? Color.white.opacity(0.2) : Color.white.opacity(0.9)
         }
 
+        /// Inactive tab text — muted, clearly subordinate to the active blue.
         static func tabBarInactiveText(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color.white.opacity(0.6) : Color.black.opacity(0.5)
+            colorScheme == .dark ? Color(hex: "8E8E93") : Color(hex: "8E8E93")
+        }
+
+        /// Tinted accent surface — for icon backgrounds, selected states, subtle highlights.
+        static func accentSubtle(for colorScheme: ColorScheme) -> Color {
+            colorScheme == .dark ? primary.opacity(0.15) : primary.opacity(0.08)
         }
     }
 
@@ -127,20 +142,20 @@ enum Design {
 
     enum Glass {
         /// Glass highlight border color (top edge)
-        static let highlightBorder = Color.white.opacity(0.2)
+        static let highlightBorder = Color.white.opacity(0.15)
 
         /// Glass shadow border color (bottom edge)
-        static let shadowBorder = Color.black.opacity(0.2)
+        static let shadowBorder = Color.black.opacity(0.12)
 
         /// Inner glow for glass containers
-        static let innerGlow = Color.white.opacity(0.05)
+        static let innerGlow = Color.white.opacity(0.04)
 
-        /// Floating shadow for glass elements
+        /// Floating shadow — light, not dramatic
         static let floatingShadow = ShadowStyle(
-            color: .black.opacity(0.4),
-            radius: 20,
+            color: .black.opacity(0.18),
+            radius: 16,
             x: 0,
-            y: 10
+            y: 6
         )
     }
 
@@ -186,12 +201,21 @@ enum Design {
     // MARK: - Shadows
 
     enum Shadows {
-        /// Card shadow
+        /// Card shadow — subtle in light mode, invisible in dark (depth = color contrast, not shadow).
+        /// Heavy drop shadows are the #1 signal of a cheap app.
         static let card = ShadowStyle(
-            color: .black.opacity(0.3),
-            radius: 16,
+            color: .black.opacity(0.07),
+            radius: 10,
             x: 0,
-            y: 8
+            y: 2
+        )
+
+        /// Slightly more present shadow for floating elements (tab bar, modals)
+        static let floating = ShadowStyle(
+            color: .black.opacity(0.12),
+            radius: 20,
+            x: 0,
+            y: 6
         )
     }
 
@@ -204,13 +228,14 @@ enum Design {
         static let saved = "bookmark.fill"
         static let sources = "antenna.radiowaves.left.and.right"
         static let settings = "gearshape.fill"
+        static let profile = "person.crop.circle.fill"
 
         // Action icons
         static let bookmark = "bookmark"
         static let bookmarkFilled = "bookmark.fill"
         static let share = "square.and.arrow.up"
         static let search = "magnifyingglass"
-        static let filter = "slider.horizontal.3"
+        static let filter = "line.3.horizontal.decrease"
         static let add = "plus"
         static let chevronRight = "chevron.right"
         static let chevronDown = "chevron.down"
@@ -264,8 +289,9 @@ extension View {
             .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
             .overlay(
                 RoundedRectangle(cornerRadius: Design.Radius.standard)
-                    .stroke(Design.Colors.subtleBorder, lineWidth: 1)
+                    .stroke(Design.Colors.subtleBorder, lineWidth: 0.5)
             )
+            // No shadow in dark mode — depth comes from #1C1C1E on #0C0C0E contrast
             .shadow(
                 color: Design.Shadows.card.color,
                 radius: Design.Shadows.card.radius,
@@ -282,17 +308,16 @@ extension View {
             .overlay(
                 RoundedRectangle(cornerRadius: Design.Radius.standard)
                     .stroke(
-                        colorScheme == .dark
-                            ? Design.Colors.subtleBorder
-                            : Color.black.opacity(0.08),
-                        lineWidth: 1
+                        Design.Colors.glassBorder(for: colorScheme),
+                        lineWidth: 0.5
                     )
             )
+            // Dark mode: no shadow. Light mode: barely-there lift.
             .shadow(
-                color: colorScheme == .dark ? .black.opacity(0.3) : .black.opacity(0.1),
-                radius: colorScheme == .dark ? 16 : 12,
+                color: colorScheme == .dark ? .clear : .black.opacity(0.06),
+                radius: 10,
                 x: 0,
-                y: colorScheme == .dark ? 8 : 4
+                y: 2
             )
     }
 
@@ -305,23 +330,14 @@ extension View {
                 if isSelected {
                     Capsule()
                         .fill(Design.Colors.primary)
-                        .shadow(color: Design.Colors.primary.opacity(0.4), radius: 8, y: 2)
+                        // Restrained glow — present but not garish
+                        .shadow(color: Design.Colors.primary.opacity(0.25), radius: 6, y: 2)
                 } else {
                     Capsule()
                         .fill(.ultraThinMaterial)
                         .overlay(
                             Capsule()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.15),
-                                            Color.white.opacity(0.05)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 0.5
-                                )
+                                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
                         )
                 }
             }
@@ -337,22 +353,13 @@ extension View {
                 if isSelected {
                     Capsule()
                         .fill(Design.Colors.primary)
-                        .shadow(color: Design.Colors.primary.opacity(0.4), radius: 8, y: 2)
+                        .shadow(color: Design.Colors.primary.opacity(0.2), radius: 6, y: 2)
                 } else {
                     Capsule()
                         .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
                         .overlay(
                             Capsule()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: colorScheme == .dark
-                                            ? [Color.white.opacity(0.15), Color.white.opacity(0.05)]
-                                            : [Color.white.opacity(0.6), Color.black.opacity(0.05)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 0.5
-                                )
+                                .stroke(Design.Colors.glassBorder(for: colorScheme), lineWidth: 0.5)
                         )
                 }
             }

@@ -203,6 +203,59 @@ final class SQLiteStore: Sendable {
         return items
     }
 
+    /// Fetches river-visible items within the retention window, including aged-out ones.
+    /// Respects rate-gating (river_visible = 1) but does NOT filter by aged_out,
+    /// so the Today feed can scroll through the full 30-day history with decay opacity.
+    func fetchRiverItemsAllHistory(days: Int = CachePolicy.cacheRetentionDays) -> [FeedItem] {
+        let cutoff = Int64(Date().addingTimeInterval(-Double(days) * 86400).timeIntervalSince1970)
+        let sql = """
+            SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
+                   cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
+                   simhash_value
+            FROM feed_items
+            WHERE river_visible = 1 AND published_at >= ?
+            ORDER BY relevance_score DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, cutoff)
+
+        var items: [FeedItem] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let item = feedItem(from: stmt) {
+                items.append(item)
+            }
+        }
+        return items
+    }
+
+    /// Fetches all items within the retention window regardless of river_visible / aged_out flags.
+    /// Used to populate the source/folder views with the full 30-day cache.
+    func fetchAllRecentItems(days: Int = CachePolicy.cacheRetentionDays) -> [FeedItem] {
+        let cutoff = Int64(Date().addingTimeInterval(-Double(days) * 86400).timeIntervalSince1970)
+        let sql = """
+            SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
+                   cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
+                   simhash_value
+            FROM feed_items
+            WHERE published_at >= ?
+            ORDER BY published_at DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, cutoff)
+
+        var items: [FeedItem] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let item = feedItem(from: stmt) {
+                items.append(item)
+            }
+        }
+        return items
+    }
+
     /// Fetches all items (including aged-out) for a given source, for frequency analysis.
     func fetchItems(forSource sourceID: UUID) -> [FeedItem] {
         let sql = """

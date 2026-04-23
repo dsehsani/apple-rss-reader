@@ -490,34 +490,48 @@ final class SwiftDataService: FeedDataService {
 
     /// Updates the in-memory articles array from pipeline FeedItems without re-fetching feeds.
     /// Called by RiverViewModel after a pipeline cycle to keep legacy views in sync.
+    ///
+    /// This is ADDITIVE — existing articles outside the pipeline set are preserved
+    /// up to the 30-day retention window. RSS feeds only expose ~10-20 recent items
+    /// per refresh; replacing rather than merging would silently drop the history.
     @MainActor
     func syncArticles(_ pipelineArticles: [Article]) {
         guard !pipelineArticles.isEmpty else { return }
 
-        // Preserve read/bookmark state — check in-memory first, then ArticleState
-        let existingInMemory = Dictionary(
-            articles.map { ($0.articleURL, (isRead: $0.isRead, isBookmarked: $0.isBookmarked)) },
+        // Build lookup maps for in-memory read/bookmark state and ArticleState
+        let existingByURL = Dictionary(
+            articles.map { ($0.articleURL, $0) },
             uniquingKeysWith: { first, _ in first }
         )
 
-        let merged = pipelineArticles.map { article -> Article in
+        // Apply read/bookmark state to incoming pipeline articles
+        let updatedPipeline: [Article] = pipelineArticles.map { article in
             var updated = article
-
-            if let mem = existingInMemory[article.articleURL] {
-                // In-memory state takes precedence (most recent)
+            if let mem = existingByURL[article.articleURL] {
                 updated.isRead = mem.isRead
                 updated.isBookmarked = mem.isBookmarked
-            } else {
-                // Fall back to ArticleState (synced from another device)
-                if let state = fetchArticleState(for: article.articleURL) {
-                    updated.isRead = state.isRead
-                    updated.isBookmarked = state.isBookmarked
-                    updated.isPaywalled = state.isPaywalled
-                }
+            } else if let state = fetchArticleState(for: article.articleURL) {
+                updated.isRead = state.isRead
+                updated.isBookmarked = state.isBookmarked
+                updated.isPaywalled = state.isPaywalled
             }
-
             return updated
-        }.sorted { $0.publishedAt > $1.publishedAt }
+        }
+
+        // Preserve existing articles that the pipeline didn't return (older history).
+        // This keeps source/folder views showing the full 30-day window even when
+        // RSS feeds only expose their 10-20 most recent items.
+        let pipelineURLs = Set(updatedPipeline.map(\.articleURL))
+        let preserved = articles.filter { !pipelineURLs.contains($0.articleURL) }
+
+        // Merge and drop anything older than the retention window
+        let cutoff = Calendar.current.date(
+            byAdding: .day, value: -CachePolicy.cacheRetentionDays, to: Date()
+        ) ?? Date()
+
+        let merged = (updatedPipeline + preserved)
+            .filter { $0.publishedAt >= cutoff }
+            .sorted { $0.publishedAt > $1.publishedAt }
 
         self.articles = merged
         ArticleCacheStore.save(merged)
@@ -531,6 +545,47 @@ final class SwiftDataService: FeedDataService {
         guard let context = modelContext else { return }
         let service = ArticleCacheService(context: context)
         try? service.purgeOldCache(olderThan: days)
+    }
+
+    /// Clears all caches: the JSON article cache, all SwiftData CachedArticle records,
+    /// and the shared URL response cache used for images.
+    @MainActor
+    func clearAllCaches() {
+        // 1. JSON file cache
+        ArticleCacheStore.clear()
+
+        // 2. SwiftData extracted-article cache (all records)
+        if let context = modelContext {
+            let descriptor = FetchDescriptor<CachedArticle>()
+            if let all = try? context.fetch(descriptor) {
+                for record in all { context.delete(record) }
+                try? context.save()
+            }
+        }
+
+        // 3. URL response cache (images, web assets)
+        URLCache.shared.removeAllCachedResponses()
+    }
+
+    /// Returns the combined on-disk size of all caches in bytes.
+    func cacheSize() -> Int64 {
+        var total = Int64(URLCache.shared.currentDiskUsage)
+
+        let cacheDir = FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)[0]
+
+        if let enumerator = FileManager.default.enumerator(
+            at: cacheDir,
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            for case let url as URL in enumerator {
+                let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+                total += Int64(size)
+            }
+        }
+
+        return total
     }
 
     // MARK: - Private Helpers

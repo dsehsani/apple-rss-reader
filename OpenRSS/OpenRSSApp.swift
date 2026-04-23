@@ -180,6 +180,12 @@ struct OpenRSSApp: App {
         WindowGroup {
             rootView
                 .environment(appState)
+                .onAppear {
+                    // Sync persisted preferences into AppState so all views
+                    // start with the correct values without needing @Query.
+                    let prefs = SwiftDataService.shared.userPreferences()
+                    appState.showImages = prefs.showImages
+                }
                 .onReceive(
                     NotificationCenter.default.publisher(
                         for: UIApplication.didReceiveMemoryWarningNotification

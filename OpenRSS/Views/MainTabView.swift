@@ -16,12 +16,11 @@ struct MainTabView: View {
     // MARK: - State
 
     @State private var selectedTab: AppTab = .today
+    @State private var searchText: String = ""
 
-    // MARK: - Pill Position State (Legacy Custom Tab Bar)
+    // MARK: - Namespace for matched geometry tab highlight
 
-    @State private var pillOffset: CGFloat = 0
-    @State private var isDragging: Bool = false
-    @State private var pillStretch: CGFloat = 1.0
+    @Namespace private var tabNamespace
 
     // MARK: - Environment
 
@@ -55,12 +54,16 @@ struct MainTabView: View {
                 MyFeedsView()
             }
 
-            Tab("Sources", systemImage: Design.Icons.sources, value: .sources) {
-                SourcesView()
-            }
-
             Tab("Settings", systemImage: Design.Icons.settings, value: .settings) {
                 SettingsView()
+            }
+
+            Tab(value: .search, role: .search) {
+                NavigationStack {
+                    SearchView(searchText: $searchText)
+                        .navigationTitle("Search")
+                }
+                .searchable(text: $searchText, prompt: "Search articles")
             }
         }
         .tabViewStyle(.tabBarOnly)
@@ -82,10 +85,10 @@ struct MainTabView: View {
                     DiscoverView()
                 case .saved:
                     MyFeedsView()
-                case .sources:
-                    SourcesView()
                 case .settings:
                     SettingsView()
+                case .search:
+                    EmptyView()
                 }
             }
 
@@ -102,118 +105,61 @@ struct MainTabView: View {
         .ignoresSafeArea(.keyboard)
     }
 
-    // MARK: - Apple News Style Tab Bar
+    // MARK: - Tab Bar
 
     private var appleNewsStyleTabBar: some View {
-        GeometryReader { geo in
-            let totalWidth = geo.size.width
-            let tabCount = CGFloat(AppTab.allCases.count)
-            let tabWidth = totalWidth / tabCount
-            let pillWidth: CGFloat = 56
-
-            ZStack {
-                // Glass background
-                tabBarBackground
-
-                // THE SLIDING PILL - follows finger directly
-                liquidPill(pillWidth: pillWidth)
-                    .position(
-                        x: pillXPosition(tabWidth: tabWidth, totalWidth: totalWidth, pillWidth: pillWidth),
-                        y: 26
-                    )
-                    // Stretch effect for liquid feel
-                    .scaleEffect(x: pillStretch, y: 2.0 - pillStretch, anchor: .center)
-
-                // Tab icons and labels (touchable)
-                HStack(spacing: 0) {
-                    ForEach(AppTab.allCases, id: \.self) { tab in
-                        tabItemView(tab: tab, tabWidth: tabWidth)
-                    }
-                }
+        HStack(spacing: 0) {
+            ForEach(AppTab.legacyTabs, id: \.self) { tab in
+                tabButton(tab)
             }
-            .frame(height: 70)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        if !isDragging {
-                            isDragging = true
-                            pillOffset = tabCenterX(for: selectedTab, tabWidth: tabWidth)
-                        }
-
-                        let fingerX = value.location.x
-                        let minX = pillWidth / 2
-                        let maxX = totalWidth - pillWidth / 2
-                        pillOffset = min(max(fingerX, minX), maxX)
-
-                        let velocity = abs(value.velocity.width)
-                        let stretchAmount = min(velocity / 2000, 0.15)
-                        withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.7)) {
-                            pillStretch = 1.0 + stretchAmount
-                        }
-                    }
-                    .onEnded { value in
-                        let nearestTabIndex = Int(round((pillOffset - tabWidth / 2) / tabWidth))
-                        let clampedIndex = min(max(nearestTabIndex, 0), AppTab.allCases.count - 1)
-                        let nearestTab = AppTab.allCases[clampedIndex]
-
-                        withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
-                            selectedTab = nearestTab
-                            pillOffset = tabCenterX(for: nearestTab, tabWidth: tabWidth)
-                            pillStretch = 1.0
-                        }
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isDragging = false
-                        }
-                    }
-            )
         }
-        .frame(height: 70)
+        .frame(height: 64)
+        .padding(.horizontal, 8)
+        .background(tabBarBackground)
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
     }
 
-    // MARK: - Pill X Position
+    // MARK: - Tab Button
 
-    private func pillXPosition(tabWidth: CGFloat, totalWidth: CGFloat, pillWidth: CGFloat) -> CGFloat {
-        if isDragging {
-            return pillOffset
-        } else {
-            return tabCenterX(for: selectedTab, tabWidth: tabWidth)
-        }
-    }
+    private func tabButton(_ tab: AppTab) -> some View {
+        let isSelected = selectedTab == tab
 
-    // MARK: - Tab Center X Calculator
-
-    private func tabCenterX(for tab: AppTab, tabWidth: CGFloat) -> CGFloat {
-        return CGFloat(tab.index) * tabWidth + tabWidth / 2
-    }
-
-    // MARK: - Tab Item View (Icon + Label)
-
-    private func tabItemView(tab: AppTab, tabWidth: CGFloat) -> some View {
-        Button {
-            withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
+        return Button {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                 selectedTab = tab
-                pillOffset = tabCenterX(for: tab, tabWidth: tabWidth)
             }
         } label: {
-            VStack(spacing: 4) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 22, weight: .medium))
-                    .symbolVariant(selectedTab == tab ? .fill : .none)
-                    .frame(height: 28)
+            ZStack {
+                // Sliding selection background — moves via matchedGeometryEffect
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Design.Colors.primary.opacity(colorScheme == .dark ? 0.18 : 0.11))
+                        .matchedGeometryEffect(id: "tabHighlight", in: tabNamespace)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 6)
+                }
 
-                Text(tab.title)
-                    .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .medium))
+                VStack(spacing: 3) {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 21, weight: isSelected ? .semibold : .regular))
+                        .symbolVariant(isSelected ? .fill : .none)
+                        .frame(height: 26)
+                        .scaleEffect(isSelected ? 1.05 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+
+                    Text(tab.title)
+                        .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
+                }
+                .foregroundStyle(
+                    isSelected
+                        ? Design.Colors.primary
+                        : Design.Colors.tabBarInactiveText(for: colorScheme)
+                )
+                .animation(.easeInOut(duration: 0.18), value: isSelected)
             }
-            .foregroundStyle(
-                selectedTab == tab
-                    ? Design.Colors.primary
-                    : Design.Colors.tabBarInactiveText(for: colorScheme)
-            )
-            .frame(width: tabWidth, height: 70)
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -238,40 +184,10 @@ struct MainTabView: View {
                     )
             )
             .shadow(
-                color: colorScheme == .dark ? .black.opacity(0.4) : .black.opacity(0.15),
-                radius: 24,
-                y: 8
+                color: colorScheme == .dark ? .black.opacity(0.5) : .black.opacity(0.08),
+                radius: colorScheme == .dark ? 24 : 16,
+                y: colorScheme == .dark ? 8 : 4
             )
-    }
-
-    // MARK: - Liquid Pill (The Sliding Indicator)
-
-    private func liquidPill(pillWidth: CGFloat) -> some View {
-        Capsule()
-            .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
-            .overlay(
-                Capsule()
-                    .stroke(
-                        LinearGradient(
-                            colors: colorScheme == .dark
-                                ? [Color.white.opacity(0.25), Color.clear]
-                                : [Color.white.opacity(0.7), Color.clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.5
-                    )
-            )
-            .overlay(
-                Capsule()
-                    .fill(Design.Colors.primary.opacity(colorScheme == .dark ? 0.2 : 0.12))
-            )
-            .shadow(
-                color: Design.Colors.primary.opacity(colorScheme == .dark ? 0.35 : 0.25),
-                radius: 10,
-                y: 2
-            )
-            .frame(width: pillWidth, height: 32)
     }
 }
 
@@ -281,16 +197,19 @@ enum AppTab: CaseIterable {
     case today
     case discover
     case saved
-    case sources
     case settings
+    case search
+
+    /// Tabs shown in the legacy custom tab bar (search is handled natively on iOS 26+)
+    static var legacyTabs: [AppTab] { [.today, .discover, .saved, .settings] }
 
     var title: String {
         switch self {
         case .today: return "Today"
         case .discover: return "Discover"
         case .saved: return "My Feeds"
-        case .sources: return "Sources"
         case .settings: return "Settings"
+        case .search: return "Search"
         }
     }
 
@@ -299,8 +218,8 @@ enum AppTab: CaseIterable {
         case .today: return Design.Icons.today
         case .discover: return Design.Icons.discover
         case .saved: return "list.bullet.below.rectangle"
-        case .sources: return Design.Icons.sources
         case .settings: return Design.Icons.settings
+        case .search: return Design.Icons.search
         }
     }
 
@@ -309,8 +228,8 @@ enum AppTab: CaseIterable {
         case .today: return 0
         case .discover: return 1
         case .saved: return 2
-        case .sources: return 3
-        case .settings: return 4
+        case .settings: return 3
+        case .search: return 4
         }
     }
 }
