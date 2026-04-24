@@ -19,6 +19,7 @@ struct TodayView: View {
     // MARK: - State
 
     @State private var selectedArticle: Article? = nil
+    @State private var nudgeForLimitAdjust: NudgeCard? = nil
 
     // MARK: - Environment
 
@@ -33,6 +34,19 @@ struct TodayView: View {
             // Background - adaptive for light/dark mode
             Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
+            if !viewModel.hasSources {
+                // No feeds — use a plain VStack so Spacers can truly center content
+                VStack(spacing: 0) {
+                    headerView
+                    Spacer()
+                    noFeedsPrompt
+                    Spacer()
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: 94)
+                }
+            } else {
+
             // Main content — header scrolls with content, not sticky
             ScrollView {
                 VStack(spacing: 0) {
@@ -40,11 +54,7 @@ struct TodayView: View {
                     LazyVStack(spacing: Design.Spacing.cardGap) {
                     // Empty states
                     if viewModel.filteredRiverItems.isEmpty {
-                        if !viewModel.hasSources {
-                            noFeedsPrompt
-                        } else {
-                            noResultsPrompt
-                        }
+                        noResultsPrompt
                     } else {
                         // River items: articles, clusters, nudges
                         ForEach(viewModel.filteredRiverItems) { riverItem in
@@ -55,11 +65,10 @@ struct TodayView: View {
                             Group {
                                 switch riverItem {
                                 case .article(let feedItem):
-                                    if let source = viewModel.source(for: feedItem) {
-                                        let article = feedItem.toArticle(categoryID: source.categoryID)
+                                    if let article = viewModel.article(for: feedItem) {
                                         ArticleCardView(
                                             article: article,
-                                            source: source,
+                                            source: viewModel.source(for: feedItem),
                                             onBookmarkTap: {
                                                 viewModel.toggleBookmark(for: article)
                                                 // Phase 2d — track share/bookmark as articleShare
@@ -107,7 +116,13 @@ struct TodayView: View {
                                 case .nudge(let nudgeCard):
                                     NudgeCardView(
                                         nudge: nudgeCard,
-                                        source: viewModel.source(forSourceID: nudgeCard.sourceID)
+                                        source: viewModel.source(forSourceID: nudgeCard.sourceID),
+                                        onAdjustSlotLimit: {
+                                            nudgeForLimitAdjust = nudgeCard
+                                        },
+                                        onMuteTemporarily: {
+                                            viewModel.muteSource(nudgeCard.sourceID)
+                                        }
                                     )
                                 }
                             }
@@ -143,6 +158,7 @@ struct TodayView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
             }
+            } // close else (hasSources)
         }
         .navigationDestination(item: $selectedArticle) { article in
             ArticleReaderHostView(
@@ -154,6 +170,37 @@ struct TodayView: View {
         .task {
             await viewModel.autoRefreshIfNeeded()
         }
+        // Refresh immediately whenever a new feed is subscribed (from any screen).
+        .onReceive(NotificationCenter.default.publisher(for: .feedAdded)) { _ in
+            Task { await viewModel.refresh() }
+        }
+        // Slot limit adjustment dialog
+        .confirmationDialog(
+            "Limit articles from \(nudgeForLimitAdjust.map { viewModel.source(forSourceID: $0.sourceID)?.name ?? $0.sourceName } ?? "this source")",
+            isPresented: Binding(
+                get: { nudgeForLimitAdjust != nil },
+                set: { if !$0 { nudgeForLimitAdjust = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let nudge = nudgeForLimitAdjust {
+                Button("Limit to 1 article/day") {
+                    viewModel.updateSlotLimit(1, forSourceID: nudge.sourceID)
+                    nudgeForLimitAdjust = nil
+                }
+                Button("Limit to 3 articles/day") {
+                    viewModel.updateSlotLimit(3, forSourceID: nudge.sourceID)
+                    nudgeForLimitAdjust = nil
+                }
+                Button("Limit to 5 articles/day") {
+                    viewModel.updateSlotLimit(5, forSourceID: nudge.sourceID)
+                    nudgeForLimitAdjust = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    nudgeForLimitAdjust = nil
+                }
+            }
+        }
         } // NavigationStack
     }
 
@@ -164,15 +211,24 @@ struct TodayView: View {
             titleRow
 
             // Category chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(viewModel.allCategories) { category in
-                        categoryButton(category)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.allCategories) { category in
+                            categoryButton(category)
+                                .id(category.id)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 14)
+                }
+                .onChange(of: viewModel.selectedCategory?.id) { _, newID in
+                    guard let id = newID else { return }
+                    withAnimation(Design.Animation.standard) {
+                        proxy.scrollTo(id, anchor: .center)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 14)
             }
         }
         .background {
@@ -360,24 +416,75 @@ struct TodayView: View {
 
     /// Shown when the user hasn't subscribed to any feeds yet.
     private var noFeedsPrompt: some View {
-        VStack(spacing: Design.Spacing.section) {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 52, weight: .ultraLight))
-                .foregroundStyle(Design.Colors.primary.opacity(0.45))
+        VStack(spacing: 28) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Design.Colors.primary.opacity(0.10))
+                    .frame(width: 88, height: 88)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28)
+                            .stroke(Design.Colors.primary.opacity(0.2), lineWidth: 1)
+                    )
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundStyle(Design.Colors.primary)
+            }
 
-            VStack(spacing: Design.Spacing.small) {
+            // Text
+            VStack(spacing: 8) {
                 Text("No Feeds Yet")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-                Text("Head to My Feeds to subscribe\nto your first RSS feed.")
+                Text("Add sources in My Feeds to start\nseeing articles here.")
                     .font(.system(size: 15))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+
+            // Actions
+            VStack(spacing: 14) {
+                Button {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = .saved
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Add Your First Feed")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(
+                        Capsule()
+                            .fill(Design.Colors.primary)
+                            .shadow(color: Design.Colors.primary.opacity(0.4), radius: 12, y: 4)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = .discover
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "safari")
+                            .font(.system(size: 13))
+                        Text("Browse Discover")
+                            .font(.system(size: 14))
+                    }
+                    .foregroundStyle(Design.Colors.primary.opacity(0.8))
+                }
+                .buttonStyle(.plain)
             }
         }
-        .padding(.top, 60)
-        .padding(.horizontal, Design.Spacing.section)
+        .padding(.horizontal, 40)
         .frame(maxWidth: .infinity)
     }
 

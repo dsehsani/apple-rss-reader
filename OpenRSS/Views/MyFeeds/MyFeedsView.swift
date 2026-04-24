@@ -27,6 +27,7 @@ struct MyFeedsView: View {
     // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppState.self) private var appState
 
     // MARK: - Body
 
@@ -35,25 +36,31 @@ struct MyFeedsView: View {
             // Flat color — matches TodayView/SourcesView pattern exactly (no size inflation)
             Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    if isSearching {
-                        searchResultsView
-                    } else if viewModel.hasAnyFeeds {
-                        feedsListView
-                        addSourceButton
-                    } else {
-                        emptyStateView
-                    }
+            if !isSearching && !viewModel.hasAnyFeeds {
+                // Empty state: full-height centered layout (Spacers work outside ScrollView)
+                VStack {
+                    Spacer()
+                    emptyStateView
+                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 20)
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                headerView
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: 94)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .top, spacing: 0) { headerView }
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 94) }
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if isSearching {
+                            searchResultsView
+                        } else {
+                            feedsListView
+                            addSourceButton
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                }
+                .safeAreaInset(edge: .top, spacing: 0) { headerView }
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 94) }
             }
         }
         .sheet(isPresented: $viewModel.showingAddFeed) {
@@ -591,35 +598,36 @@ struct MyFeedsView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        VStack(spacing: 28) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Design.Colors.primary.opacity(0.10))
+                    .frame(width: 88, height: 88)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28)
+                            .stroke(Design.Colors.primary.opacity(0.2), lineWidth: 1)
+                    )
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundStyle(Design.Colors.primary)
+            }
 
-            VStack(spacing: 28) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(Design.Colors.primary.opacity(0.10))
-                        .frame(width: 96, height: 96)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Design.Colors.primary.opacity(0.2), lineWidth: 1)
-                        )
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(Design.Colors.primary)
-                }
+            // Text
+            VStack(spacing: 8) {
+                Text("No Feeds Yet")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-                VStack(spacing: 10) {
-                    Text("No Feeds Yet")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                Text("Subscribe to RSS feeds from your favorite\nblogs, news sites, and podcasts.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
 
-                    Text("Subscribe to RSS feeds from your favorite\nblogs, news sites, and podcasts.")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(3)
-                }
-
+            // Actions
+            VStack(spacing: 14) {
                 Button {
                     viewModel.showingAddFeed = true
                 } label: {
@@ -630,21 +638,33 @@ struct MyFeedsView: View {
                             .font(.system(size: 16, weight: .semibold))
                     }
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 26)
+                    .padding(.horizontal, 28)
                     .padding(.vertical, 14)
                     .background(
                         Capsule()
                             .fill(Design.Colors.primary)
-                            .shadow(color: Design.Colors.primary.opacity(0.4), radius: 14, y: 5)
+                            .shadow(color: Design.Colors.primary.opacity(0.4), radius: 12, y: 4)
                     )
                 }
                 .buttonStyle(.plain)
-            }
 
-            Spacer()
-            Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = .discover
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "safari")
+                            .font(.system(size: 13))
+                        Text("Browse Discover")
+                            .font(.system(size: 14))
+                    }
+                    .foregroundStyle(Design.Colors.primary.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 40)
     }
 
     // MARK: - Private Helpers

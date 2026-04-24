@@ -84,6 +84,8 @@ struct ClusterCardView: View {
                         image
                             .resizable()
                             .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
                     case .empty:
                         Color.clear
                             .overlay(ProgressView().tint(.white.opacity(0.5)))

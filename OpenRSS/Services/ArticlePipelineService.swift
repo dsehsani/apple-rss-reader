@@ -115,12 +115,20 @@ final class ArticlePipelineService {
         // Phase 4 — normalise cleaned HTML into typed ContentNode array
         let nodes = try normalizer.normalize(content: readable)
 
-        // Deduplicate image nodes
-        var seenImageURLs = Set<URL>()
-        if let heroURL = readable.heroImageURL { seenImageURLs.insert(heroURL) }
+        // Deduplicate image nodes — compare normalized URLs (without query params
+        // or fragments) because og:image URLs often differ from <img src> URLs
+        // only in CDN sizing params (e.g. ?w=1200), causing a double hero image.
+        func normalizedKey(_ url: URL) -> String {
+            var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            comps?.queryItems = nil
+            comps?.fragment = nil
+            return comps?.url?.absoluteString ?? url.absoluteString
+        }
+        var seenKeys = Set<String>()
+        if let heroURL = readable.heroImageURL { seenKeys.insert(normalizedKey(heroURL)) }
         let dedupedNodes = nodes.filter { node in
             guard case .image(let url, _) = node else { return true }
-            return seenImageURLs.insert(url).inserted
+            return seenKeys.insert(normalizedKey(url)).inserted
         }
 
         // Build the ExtractedArticle

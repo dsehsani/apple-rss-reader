@@ -28,7 +28,9 @@ final class RiverPipeline: @unchecked Sendable {
     // MARK: - Publishers
 
     /// View layer subscribes to this for snapshot updates.
-    let snapshotPublisher = PassthroughSubject<RiverSnapshot, Never>()
+    /// CurrentValueSubject ensures late subscribers (e.g. SearchView) immediately
+    /// receive the last emitted snapshot instead of waiting for the next pipeline cycle.
+    let snapshotPublisher = CurrentValueSubject<RiverSnapshot, Never>(RiverSnapshot(items: [], pipelineDurationMs: 0))
 
     // MARK: - Dependencies
 

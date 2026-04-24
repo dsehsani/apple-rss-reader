@@ -17,6 +17,7 @@ struct ParagraphView: View {
         Text(attributedText)
             .font(.body)
             .lineSpacing(5)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .environment(\.openURL, OpenURLAction { url in
                 UIApplication.shared.open(url)

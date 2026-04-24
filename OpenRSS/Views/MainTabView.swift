@@ -15,7 +15,6 @@ struct MainTabView: View {
 
     // MARK: - State
 
-    @State private var selectedTab: AppTab = .today
     @State private var searchText: String = ""
 
     // MARK: - Namespace for matched geometry tab highlight
@@ -41,7 +40,7 @@ struct MainTabView: View {
 
     @available(iOS 26.0, *)
     private var liquidGlassTabView: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Bindable(appState).selectedTab) {
             Tab("Today", systemImage: Design.Icons.today, value: .today) {
                 TodayView()
             }
@@ -78,7 +77,7 @@ struct MainTabView: View {
         ZStack(alignment: .bottom) {
             // Tab content
             Group {
-                switch selectedTab {
+                switch appState.selectedTab {
                 case .today:
                     TodayView()
                 case .discover:
@@ -123,11 +122,11 @@ struct MainTabView: View {
     // MARK: - Tab Button
 
     private func tabButton(_ tab: AppTab) -> some View {
-        let isSelected = selectedTab == tab
+        let isSelected = appState.selectedTab == tab
 
         return Button {
             withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                selectedTab = tab
+                appState.selectedTab = tab
             }
         } label: {
             ZStack {

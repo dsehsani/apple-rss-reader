@@ -58,16 +58,18 @@ final class RiverViewModel {
 
     /// All articles from river items, unfiltered. Used by SearchView.
     var allArticles: [Article] {
-        riverItems.compactMap { riverItem in
+        let stateByURL = articleStateIndex()
+        return riverItems.compactMap { riverItem in
             guard case .article(let feedItem) = riverItem else { return nil }
             guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
-            return feedItem.toArticle(categoryID: source.categoryID)
+            return overlayState(feedItem.toArticle(categoryID: source.categoryID), index: stateByURL)
         }
     }
 
     /// Articles converted from river items, filtered by category, search, and active filters.
     /// This is the primary data source for the view.
     var filteredArticles: [Article] {
+        let stateByURL = articleStateIndex()
         let category = selectedCategory
         let isAllUpdates = category == nil || category?.id == Category.allUpdates.id
         let filters = activeFilters
@@ -80,7 +82,7 @@ final class RiverViewModel {
 
             // Look up the source to get the categoryID
             guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
-            let article = feedItem.toArticle(categoryID: source.categoryID)
+            let article = overlayState(feedItem.toArticle(categoryID: source.categoryID), index: stateByURL)
 
             // Category filter
             if !isAllUpdates, article.categoryID != category!.id {
@@ -107,17 +109,25 @@ final class RiverViewModel {
     /// Filtered river items including both articles and cluster cards.
     /// Cluster cards have their sourceNames resolved to human-readable names.
     var filteredRiverItems: [RiverItem] {
+        let stateByURL = articleStateIndex()
         let category = selectedCategory
         let isAllUpdates = category == nil || category?.id == Category.allUpdates.id
         let checkSaved  = activeFilters.contains(.saved)
         let checkUnread = activeFilters.contains(.unread)
         let checkToday  = activeFilters.contains(.today)
 
+        let mutedDict = UserDefaults.standard.dictionary(forKey: Self.mutedSourcesKey) as? [String: Double] ?? [:]
+        let now = Date()
+
         let sorted: [RiverItem] = riverItems.compactMap { riverItem -> (RiverItem, Double)? in
             switch riverItem {
             case .article(let feedItem):
+                // Skip articles from muted sources
+                if let ts = mutedDict[feedItem.sourceID.uuidString], Date(timeIntervalSince1970: ts) > now {
+                    return nil
+                }
                 guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
-                let article = feedItem.toArticle(categoryID: source.categoryID)
+                let article = overlayState(feedItem.toArticle(categoryID: source.categoryID), index: stateByURL)
 
                 // Category filter
                 if !isAllUpdates, article.categoryID != category!.id {
@@ -152,6 +162,10 @@ final class RiverViewModel {
                 return (.digest(resolvedCard), riverItem.relevanceScore)
 
             case .nudge(let card):
+                // Skip nudge cards from muted sources
+                if let ts = mutedDict[card.sourceID.uuidString], Date(timeIntervalSince1970: ts) > now {
+                    return nil
+                }
                 // Resolve source name for nudge cards too
                 let resolvedCard = resolveNudgeSourceName(card)
                 return (.nudge(resolvedCard), riverItem.relevanceScore)
@@ -289,6 +303,7 @@ final class RiverViewModel {
     }
 
     /// Unread count for a specific category.
+    /// Unread count for a specific category.
     func unreadCount(for category: Category) -> Int {
         // Use the data service's articles for unread counts (consistent with bookmark/read state)
         let visible = dataService.articles.filter { !$0.isRead }
@@ -386,7 +401,69 @@ final class RiverViewModel {
         dataService.markAsUnread(article.id)
     }
 
+    // MARK: - Source Muting
+
+    private static let mutedSourcesKey = "openrss.mutedSources"
+
+    /// Mute a source for 24 hours. Persisted in UserDefaults.
+    func muteSource(_ sourceID: UUID) {
+        let expiry = Date().addingTimeInterval(86400)
+        var dict = UserDefaults.standard.dictionary(forKey: Self.mutedSourcesKey) as? [String: Double] ?? [:]
+        dict[sourceID.uuidString] = expiry.timeIntervalSince1970
+        UserDefaults.standard.set(dict, forKey: Self.mutedSourcesKey)
+        // Re-score to remove the source's items from the visible river
+        pipeline.runScoringCycle()
+    }
+
+    /// Returns true if the given source is currently muted.
+    func isSourceMuted(_ sourceID: UUID) -> Bool {
+        let dict = UserDefaults.standard.dictionary(forKey: Self.mutedSourcesKey) as? [String: Double] ?? [:]
+        guard let ts = dict[sourceID.uuidString] else { return false }
+        return Date(timeIntervalSince1970: ts) > Date()
+    }
+
+    // MARK: - Slot Limit Adjustment
+
+    /// Update the daily slot limit for a source, then refresh the pipeline.
+    func updateSlotLimit(_ limit: Int, forSourceID sourceID: UUID) {
+        var record = SQLiteStore.shared.fetchAffinity(forSource: sourceID)
+            ?? SourceAffinityRecord(sourceID: sourceID)
+        record.slotLimit = limit
+        SQLiteStore.shared.upsertAffinity(record)
+        Task { await refresh() }
+    }
+
+    // MARK: - State Overlay Helpers
+
+    /// Builds a URL → Article lookup index from the in-memory articles array.
+    /// Using a dict avoids O(n²) lookups when overlaying state across a river of items.
+    private func articleStateIndex() -> [String: Article] {
+        Dictionary(
+            dataService.articles.map { ($0.articleURL, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+    }
+
+    /// Applies persisted read/bookmark/paywall state onto a freshly converted Article.
+    /// `toArticle()` always returns isBookmarked/isRead = false; this corrects that.
+    private func overlayState(_ article: Article, index: [String: Article]) -> Article {
+        guard let mem = index[article.articleURL] else { return article }
+        var a = article
+        a.isRead = mem.isRead
+        a.isBookmarked = mem.isBookmarked
+        a.isPaywalled = mem.isPaywalled
+        return a
+    }
+
     // MARK: - Helper Methods
+
+    /// Converts a FeedItem to an Article with persisted read/bookmark/paywall state applied.
+    /// Use this instead of `feedItem.toArticle()` directly so the UI reflects real state.
+    func article(for feedItem: FeedItem) -> Article? {
+        guard let source = dataService.source(for: feedItem.sourceID) else { return nil }
+        let stateByURL = articleStateIndex()
+        return overlayState(feedItem.toArticle(categoryID: source.categoryID), index: stateByURL)
+    }
 
     /// Get the source for an article.
     func source(for article: Article) -> Source? {

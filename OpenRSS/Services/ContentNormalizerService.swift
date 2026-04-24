@@ -90,6 +90,39 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         }
     }
 
+    // MARK: - Logo / icon / avatar image filter
+
+    /// Alt-text keywords that identify branding images (logos, icons, avatars)
+    /// that are embedded in article markup but are not editorial content.
+    private static let logoKeywords: [String] = [
+        "logo", "icon", "avatar", "brand", "badge", "sponsor", "advertiser", "masthead",
+        "headshot", "profile photo", "profile picture", "author photo"
+    ]
+
+    /// Host substrings for domains that serve user avatars rather than editorial images.
+    /// Gravatar (gravatar.com) is the most common — it serves tiny author profile photos
+    /// that expand to full-width when rendered with contentMode: .fit in the reader.
+    private static let avatarDomains: [String] = [
+        "gravatar.com",
+        "avatar.githubusercontent.com",
+        "pbs.twimg.com/profile_images",
+        "secure.gravatar.com"
+    ]
+
+    /// Returns true when the alt text indicates the image is a site logo or icon,
+    /// not an editorial photograph or illustration.
+    private func isLogoAlt(_ alt: String) -> Bool {
+        let lower = alt.lowercased()
+        return Self.logoKeywords.contains(where: { lower.contains($0) })
+    }
+
+    /// Returns true when the image URL points to a known avatar/profile-photo service.
+    private func isAvatarURL(_ url: URL) -> Bool {
+        let host = url.host?.lowercased() ?? ""
+        let path = url.path.lowercased()
+        return Self.avatarDomains.contains(where: { host.contains($0) || "\(host)\(path)".contains($0) })
+    }
+
     // MARK: - Ad-placeholder text filter
 
     /// Text strings that are pure ad artifacts — never real article content.
@@ -150,8 +183,11 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         // MARK: Images
         case "img":
             guard let src = try? el.attr("src"), !src.isEmpty,
-                  let url = URL(string: src) else { return nil }
+                  let url = URL(string: src),
+                  url.scheme == "https" || url.scheme == "http" else { return nil }
+            guard !isAvatarURL(url) else { return nil }
             let alt = (try? el.attr("alt")) ?? ""
+            guard !isLogoAlt(alt) else { return nil }
             let caption = alt.isEmpty ? nil : alt
             return .image(url: url, caption: caption)
 
@@ -159,7 +195,11 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         case "figure":
             if let img = try? el.select("img").first(),
                let src = try? img.attr("src"), !src.isEmpty,
-               let url = URL(string: src) {
+               let url = URL(string: src),
+               url.scheme == "https" || url.scheme == "http" {
+                guard !isAvatarURL(url) else { return nil }
+                let alt = (try? img.attr("alt")) ?? ""
+                guard !isLogoAlt(alt) else { return nil }
                 let caption = (try? el.select("figcaption").first()?.text()) ?? ""
                 return .image(url: url, caption: caption.isEmpty ? nil : caption)
             }

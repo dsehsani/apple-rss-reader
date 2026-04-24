@@ -42,6 +42,8 @@ extension Category {
         color: .blue,
         sortOrder: -1  // Always first
     )
+
+
 }
 
 // MARK: - Hashable Conformance for Color

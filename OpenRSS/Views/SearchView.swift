@@ -54,16 +54,27 @@ struct SearchView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            if let category = selectedCategory {
-                folderSearchView(category)
-            } else if isActive {
-                searchResultsView
+        let folders = viewModel.allCategories.filter { $0.id != Category.allUpdates.id }
+        let hasNoFeeds = folders.isEmpty && selectedCategory == nil
+
+        return Group {
+            if hasNoFeeds && !isActive {
+                // No feeds — use a plain view so Spacers can center content
+                noFeedsView
+                    .background(Design.Colors.background(for: colorScheme))
             } else {
-                browseTopicsView
+                ScrollView(showsIndicators: false) {
+                    if let category = selectedCategory {
+                        folderSearchView(category)
+                    } else if isActive {
+                        searchResultsView
+                    } else {
+                        browseTopicsView
+                    }
+                }
+                .background(Design.Colors.background(for: colorScheme))
             }
         }
-        .background(Design.Colors.background(for: colorScheme))
         .navigationDestination(item: $selectedArticle) { article in
             ArticleReaderHostView(
                 article: article,
@@ -85,58 +96,142 @@ struct SearchView: View {
     // MARK: - Browse Topics (idle state)
 
     private var browseTopicsView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Browse by Folder")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
-                .padding(.horizontal, 4)
+        let folders = viewModel.allCategories.filter { $0.id != Category.allUpdates.id }
 
-            ForEach(viewModel.allCategories.filter { $0.id != Category.allUpdates.id }) { category in
+        return Group {
+            if folders.isEmpty {
+                noFeedsView
+            } else {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Browse by Folder")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                        .padding(.horizontal, 4)
+
+                    ForEach(folders) { category in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedCategory = category
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: category.icon)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 40, height: 40)
+                                    .background(category.color.gradient)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                                Text(category.name)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                                Spacer()
+
+                                let count = viewModel.unreadCount(for: category)
+                                if count > 0 {
+                                    Text("\(count)")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                                }
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+                            }
+                            .padding(.horizontal, Design.Spacing.edge)
+                            .padding(.vertical, 12)
+                            .background(Design.Colors.cardBackground(for: colorScheme))
+                            .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Design.Radius.standard)
+                                    .stroke(Design.Colors.glassBorder(for: colorScheme), lineWidth: 0.5)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.top, 8)
+                .padding(.bottom, 100)
+            }
+        }
+    }
+
+    // MARK: - No Feeds Empty State
+
+    private var noFeedsView: some View {
+        VStack(spacing: 28) {
+            Spacer()
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Design.Colors.primary.opacity(0.10))
+                    .frame(width: 88, height: 88)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28)
+                            .stroke(Design.Colors.primary.opacity(0.2), lineWidth: 1)
+                    )
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 34, weight: .light))
+                    .foregroundStyle(Design.Colors.primary)
+            }
+
+            VStack(spacing: 8) {
+                Text("No Feeds Yet")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                Text("Add feeds to start searching\nthrough your articles.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+
+            VStack(spacing: 14) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedCategory = category
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = .saved
                     }
                 } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: category.icon)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 40, height: 40)
-                            .background(category.color.gradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                        Text(category.name)
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
-
-                        Spacer()
-
-                        let count = viewModel.unreadCount(for: category)
-                        if count > 0 {
-                            Text("\(count)")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
-                        }
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Add Your First Feed")
+                            .font(.system(size: 16, weight: .semibold))
                     }
-                    .padding(.horizontal, Design.Spacing.edge)
-                    .padding(.vertical, 12)
-                    .background(Design.Colors.cardBackground(for: colorScheme))
-                    .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Design.Radius.standard)
-                            .stroke(Design.Colors.glassBorder(for: colorScheme), lineWidth: 0.5)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(
+                        Capsule()
+                            .fill(Design.Colors.primary)
+                            .shadow(color: Design.Colors.primary.opacity(0.4), radius: 12, y: 4)
                     )
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = .discover
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "safari")
+                            .font(.system(size: 13))
+                        Text("Browse Discover")
+                            .font(.system(size: 14))
+                    }
+                    .foregroundStyle(Design.Colors.primary.opacity(0.8))
+                }
+                .buttonStyle(.plain)
             }
+
+            Spacer()
         }
-        .padding(.horizontal, Design.Spacing.edge)
-        .padding(.top, 8)
-        .padding(.bottom, 100)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 40)
     }
 
     // MARK: - Folder Search Mode

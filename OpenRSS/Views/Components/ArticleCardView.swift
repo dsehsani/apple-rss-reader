@@ -96,7 +96,7 @@ struct ArticleCardView: View {
                     .frame(width: 3)
             }
         }
-        .opacity(article.isRead ? min(0.7, decayOpacity) : decayOpacity)
+        .opacity(decayOpacity)
         .contentShape(Rectangle())
         .onTapGesture { onReadMoreTap?() }
         .contextMenu {
@@ -141,34 +141,37 @@ struct ArticleCardView: View {
     // MARK: - Subviews
 
     private var heroImage: some View {
-        ZStack {
-            if !heroImageLoaded {
-                placeholderHero
-            }
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 180)
+            .overlay {
+                ZStack {
+                    if !heroImageLoaded {
+                        placeholderHero
+                    }
 
-            let displayURL = article.imageURL ?? ogImageURL
-            if let urlString = displayURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .onAppear { heroImageLoaded = true }
-                    case .empty:
-                        Color.clear
-                            .overlay(ProgressView().tint(.white.opacity(0.5)))
-                    case .failure:
-                        Color.clear
-                    @unknown default:
-                        Color.clear
+                    let displayURL = article.imageURL ?? ogImageURL
+                    if let urlString = displayURL, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .onAppear { heroImageLoaded = true }
+                            case .empty:
+                                Color.clear
+                                    .overlay(ProgressView().tint(.white.opacity(0.5)))
+                            case .failure:
+                                Color.clear
+                            @unknown default:
+                                Color.clear
+                            }
+                        }
                     }
                 }
             }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 180)
-        .clipped()
+            .clipped()
     }
 
     private var placeholderHero: some View {
@@ -339,7 +342,9 @@ struct ArticleCardView: View {
             } label: {
                 Image(systemName: article.isBookmarked ? Design.Icons.bookmarkFilled : Design.Icons.bookmark)
                     .font(.system(size: 18))
-                    .foregroundStyle(article.isBookmarked ? Design.Colors.primary : Design.Colors.secondaryText)
+                    .foregroundStyle(article.isBookmarked ? Color.orange : Design.Colors.secondaryText)
+                    .scaleEffect(article.isBookmarked ? 1.15 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: article.isBookmarked)
             }
             .buttonStyle(.plain)
 

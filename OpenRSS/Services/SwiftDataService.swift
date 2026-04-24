@@ -15,6 +15,13 @@ import SwiftUI
 import SwiftData
 import CryptoKit
 
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// Posted on the main thread whenever a new feed is successfully saved.
+    static let feedAdded = Notification.Name("openrss.feedAdded")
+}
+
 // MARK: - SwiftDataService
 
 @Observable
@@ -263,6 +270,7 @@ final class SwiftDataService: FeedDataService {
         context.insert(feed)
         try context.save()
         loadFromSwiftData()
+        NotificationCenter.default.post(name: .feedAdded, object: nil)
     }
 
     /// Permanently deletes a feed subscription.
@@ -530,7 +538,7 @@ final class SwiftDataService: FeedDataService {
         ) ?? Date()
 
         let merged = (updatedPipeline + preserved)
-            .filter { $0.publishedAt >= cutoff }
+            .filter { $0.publishedAt >= cutoff || $0.isBookmarked }  // never evict saved articles
             .sorted { $0.publishedAt > $1.publishedAt }
 
         self.articles = merged

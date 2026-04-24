@@ -23,4 +23,8 @@ final class AppState {
     /// instantly when the toggle changes in Settings. Initialized from the
     /// persisted value in OpenRSSApp.body via onAppear.
     var showImages: Bool = true
+
+    /// The currently selected tab. Set from any view to programmatically
+    /// switch tabs (e.g. the empty-state "Browse Discover" link in MyFeedsView).
+    var selectedTab: AppTab = .today
 }
