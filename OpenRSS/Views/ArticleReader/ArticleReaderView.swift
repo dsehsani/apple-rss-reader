@@ -15,6 +15,9 @@ import SwiftUI
 struct ArticleReaderView: View {
 
     let extracted: ExtractedArticle
+    /// Audio enclosure URL from the RSS feed. When non-nil an inline player is
+    /// shown below the hero image. Nil for articles without audio.
+    var audioURL: URL? = nil
     var onSignIn: (() -> Void)? = nil
 
     // MARK: - Body
@@ -59,6 +62,13 @@ struct ArticleReaderView: View {
                 .frame(height: 220)
                 .clipped()
                 .padding(.bottom, 20)
+            }
+
+            // Audio player — only shown when the RSS item carried an audio enclosure.
+            if let audioURL {
+                AudioPlayerView(audioURL: audioURL)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
             }
 
             VStack(alignment: .leading, spacing: 8) {

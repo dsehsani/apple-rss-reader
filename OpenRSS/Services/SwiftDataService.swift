@@ -307,6 +307,7 @@ final class SwiftDataService: FeedDataService {
                         sourceID: source.id,
                         categoryID: source.categoryID,
                         imageURL: imageURL,
+                        audioURL: p.audioURL,
                         articleURL: linkKey.isEmpty ? "https://example.com" : linkKey,
                         publishedAt: published,
                         isRead: false,
