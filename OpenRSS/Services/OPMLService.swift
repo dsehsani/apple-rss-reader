@@ -52,7 +52,9 @@ final class OPMLService: NSObject {
             let feeds = folder.feeds.sorted(by: { $0.title < $1.title })
             guard !feeds.isEmpty else { continue }
 
-            xml += "    <outline text=\"\(escaped(folder.name))\" title=\"\(escaped(folder.name))\">\n"
+            xml += "    <outline text=\"\(escaped(folder.name))\" title=\"\(escaped(folder.name))\""
+            xml += " openrss:iconName=\"\(escaped(folder.iconName))\""
+            xml += " openrss:colorHex=\"\(escaped(folder.colorHex))\">\n"
             for feed in feeds {
                 xml += feedOutline(feed, indent: "      ")
             }
@@ -107,7 +109,7 @@ final class OPMLService: NSObject {
                 if let existing = service.categories.first(where: { $0.name == groupName }) {
                     folderID = existing.id
                 } else {
-                    try service.addFolder(name: groupName, iconName: "folder.fill", colorHex: "007AFF")
+                    try service.addFolder(name: groupName, iconName: group.iconName, colorHex: group.colorHex)
                     folderID = service.categories.last?.id
                 }
             }
@@ -197,6 +199,8 @@ private final class OPMLParser: NSObject, XMLParserDelegate {
 
     struct FeedGroup {
         let name: String?
+        let iconName: String
+        let colorHex: String
         var feeds: [FeedEntry]
     }
 
@@ -237,7 +241,9 @@ private final class OPMLParser: NSObject, XMLParserDelegate {
         if xmlURL.isEmpty {
             // This is a folder/group outline — flush previous group and start new
             if let g = currentGroup { groups.append(g) }
-            currentGroup = FeedGroup(name: text.isEmpty ? nil : text, feeds: [])
+            let iconName = attributes["openrss:iconName"] ?? "folder.fill"
+            let colorHex = attributes["openrss:colorHex"] ?? "007AFF"
+            currentGroup = FeedGroup(name: text.isEmpty ? nil : text, iconName: iconName, colorHex: colorHex, feeds: [])
         } else {
             // This is a feed outline
             let entry = FeedEntry(
@@ -252,7 +258,7 @@ private final class OPMLParser: NSObject, XMLParserDelegate {
                 if groups.last?.name == nil {
                     groups[groups.count - 1].feeds.append(entry)
                 } else {
-                    groups.append(FeedGroup(name: nil, feeds: [entry]))
+                    groups.append(FeedGroup(name: nil, iconName: "folder.fill", colorHex: "007AFF", feeds: [entry]))
                 }
             }
         }
