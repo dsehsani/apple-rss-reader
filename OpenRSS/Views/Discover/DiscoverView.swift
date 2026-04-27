@@ -153,7 +153,13 @@ struct DiscoverView: View {
                     endPoint: .bottomTrailing
                 )
 
-                // Frosted bottom bar with feed name
+                // Bottom gradient + text overlay
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.55)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Editor's Pick")
                         .font(.system(size: 10, weight: .semibold))
@@ -168,7 +174,6 @@ struct DiscoverView: View {
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.ultraThinMaterial.opacity(0.6))
             }
             .frame(height: 130)
             .clipped()

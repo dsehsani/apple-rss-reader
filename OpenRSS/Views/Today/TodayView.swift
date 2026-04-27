@@ -19,6 +19,7 @@ struct TodayView: View {
     // MARK: - State
 
     @State private var selectedArticle: Article? = nil
+    @State private var selectedSourceID: UUID? = nil
     @State private var nudgeForLimitAdjust: NudgeCard? = nil
 
     // MARK: - Environment
@@ -110,7 +111,17 @@ struct TodayView: View {
                                 case .digest(let digestCard):
                                     DigestCardView(
                                         digest: digestCard,
-                                        source: viewModel.source(forSourceID: digestCard.sourceID)
+                                        source: viewModel.source(forSourceID: digestCard.sourceID),
+                                        onArticleTap: { feedItem in
+                                            if let source = viewModel.source(for: feedItem) {
+                                                let article = feedItem.toArticle(categoryID: source.categoryID)
+                                                viewModel.markAsRead(article)
+                                                selectedArticle = article
+                                            }
+                                        },
+                                        onGoToSource: {
+                                            selectedSourceID = digestCard.sourceID
+                                        }
                                     )
 
                                 case .nudge(let nudgeCard):
@@ -165,6 +176,9 @@ struct TodayView: View {
                 article: article,
                 feedName: viewModel.source(for: article)?.name ?? "Article"
             )
+        }
+        .navigationDestination(item: $selectedSourceID) { sourceID in
+            SourceFeedView(sourceID: sourceID)
         }
         // Auto-refresh on first appearance; skips if a refresh ran < 30 min ago.
         .task {

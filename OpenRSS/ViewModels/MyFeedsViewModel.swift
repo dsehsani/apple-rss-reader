@@ -11,6 +11,7 @@ import Foundation
 import SwiftUI
 
 @Observable
+@MainActor
 final class MyFeedsViewModel {
 
     // MARK: - Dependencies
@@ -22,12 +23,14 @@ final class MyFeedsViewModel {
     /// Controls presentation of the Add Feed sheet.
     var showingAddFeed: Bool = false
 
-    // MARK: - Computed — Folders & Feeds
+    // MARK: - Folders (stored for reliable @Observable tracking)
 
     /// All user-created folders, ordered by sortOrder.
-    var folders: [Category] {
-        dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
-    }
+    /// Stored (not computed) so that @Observable change notifications fire when
+    /// the underlying data changes, triggering immediate UI re-renders.
+    private(set) var folders: [Category] = []
+
+    // MARK: - Computed — Feeds
 
     /// Feeds belonging to a given folder.
     func feeds(in folder: Category) -> [Source] {
@@ -46,6 +49,30 @@ final class MyFeedsViewModel {
 
     init(dataService: SwiftDataService = .shared) {
         self.dataService = dataService
+        refreshFolders()
+        startObservingFolders()
+    }
+
+    // MARK: - Private Observation
+
+    /// Synchronously re-reads folders from the data service. Call after any
+    /// mutation so the @Observable notification fires immediately, before the
+    /// runloop yields.
+    private func refreshFolders() {
+        folders = dataService.categories.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// Tracks `dataService.categories` for changes that originate outside of
+    /// this view model (e.g. CloudKit sync) and keeps `folders` in sync.
+    private func startObservingFolders() {
+        withObservationTracking {
+            _ = dataService.categories
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.refreshFolders()
+                self?.startObservingFolders()
+            }
+        }
     }
 
     // MARK: - Search & Unread Counts
@@ -75,6 +102,12 @@ final class MyFeedsViewModel {
 
     func deleteFolder(_ folder: Category) {
         try? dataService.deleteFolder(id: folder.id)
+        refreshFolders()
+    }
+
+    func updateFolder(_ folder: Category, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) {
+        try? dataService.updateFolder(id: folder.id, name: name, iconName: iconName, colorHex: colorHex)
+        refreshFolders()
     }
 
     func deleteFeed(_ source: Source) {

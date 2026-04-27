@@ -16,6 +16,7 @@ struct DigestCard: Identifiable, Hashable, Sendable {
     let itemCount: Int
     let highlights: [String]       // 2-3 title snippets
     let overflowIDs: [UUID]
+    let overflowItems: [FeedItem]  // Full FeedItems for tappable article links
     let insertionPosition: Date
 
     /// Computed ID derived from the sourceID and insertion date for stable identity.
@@ -59,6 +60,7 @@ struct DigestCard: Identifiable, Hashable, Sendable {
         itemCount: Int,
         highlights: [String],
         overflowIDs: [UUID],
+        overflowItems: [FeedItem] = [],
         insertionPosition: Date
     ) {
         self.sourceID = sourceID
@@ -66,6 +68,7 @@ struct DigestCard: Identifiable, Hashable, Sendable {
         self.itemCount = itemCount
         self.highlights = highlights
         self.overflowIDs = overflowIDs
+        self.overflowItems = overflowItems
         self.insertionPosition = insertionPosition
     }
 }

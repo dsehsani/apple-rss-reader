@@ -35,21 +35,21 @@ struct CategoryFeedsView: View {
             ZStack {
                 Design.Colors.background(for: colorScheme).ignoresSafeArea()
 
-                List {
-                    Section {
+                VStack(spacing: 0) {
+                    categoryHeader
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    List {
                         ForEach(category.feeds) { feed in
                             feedRow(feed)
                                 .listRowBackground(Design.Colors.cardBackground(for: colorScheme))
                         }
-                    } header: {
-                        categoryHeader
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
             }
-            .navigationTitle(category.name)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -70,27 +70,27 @@ struct CategoryFeedsView: View {
     // MARK: - Category Header
 
     private var categoryHeader: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(category.color.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 48, height: 48)
                 Image(systemName: category.icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(category.color)
             }
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(category.name)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
                 Text("\(category.feeds.count) sources")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
             }
         }
-        .textCase(nil)
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Feed Row

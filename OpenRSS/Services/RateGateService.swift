@@ -96,6 +96,7 @@ final class RateGateService: Sendable {
                     itemCount: overflowItems.count,
                     highlights: highlights,
                     overflowIDs: overflowIDs,
+                    overflowItems: overflowItems,
                     insertionPosition: insertionPosition
                 )
                 digestCards.append(digest)

@@ -157,6 +157,13 @@ final class RiverViewModel {
                 return (.cluster(resolvedCard), riverItem.relevanceScore)
 
             case .digest(let card):
+                // Category filter: check the digest source's category
+                if !isAllUpdates {
+                    guard let source = dataService.source(for: card.sourceID),
+                          source.categoryID == category!.id else {
+                        return nil
+                    }
+                }
                 // Resolve source name if it's a UUID placeholder
                 let resolvedCard = resolveDigestSourceName(card)
                 return (.digest(resolvedCard), riverItem.relevanceScore)
@@ -210,6 +217,7 @@ final class RiverViewModel {
                 itemCount: card.itemCount,
                 highlights: card.highlights,
                 overflowIDs: card.overflowIDs,
+                overflowItems: card.overflowItems,
                 insertionPosition: card.insertionPosition
             )
         }

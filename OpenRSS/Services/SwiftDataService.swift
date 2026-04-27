@@ -247,6 +247,22 @@ final class SwiftDataService: FeedDataService {
         }
     }
 
+    /// Updates an existing folder's name, icon, or color.
+    @MainActor
+    func updateFolder(id: UUID, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) throws {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FolderModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        if let folder = try context.fetch(descriptor).first {
+            if let name   { folder.name     = name }
+            if let iconName { folder.iconName = iconName }
+            if let colorHex { folder.colorHex = colorHex }
+            try context.save()
+            loadFromSwiftData()
+        }
+    }
+
     /// Returns the live FolderModel for a given UUID (used when assigning a feed to a folder).
     @MainActor
     func folderModel(for id: UUID) -> FolderModel? {
