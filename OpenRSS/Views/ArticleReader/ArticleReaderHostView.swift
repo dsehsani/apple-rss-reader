@@ -54,6 +54,7 @@ struct ArticleReaderHostView: View {
             case .loaded(let extracted):
                 ArticleReaderView(
                     extracted: extracted,
+                    audioURL: article.audioURL.flatMap { URL(string: $0) },
                     onSignIn: { showPaywallSafari = true }
                 )
 

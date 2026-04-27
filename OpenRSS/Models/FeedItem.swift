@@ -25,6 +25,9 @@ struct FeedItem: Identifiable, Equatable, Sendable {
     // Image URL from the feed (hero image)
     var imageURL: String?
 
+    // Audio enclosure URL (e.g. podcast episodes). Nil for most items.
+    var audioURL: String?
+
     // Author from the feed
     var author: String?
 
@@ -55,6 +58,7 @@ struct FeedItem: Identifiable, Equatable, Sendable {
         fetchedAt: Date = Date(),
         excerpt: String = "",
         imageURL: String? = nil,
+        audioURL: String? = nil,
         author: String? = nil,
         clusterID: UUID? = nil,
         isCanonical: Bool = false,
@@ -73,6 +77,7 @@ struct FeedItem: Identifiable, Equatable, Sendable {
         self.fetchedAt = fetchedAt
         self.excerpt = excerpt
         self.imageURL = imageURL
+        self.audioURL = audioURL
         self.author = author
         self.clusterID = clusterID
         self.isCanonical = isCanonical
@@ -120,6 +125,7 @@ extension FeedItem {
             sourceID: sourceID,
             categoryID: categoryID,
             imageURL: imageURL,
+            audioURL: audioURL,
             articleURL: link.absoluteString,
             publishedAt: publishedAt,
             isRead: false,

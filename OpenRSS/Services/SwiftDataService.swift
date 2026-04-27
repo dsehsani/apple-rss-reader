@@ -116,6 +116,7 @@ final class SwiftDataService: FeedDataService {
                 fetchedAt: article.publishedAt,
                 excerpt: article.excerpt,
                 imageURL: article.imageURL,
+                audioURL: article.audioURL,
                 author: nil,
                 velocityTier: .article,
                 simhashValue: SimHash.compute(article.title)
@@ -482,6 +483,7 @@ final class SwiftDataService: FeedDataService {
                         sourceID: source.id,
                         categoryID: source.categoryID,
                         imageURL: imageURL,
+                        audioURL: p.audioURL,
                         articleURL: linkKey.isEmpty ? "https://example.com" : linkKey,
                         publishedAt: published,
                         isRead: false,

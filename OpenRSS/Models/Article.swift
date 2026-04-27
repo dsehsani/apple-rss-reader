@@ -34,6 +34,8 @@ struct Article: Identifiable, Hashable, Codable {
     let sourceID: UUID
     let categoryID: UUID
     let imageURL: String?
+    /// Audio enclosure URL from the RSS feed (e.g. podcast episodes). Nil for most articles.
+    let audioURL: String?
     let articleURL: String
     let publishedAt: Date
     /// Timestamp when this article was first fetched from the network.
@@ -64,6 +66,7 @@ struct Article: Identifiable, Hashable, Codable {
         sourceID: UUID,
         categoryID: UUID,
         imageURL: String? = nil,
+        audioURL: String? = nil,
         articleURL: String = "https://example.com",
         publishedAt: Date = Date(),
         fetchedAt: Date = Date(),
@@ -82,6 +85,7 @@ struct Article: Identifiable, Hashable, Codable {
         self.sourceID = sourceID
         self.categoryID = categoryID
         self.imageURL = imageURL
+        self.audioURL = audioURL
         self.articleURL = articleURL
         self.publishedAt = publishedAt
         self.fetchedAt = fetchedAt
@@ -95,8 +99,8 @@ struct Article: Identifiable, Hashable, Codable {
         self.isCanonical = isCanonical
     }
 
-    // Custom decoder so that cached JSON written before `isPaywalled` or
-    // `fetchedAt` existed still decodes correctly.
+    // Custom decoder so that cached JSON written before `isPaywalled`,
+    // `fetchedAt`, or `audioURL` existed still decodes correctly.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id              = try c.decode(UUID.self,   forKey: .id)
@@ -105,6 +109,7 @@ struct Article: Identifiable, Hashable, Codable {
         sourceID        = try c.decode(UUID.self,   forKey: .sourceID)
         categoryID      = try c.decode(UUID.self,   forKey: .categoryID)
         imageURL        = try c.decodeIfPresent(String.self, forKey: .imageURL)
+        audioURL        = try c.decodeIfPresent(String.self, forKey: .audioURL)
         articleURL      = try c.decode(String.self, forKey: .articleURL)
         publishedAt     = try c.decode(Date.self,   forKey: .publishedAt)
         // Backward compat: older JSON lacks fetchedAt — fall back to publishedAt.

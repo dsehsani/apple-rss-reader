@@ -16,6 +16,8 @@ struct ParsedArticle {
     let description: String?
     let imageURL: String?
     let author: String?
+    /// Audio enclosure URL if the feed item carries an audio attachment (e.g. podcast).
+    let audioURL: String?
 }
 
 // MARK: - RSSServiceError
@@ -104,15 +106,40 @@ final class RSSService {
     private func extractRSS(_ rss: RSSFeed) -> [ParsedArticle] {
         guard let items = rss.items else { return [] }
 
+        // Channel-level image fallback — used when an individual episode carries no
+        // image of its own (the common case for podcast feeds like NPR).
+        // Priority: itunes:image href (square podcast artwork) → standard <image> element.
+        let channelFallbackImage: String? =
+            rss.iTunes?.iTunesImage?.attributes?.href ??
+            rss.image?.url
+
         return items.map { item in
             // Get description with fallback to content:encoded
             let description = item.description ?? item.content?.contentEncoded
 
-            // Get image URL from media:content or enclosure.
+            // Determine whether the enclosure carries audio so we can exclude it
+            // from the image URL slot (an mp3 URL should never feed into AsyncImage).
+            let enclosureType = item.enclosure?.attributes?.type ?? ""
+            let isAudioEnclosure = Self.isAudioMIMEType(enclosureType)
+
+            // Image priority for each item:
+            //   1. itunes:image href  — per-episode artwork (podcasts, some NPR episodes)
+            //   2. media:thumbnail    — per-episode wide/square image (e.g. NPR special episodes)
+            //   3. media:content      — per-episode media embed (non-audio only)
+            //   4. enclosure URL      — only if enclosure is not audio
+            var imageURL: String? =
+                item.iTunes?.iTunesImage?.attributes?.href ??
+                item.media?.mediaThumbnails?.first?.attributes?.url ??
+                item.media?.mediaContents?.first(where: {
+                    !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
+                    ($0.attributes?.medium ?? "") != "audio"
+                })?.attributes?.url
+            if imageURL == nil && !isAudioEnclosure {
+                imageURL = item.enclosure?.attributes?.url
+            }
+
             // Upgrade http:// → https:// for ATS compatibility (e.g. Smashing Magazine
             // enclosures use http:// which iOS blocks in AsyncImage).
-            var imageURL = item.media?.mediaContents?.first?.attributes?.url
-                ?? item.enclosure?.attributes?.url
             if let url = imageURL, url.hasPrefix("http://") {
                 imageURL = "https://" + url.dropFirst(7)
             }
@@ -124,6 +151,24 @@ final class RSSService {
                 imageURL = Self.firstImageURL(in: item.content?.contentEncoded)
             }
 
+            // Final fallback: use the channel-level image (essential for podcast feeds
+            // where most episodes carry no per-episode artwork of their own).
+            if imageURL == nil {
+                imageURL = channelFallbackImage
+            }
+
+            // Detect audio enclosure (podcast episodes, audio articles, etc.)
+            var audioURL: String? = nil
+            if isAudioEnclosure, let url = item.enclosure?.attributes?.url {
+                audioURL = url
+            }
+            if audioURL == nil {
+                audioURL = item.media?.mediaContents?.first(where: {
+                    Self.isAudioMIMEType($0.attributes?.type ?? "") ||
+                    ($0.attributes?.medium ?? "") == "audio"
+                })?.attributes?.url
+            }
+
             // Get author
             let author = item.author ?? item.dublinCore?.dcCreator
 
@@ -133,9 +178,15 @@ final class RSSService {
                 publicationDate: item.pubDate,
                 description: description,
                 imageURL: imageURL,
-                author: author
+                author: author,
+                audioURL: audioURL
             )
         }
+    }
+
+    /// Returns true for any audio/* MIME type commonly found in RSS enclosures.
+    private static func isAudioMIMEType(_ type: String) -> Bool {
+        type.hasPrefix("audio/")
     }
 
     /// Finds the first absolute image URL from an `<img src>` attribute in raw HTML.
@@ -160,59 +211,85 @@ final class RSSService {
     /// Extract articles from Atom feed
     private func extractAtom(_ atom: AtomFeed) -> [ParsedArticle] {
         guard let entries = atom.entries else { return [] }
-        
+
         return entries.map { entry in
             // Get the first alternate link (the article URL)
             let link = entry.links?.first(where: { $0.attributes?.rel == "alternate" })?.attributes?.href
                 ?? entry.links?.first?.attributes?.href
-            
+
             // Get content with fallback to summary
             let description = entry.content?.value ?? entry.summary?.value
-            
+
             // Get publication date
             let date = entry.published ?? entry.updated
-            
+
             // Get author
             let author = entry.authors?.first?.name
-            
-            // Get image: prefer media:content (used by The Atlantic, many Atom feeds),
-            // then media:thumbnail, then an enclosure link.
-            let imageURL = entry.media?.mediaContents?.first?.attributes?.url
+
+            // Detect audio from enclosure links (e.g. <link rel="enclosure" type="audio/mpeg">)
+            // or media:content with audio type/medium.
+            var audioURL: String? = entry.links?.first(where: {
+                $0.attributes?.rel == "enclosure" &&
+                Self.isAudioMIMEType($0.attributes?.type ?? "")
+            })?.attributes?.href
+            if audioURL == nil {
+                audioURL = entry.media?.mediaContents?.first(where: {
+                    Self.isAudioMIMEType($0.attributes?.type ?? "") ||
+                    ($0.attributes?.medium ?? "") == "audio"
+                })?.attributes?.url
+            }
+
+            // Get image: prefer media:content (non-audio), then media:thumbnail,
+            // then a non-audio enclosure link.
+            let imageURL = entry.media?.mediaContents?.first(where: {
+                !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
+                ($0.attributes?.medium ?? "") != "audio"
+            })?.attributes?.url
                 ?? entry.media?.mediaThumbnails?.first?.attributes?.url
-                ?? entry.links?.first(where: { $0.attributes?.rel == "enclosure" })?.attributes?.href
-            
+                ?? entry.links?.first(where: {
+                    $0.attributes?.rel == "enclosure" &&
+                    !Self.isAudioMIMEType($0.attributes?.type ?? "")
+                })?.attributes?.href
+
             return ParsedArticle(
                 title: entry.title,
                 link: link,
                 publicationDate: date,
                 description: description,
                 imageURL: imageURL,
-                author: author
+                author: author,
+                audioURL: audioURL
             )
         }
     }
-    
+
     /// Extract articles from JSON Feed
     private func extractJSON(_ json: JSONFeed) -> [ParsedArticle] {
         guard let items = json.items else { return [] }
-        
+
         return items.map { item in
             // Get description with preference for HTML content
             let description = item.contentHtml ?? item.contentText ?? item.summary
-            
+
             // Get image URL
             let imageURL = item.image ?? item.bannerImage
-            
+
             // Get author
             let author = item.author?.name ?? json.author?.name
-            
+
+            // JSON Feed attachments carry audio files (podcasts commonly use this).
+            let audioURL = item.attachments?.first(where: {
+                Self.isAudioMIMEType($0.mimeType ?? "")
+            })?.url
+
             return ParsedArticle(
                 title: item.title,
                 link: item.url,
                 publicationDate: item.datePublished,
                 description: description,
                 imageURL: imageURL,
-                author: author
+                author: author,
+                audioURL: audioURL
             )
         }
     }

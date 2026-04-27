@@ -193,6 +193,7 @@ final class FeedIngestService: Sendable {
             fetchedAt: Date(),
             excerpt: excerpt,
             imageURL: imageURL,
+            audioURL: parsed.audioURL,
             author: parsed.author,
             velocityTier: velocityTier,
             simhashValue: SimHash.compute(title)

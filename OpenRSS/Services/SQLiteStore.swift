@@ -73,9 +73,14 @@ final class SQLiteStore: Sendable {
                 aged_out         INTEGER DEFAULT 0,
                 river_visible    INTEGER DEFAULT 1,
                 simhash_value    INTEGER DEFAULT 0,
-                embedding_vector BLOB
+                embedding_vector BLOB,
+                audio_url        TEXT
             )
         """)
+
+        // Lightweight migration: add audio_url to pre-existing tables.
+        // SQLite returns "duplicate column name" if it already exists; ignore.
+        execute("ALTER TABLE feed_items ADD COLUMN audio_url TEXT")
 
         execute("""
             CREATE TABLE IF NOT EXISTS source_affinity (
@@ -115,8 +120,8 @@ final class SQLiteStore: Sendable {
                 INSERT OR REPLACE INTO feed_items
                 (id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                  cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                 simhash_value, embedding_vector)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                 simhash_value, embedding_vector, audio_url)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
@@ -147,6 +152,7 @@ final class SQLiteStore: Sendable {
                 sqlite3_bind_int64(stmt, 16, Int64(bitPattern: item.simhashValue))
                 // embedding_vector: nil for Phase 2a
                 sqlite3_bind_null(stmt, 17)
+                bindOptionalText(stmt, 18, item.audioURL)
 
                 sqlite3_step(stmt)
             }
@@ -185,7 +191,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE river_visible = 1 AND aged_out = 0
             ORDER BY relevance_score DESC
@@ -211,7 +217,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE river_visible = 1 AND published_at >= ?
             ORDER BY relevance_score DESC
@@ -237,7 +243,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE published_at >= ?
             ORDER BY published_at DESC
@@ -261,7 +267,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE source_id = ?
             ORDER BY published_at DESC
@@ -316,7 +322,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE aged_out = 0
             ORDER BY published_at DESC
@@ -341,7 +347,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE aged_out = 0 AND published_at >= ?
             ORDER BY published_at DESC
@@ -419,7 +425,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value
+                   simhash_value, audio_url
             FROM feed_items
             WHERE cluster_id = ?
             ORDER BY published_at ASC
@@ -711,6 +717,7 @@ final class SQLiteStore: Sendable {
         let agedOut = sqlite3_column_int(stmt, 13) != 0
         let riverVisible = sqlite3_column_int(stmt, 14) != 0
         let simhash = UInt64(bitPattern: sqlite3_column_int64(stmt, 15))
+        let audioURL = columnText(stmt, 16)
 
         return FeedItem(
             id: id,
@@ -721,6 +728,7 @@ final class SQLiteStore: Sendable {
             fetchedAt: fetchedAt,
             excerpt: excerpt,
             imageURL: imageURL,
+            audioURL: audioURL,
             author: author,
             clusterID: clusterID,
             isCanonical: isCanonical,
