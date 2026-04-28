@@ -118,8 +118,8 @@ final class TodayViewModel {
 
         if let sds = dataService as? SwiftDataService {
             await sds.refreshAllFeeds()
-            // Purge extracted article cache entries older than 7 days
-            sds.purgeOldArticleCache(olderThan: 7)
+            // Purge extracted article cache entries older than 30 days
+            sds.purgeOldArticleCache(olderThan: 30)
         }
 
         UserDefaults.standard.set(Date(), forKey: Self.lastRefreshKey)

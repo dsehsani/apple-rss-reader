@@ -41,6 +41,15 @@ final class FeedModel {
     /// The folder this feed belongs to. `nil` means the feed is "unfiled".
     var folder: FolderModel?
 
+    /// User override for decay rate. When non-nil, overrides auto-inferred velocity tier.
+    var decayOverride: VelocityTier?
+
+    /// When true, clustered stories from this source are down-weighted in the river.
+    var preferUniqueStories: Bool
+
+    /// Per-feed YouTube content-type filter — kinds in this set are hidden.
+    var hiddenYouTubeKinds: Set<YouTubeService.YouTubeContentKind>
+
     // MARK: - Initialization
 
     init(
@@ -57,5 +66,8 @@ final class FeedModel {
         self.isEnabled = isEnabled
         self.isPaywalled = isPaywalled
         self.addedAt = Date()
+        self.decayOverride = nil
+        self.preferUniqueStories = false
+        self.hiddenYouTubeKinds = []
     }
 }

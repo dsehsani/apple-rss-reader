@@ -44,61 +44,71 @@ struct LiquidGlassFilterSheet: View {
         VStack(spacing: 0) {
             sheetHeader
             filterRows
-            doneButton
-                .padding(.top, 20)
         }
-        // Pad to the bottom of the safe area so the glass card feels complete
         .padding(.bottom, 24)
-        .safeAreaPadding(.bottom)
-        // Glass material fills the entire sheet surface
-        .presentationBackground(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+        // Glass material fills the entire sheet surface — matches headerView in TodayView
+        .presentationBackground(colorScheme == .dark ? .regularMaterial : .thinMaterial)
         .presentationCornerRadius(Design.Radius.glass)
-        .presentationDetents([.height(380)])
+        .presentationDetents([.height(330)])
         .presentationDragIndicator(.visible)
     }
 
     // MARK: - Header
 
     private var sheetHeader: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
+            // Title row — checkmark sits on the same line as the title
+            HStack(alignment: .center) {
                 Text("Filter Articles")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                Spacer()
+
+                // Blue checkmark dismiss button
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            Circle()
+                                .fill(Design.Colors.primary)
+                                .shadow(color: Design.Colors.primary.opacity(0.35), radius: 8, y: 3)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Subtitle row — "X active" + Clear All
+            HStack(spacing: 8) {
                 Text("\(activeFilters.count) active")
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                     .opacity(activeFilters.isEmpty ? 0 : 1)
                     .animation(Design.Animation.quick, value: activeFilters.isEmpty)
-            }
 
-            Spacer()
-
-            // Clear All — only visible when at least one filter is on
-            if !activeFilters.isEmpty {
-                Button {
-                    withAnimation(Design.Animation.standard) {
-                        activeFilters.removeAll()
+                if !activeFilters.isEmpty {
+                    Button {
+                        withAnimation(Design.Animation.standard) {
+                            activeFilters.removeAll()
+                        }
+                    } label: {
+                        Text("Clear All")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Design.Colors.primary)
                     }
-                } label: {
-                    Text("Clear All")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Design.Colors.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Design.Colors.primary.opacity(0.12))
-                        )
+                    .buttonStyle(.plain)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
-                .buttonStyle(.plain)
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
+            .animation(Design.Animation.standard, value: activeFilters.isEmpty)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 24)
-        .padding(.bottom, 16)
-        .animation(Design.Animation.standard, value: activeFilters.isEmpty)
+        .padding(.top, 20)
+        .padding(.bottom, 14)
     }
 
     // MARK: - Filter Rows
@@ -124,26 +134,7 @@ struct LiquidGlassFilterSheet: View {
         .padding(.horizontal, 16)
     }
 
-    // MARK: - Done Button
 
-    private var doneButton: some View {
-        Button {
-            dismiss()
-        } label: {
-            Text("Done")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    Capsule()
-                        .fill(Design.Colors.primary)
-                        .shadow(color: Design.Colors.primary.opacity(0.4), radius: 10, y: 4)
-                )
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 20)
-    }
 }
 
 // MARK: - FilterOptionRow
@@ -181,7 +172,7 @@ private struct FilterOptionRow: View {
                     .animation(Design.Animation.quick, value: isActive)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 12)
             .background(rowBackground)
         }
         .buttonStyle(.plain)

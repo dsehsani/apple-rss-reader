@@ -14,6 +14,8 @@ struct SourceRowView: View {
 
     let source: Source
     let unreadCount: Int
+    /// Called when the user taps the row (used for sourceBrowse affinity tracking).
+    var onTap: (() -> Void)?
 
     // MARK: - Body
 
@@ -63,6 +65,7 @@ struct SourceRowView: View {
         .padding(.vertical, 8)
         .padding(.horizontal, Design.Spacing.edge)
         .contentShape(Rectangle())
+        .onTapGesture { onTap?() }
     }
 }
 
@@ -78,6 +81,7 @@ struct CategorySectionHeader: View {
     let unreadCount: Int
     let isExpanded: Bool
     var onTap: (() -> Void)?
+    var onBrowse: (() -> Void)?
 
     // MARK: - Body
 
@@ -119,6 +123,19 @@ struct CategorySectionHeader: View {
                         .padding(.vertical, 5)
                         .background(Design.Colors.primary)
                         .clipShape(Capsule())
+                }
+
+                // Browse folder
+                if let onBrowse {
+                    Button {
+                        onBrowse()
+                    } label: {
+                        Image(systemName: "rectangle.grid.1x2")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Design.Colors.primary.opacity(0.8))
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 // Expand/collapse chevron

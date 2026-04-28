@@ -8,6 +8,9 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import BackgroundTasks
+import Network
+import CryptoKit
 
 @main
 struct OpenRSSApp: App {
@@ -25,8 +28,23 @@ struct OpenRSSApp: App {
             directory: nil                         // default location
         )
 
-        let schema = Schema([FolderModel.self, FeedModel.self, CachedArticle.self])
-        let config = ModelConfiguration(schema: schema)
+        let schema = Schema([
+            FolderModel.self,
+            FeedModel.self,
+            CachedArticle.self,
+            UserProfile.self,
+            ArticleState.self,
+            UserPreferences.self,
+        ])
+
+        // Check Keychain directly — AuthenticationManager isn't configured yet.
+        // If an Apple user ID is stored, the user was previously signed in.
+        let isSignedIn = KeychainService.loadAppleUserID() != nil
+
+        let config = ModelConfiguration(
+            schema: schema,
+            cloudKitDatabase: isSignedIn ? .automatic : .none
+        )
 
         do {
             container = try ModelContainer(for: schema, configurations: config)
@@ -56,22 +74,118 @@ struct OpenRSSApp: App {
         // @main App.init() is always called on the main thread, so assumeIsolated is safe.
         MainActor.assumeIsolated {
             SwiftDataService.shared.configure(container: container)
+            AuthenticationManager.shared.configure(container: container)
 
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
+
+            SyncService.shared.startMonitoring(isCloudKitEnabled: isSignedIn)
+        }
+
+        // Phase 2a — Register BGTask for background river refresh
+        Self.registerBackgroundTasks()
+    }
+
+    // MARK: - Background Task Registration
+
+    private static let riverRefreshIdentifier = "com.openrss.riverRefresh"
+
+    private static func registerBackgroundTasks() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: riverRefreshIdentifier,
+            using: nil
+        ) { task in
+            guard let bgTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handleRiverRefresh(task: bgTask)
+        }
+    }
+
+    private static func handleRiverRefresh(task: BGAppRefreshTask) {
+        // Schedule the next refresh before starting work
+        scheduleNextRiverRefresh()
+
+        let workTask = Task {
+            // Network check — skip the pipeline if there is no connection
+            guard await isNetworkAvailable() else {
+                print("BGTask: skipping refresh — no network")
+                task.setTaskCompleted(success: false)
+                return
+            }
+
+            let sources = await MainActor.run { SwiftDataService.shared.sources }
+
+            // Snapshot count before
+            let countBefore = SQLiteStore.shared.totalItemCount()
+
+            await RiverPipeline.shared.runCycle(sources: sources)
+
+            // Snapshot count after — detect empty cycle
+            let countAfter = SQLiteStore.shared.totalItemCount()
+            let store = RefreshStateStore.shared
+            if countAfter > countBefore {
+                store.consecutiveEmptyRefreshes = 0
+            } else {
+                store.consecutiveEmptyRefreshes += 1
+            }
+
+            store.lastRefreshedAt = Date()
+
+            task.setTaskCompleted(success: true)
+        }
+
+        // If the system kills the background task, cancel our work
+        task.expirationHandler = {
+            workTask.cancel()
+        }
+    }
+
+    /// Returns true if the device has any usable network path.
+    private static func isNetworkAvailable() async -> Bool {
+        await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            let queue = DispatchQueue(label: "com.openrss.networkCheck")
+            monitor.pathUpdateHandler = { path in
+                monitor.cancel()
+                continuation.resume(returning: path.status == .satisfied)
+            }
+            monitor.start(queue: queue)
+        }
+    }
+
+    /// Schedules the next background river refresh.
+    static func scheduleNextRiverRefresh() {
+        let interval = RefreshStateStore.shared.nextIntervalSeconds
+        guard interval.isFinite else { return }  // .manual — do not schedule
+
+        let request = BGAppRefreshTaskRequest(identifier: riverRefreshIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("BGTask scheduling failed: \(error)")
         }
     }
 
     // MARK: - App State
 
     @State private var appState = AppState()
+    @State private var hasCheckedAuth = false
 
     // MARK: - Body
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            rootView
                 .environment(appState)
+                .onAppear {
+                    // Sync persisted preferences into AppState so all views
+                    // start with the correct values without needing @Query.
+                    let prefs = SwiftDataService.shared.userPreferences()
+                    appState.showImages = prefs.showImages
+                }
                 .onReceive(
                     NotificationCenter.default.publisher(
                         for: UIApplication.didReceiveMemoryWarningNotification
@@ -79,7 +193,60 @@ struct OpenRSSApp: App {
                 ) { _ in
                     URLCache.shared.removeAllCachedResponses()
                 }
+                // Schedule background refresh when the app moves to background
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: UIApplication.didEnterBackgroundNotification
+                    )
+                ) { _ in
+                    Self.scheduleNextRiverRefresh()
+                }
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: Notification.Name("OpenRSS.AuthStateChanged")
+                    )
+                ) { _ in
+                    let isNowSignedIn = AuthenticationManager.shared.isSignedIn
+                    SyncService.shared.startMonitoring(isCloudKitEnabled: isNowSignedIn)
+                }
+                .task {
+                    guard !hasCheckedAuth else { return }
+                    hasCheckedAuth = true
+                    await AuthenticationManager.shared.checkExistingCredential()
+                }
         }
         .modelContainer(container)
+    }
+
+    // MARK: - Root View
+
+    /// Decides whether to show onboarding or the main app.
+    ///
+    /// - `.unknown`   → blank screen (auth check in-flight, prevents onboarding flash)
+    /// - `.signedOut` + never skipped → OnboardingView
+    /// - `.signedOut` + guest mode    → MainTabView
+    /// - `.signedIn`  → MainTabView
+    @ViewBuilder
+    private var rootView: some View {
+        let auth = AuthenticationManager.shared
+
+        switch auth.state {
+        case .unknown:
+            Color.clear
+
+        case .signedOut:
+            if auth.shouldShowOnboarding {
+                OnboardingView()
+            } else {
+                mainApp
+            }
+
+        case .signedIn:
+            mainApp
+        }
+    }
+
+    private var mainApp: some View {
+        MainTabView()
     }
 }

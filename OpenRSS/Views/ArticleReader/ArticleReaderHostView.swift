@@ -36,6 +36,7 @@ struct ArticleReaderHostView: View {
     @State private var loadState: LoadState = .loading
     @State private var showPaywallSafari = false
     @State private var isDescriptionExpanded = false
+    @State private var appearedAt: Date?
 
     // MARK: - Environment
 
@@ -80,10 +81,41 @@ struct ArticleReaderHostView: View {
             }
         }
         .task { await runPipeline() }
-        .onAppear  { appState.isReadingArticle = true  }
+        .onAppear  {
+            appState.isReadingArticle = true
+            appearedAt = Date()
+
+            // Phase 2d — track return visit if article was already read
+            if article.isRead {
+                AffinityTracker.shared.record(
+                    .returnVisit,
+                    sourceID: article.sourceID,
+                    itemID: article.id
+                )
+            }
+        }
         // Only clear the flag when we're truly leaving the reader, not when
         // the paywall sheet slides in on top of us.
-        .onDisappear { if !showPaywallSafari { appState.isReadingArticle = false } }
+        .onDisappear {
+            if !showPaywallSafari {
+                appState.isReadingArticle = false
+
+                // Phase 2d — Dwell time tracking
+                if let appeared = appearedAt {
+                    let dwell = Date().timeIntervalSince(appeared)
+                    let eventType: InteractionEventType = dwell < 5 ? .quickBounce
+                                                        : dwell < 15 ? .articleOpen
+                                                        : dwell < 45 ? .dwellMedium
+                                                        : .dwellLong
+                    AffinityTracker.shared.record(
+                        eventType,
+                        sourceID: article.sourceID,
+                        itemID: article.id,
+                        dwellTime: dwell
+                    )
+                }
+            }
+        }
     }
 
     // MARK: - Pipeline

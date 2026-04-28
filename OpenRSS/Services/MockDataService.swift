@@ -25,6 +25,7 @@ protocol FeedDataService {
     func toggleBookmark(for articleID: UUID)
     func markAsRead(_ articleID: UUID)
     func markAsUnread(_ articleID: UUID)
+    func splitCluster(for articleID: UUID)
 }
 
 /// Mock data service providing sample RSS data for UI development
@@ -669,6 +670,16 @@ final class MockDataService: FeedDataService {
     func markAsUnread(_ articleID: UUID) {
         if let i = articles.firstIndex(where: { $0.id == articleID }) {
             articles[i].isRead = false
+        }
+    }
+
+    func splitCluster(for articleID: UUID) {
+        guard let i = articles.firstIndex(where: { $0.id == articleID }),
+              let clusterID = articles[i].clusterID else { return }
+        for j in articles.indices where articles[j].clusterID == clusterID {
+            articles[j].clusterID = nil
+            articles[j].clusterSize = 1
+            articles[j].isCanonical = true
         }
     }
 

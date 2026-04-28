@@ -28,6 +28,13 @@ struct ArticleReaderView: View {
                 headerZone
                     .padding(.bottom, 24)
 
+                // Audio player — only shown when the RSS item carried an audio enclosure.
+                if let audioURL {
+                    AudioPlayerView(audioURL: audioURL)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                }
+
                 bodyZone
                     .padding(.horizontal, 20)
 
@@ -40,6 +47,13 @@ struct ArticleReaderView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
             }
+            // containerRelativeFrame(.horizontal) anchors the content width to the
+            // scroll view's actual bounds width. Unlike frame(maxWidth: .infinity),
+            // this prevents SwiftUI from ever reporting a wider ideal size to the
+            // underlying UIScrollView — so contentSize.width stays == bounds.width
+            // and UIKit never sets a non-zero contentOffset.x that clips the left edge.
+            .containerRelativeFrame(.horizontal, alignment: .leading)
+            .clipped()
         }
         .background(Color(.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
@@ -79,12 +93,14 @@ struct ArticleReaderView: View {
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
                     .tracking(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Title
+                // Title — fixedSize before frame so the frame sees the capped width
                 Text(extracted.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Byline + read time
                 HStack(spacing: 12) {
@@ -98,7 +114,9 @@ struct ArticleReaderView: View {
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
         }
     }
@@ -106,11 +124,17 @@ struct ArticleReaderView: View {
     // MARK: - Body Zone
 
     private var bodyZone: some View {
-        LazyVStack(alignment: .leading, spacing: 16) {
+        // VStack (not LazyVStack) gives consistent width proposals to children.
+        // LazyVStack has known layout quirks with fixedSize in scroll views,
+        // causing children to report unconstrained widths that push the whole
+        // container beyond screen width and shift the header text off the left edge.
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(Array(extracted.nodes.enumerated()), id: \.offset) { _, node in
                 nodeView(for: node)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

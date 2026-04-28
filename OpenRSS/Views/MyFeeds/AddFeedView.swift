@@ -14,20 +14,6 @@
 
 import SwiftUI
 
-// MARK: - Folder Appearance Options
-
-private let folderColorHexes: [String] = [
-    "007AFF", "FF9500", "34C759", "AF52DE", "FF2D55",
-    "5AC8FA", "FF3B30", "5856D0", "FFCC00", "00C7BE"
-]
-
-private let folderIcons: [String] = [
-    "folder.fill",        "star.fill",      "heart.fill",    "bookmark.fill",
-    "newspaper.fill",     "laptopcomputer", "gamecontroller.fill", "music.note",
-    "camera.fill",        "cart.fill",      "globe",         "leaf.fill",
-    "flame.fill",         "bolt.fill",      "person.fill",   "airplane"
-]
-
 // MARK: - AddFeedView
 
 struct AddFeedView: View {
@@ -35,6 +21,7 @@ struct AddFeedView: View {
     // MARK: - ViewModel
 
     @State private var viewModel = AddFeedViewModel()
+    @State private var showingHelp = false
 
     // MARK: - Environment
 
@@ -78,8 +65,18 @@ struct AddFeedView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Design.Colors.primary)
+                    HStack(spacing: 12) {
+                        Button("Cancel") { dismiss() }
+                            .foregroundStyle(Design.Colors.primary)
+
+                        Button {
+                            showingHelp = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 17))
+                                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Group {
@@ -106,6 +103,112 @@ struct AddFeedView: View {
         .presentationBackground(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
         .presentationCornerRadius(Design.Radius.glass)
         .onDisappear { viewModel.reset() }
+        .sheet(isPresented: $showingHelp) {
+            helpSheet
+        }
+    }
+
+    // MARK: - Help Sheet
+
+    private var helpSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header icon
+                    HStack {
+                        Spacer()
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Design.Colors.primary.opacity(0.1))
+                                .frame(width: 72, height: 72)
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(Design.Colors.primary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+
+                    // Steps
+                    VStack(alignment: .leading, spacing: 20) {
+                        helpStep(
+                            number: "1",
+                            title: "Find the RSS feed URL",
+                            description: "Most blogs and news sites have an RSS feed. Look for an RSS icon on the site, or try adding /feed or /rss to the website URL."
+                        )
+                        helpStep(
+                            number: "2",
+                            title: "Paste the URL above",
+                            description: "Copy the feed URL and paste it into the Feed URL field. Tap the arrow button to fetch the feed details."
+                        )
+                        helpStep(
+                            number: "3",
+                            title: "Choose a folder",
+                            description: "Organize your feed by placing it in a folder, or leave it unfiled. You can create a new folder with a custom color and icon."
+                        )
+                        helpStep(
+                            number: "4",
+                            title: "Subscribe",
+                            description: "Tap Subscribe and you're done! New articles will start appearing in your feed."
+                        )
+                    }
+                    .padding(.horizontal, Design.Spacing.edge)
+
+                    // Tip
+                    HStack(spacing: 10) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.yellow)
+                        Text("YouTube channels and podcasts work too — just paste the channel or podcast URL.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    }
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+                    )
+                    .padding(.horizontal, Design.Spacing.edge)
+                }
+                .padding(.bottom, 30)
+            }
+            .background(Design.Colors.background(for: colorScheme))
+            .navigationTitle("How to Add a Feed")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showingHelp = false }
+                        .foregroundStyle(Design.Colors.primary)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+        .presentationCornerRadius(Design.Radius.glass)
+    }
+
+    private func helpStep(number: String, title: String, description: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text(number)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle()
+                        .fill(Design.Colors.primary)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                Text(description)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     // MARK: - URL Input Section
@@ -298,7 +401,7 @@ struct AddFeedView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(folderColorHexes, id: \.self) { hex in
+                    ForEach(folderColorHexOptions, id: \.self) { hex in
                         Button {
                             viewModel.newFolderColorHex = hex
                         } label: {
@@ -346,7 +449,7 @@ struct AddFeedView: View {
 
             let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 5)
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(folderIcons, id: \.self) { icon in
+                ForEach(folderIconOptions, id: \.self) { icon in
                     Button {
                         viewModel.newFolderIcon = icon
                     } label: {

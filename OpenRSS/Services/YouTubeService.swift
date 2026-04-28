@@ -35,6 +35,43 @@ final class YouTubeService {
         }
     }
 
+    // MARK: - Content Kind
+
+    /// Classifies YouTube content for per-feed filtering.
+    enum YouTubeContentKind: String, CaseIterable, Codable, Hashable {
+        case video
+        case short
+        case playlist
+
+        var displayName: String {
+            switch self {
+            case .video:    return "Videos"
+            case .short:    return "Shorts"
+            case .playlist: return "Playlists"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .video:    return "play.rectangle"
+            case .short:    return "bolt.square"
+            case .playlist: return "list.and.film"
+            }
+        }
+    }
+
+    /// Classifies an article URL into a `YouTubeContentKind`.
+    /// Returns `nil` for non-YouTube URLs (which should always be shown).
+    static func contentKind(forArticleURL urlString: String) -> YouTubeContentKind? {
+        guard let url = URL(string: urlString) else { return nil }
+        switch route(for: url) {
+        case .video:    return .video
+        case .short:    return .short
+        case .playlist: return .playlist
+        case .unknown:  return nil
+        }
+    }
+
     // MARK: - Resource Routing
 
     /// Structured representation of a YouTube URL's content type.

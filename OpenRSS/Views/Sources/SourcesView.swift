@@ -52,6 +52,9 @@ struct SourcesView: View {
                 addButton
             }
             .navigationTitle("Sources")
+            .navigationDestination(item: $viewModel.browsingCategoryID) { categoryID in
+                FolderView(categoryID: categoryID)
+            }
             .sheet(isPresented: $viewModel.showingAddSourceSheet) {
                 addSourceSheet
             }
@@ -86,6 +89,9 @@ struct SourcesView: View {
 
             addButton
         }
+        .navigationDestination(item: $viewModel.browsingCategoryID) { categoryID in
+            FolderView(categoryID: categoryID)
+        }
         .sheet(isPresented: $viewModel.showingAddSourceSheet) {
             addSourceSheet
         }
@@ -100,17 +106,32 @@ struct SourcesView: View {
                     category: category,
                     sourceCount: viewModel.sourceCount(for: category),
                     unreadCount: viewModel.unreadCount(for: category),
-                    isExpanded: viewModel.isExpanded(category)
-                ) {
-                    viewModel.toggleExpansion(for: category)
-                }
+                    isExpanded: viewModel.isExpanded(category),
+                    onTap: {
+                        viewModel.toggleExpansion(for: category)
+                    },
+                    onBrowse: {
+                        viewModel.browsingCategoryID = category.id
+                    }
+                )
 
                 if viewModel.isExpanded(category) {
                     ForEach(viewModel.filteredSources(for: category)) { source in
-                        SourceRowView(
-                            source: source,
-                            unreadCount: viewModel.unreadCount(for: source)
-                        )
+                        NavigationLink(destination: SourceFeedView(sourceID: source.id)) {
+                            SourceRowView(
+                                source: source,
+                                unreadCount: viewModel.unreadCount(for: source),
+                                onTap: {
+                                    // Phase 2d — track source browse
+                                    AffinityTracker.shared.record(
+                                        .sourceBrowse,
+                                        sourceID: source.id,
+                                        itemID: source.id
+                                    )
+                                }
+                            )
+                        }
+                        .buttonStyle(.plain)
                         .background(Design.Colors.cardBackground.opacity(0.3))
                     }
                 }

@@ -22,6 +22,8 @@ final class SourcesViewModel {
     var searchText: String = ""
     var showingAddSourceSheet: Bool = false
     var showingManageCategoriesSheet: Bool = false
+    /// Set to a category ID to navigate to its FolderView.
+    var browsingCategoryID: UUID? = nil
 
     // MARK: - Computed Properties
 

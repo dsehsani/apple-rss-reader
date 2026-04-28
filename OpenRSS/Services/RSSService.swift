@@ -109,8 +109,6 @@ final class RSSService {
         // Channel-level image fallback — used when an individual episode carries no
         // image of its own (the common case for podcast feeds like NPR).
         // Priority: itunes:image href (square podcast artwork) → standard <image> element.
-        // Note: RSSFeed has no `media` property in FeedKit, so channel-level
-        // media:thumbnail is not accessible here.
         let channelFallbackImage: String? =
             rss.iTunes?.iTunesImage?.attributes?.href ??
             rss.image?.url
@@ -264,7 +262,7 @@ final class RSSService {
             )
         }
     }
-    
+
     /// Extract articles from JSON Feed
     private func extractJSON(_ json: JSONFeed) -> [ParsedArticle] {
         guard let items = json.items else { return [] }
