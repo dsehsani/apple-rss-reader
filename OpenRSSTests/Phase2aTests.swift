@@ -224,37 +224,34 @@ struct DecayScoringTests {
     // Expected output: Each threshold band returns the correct opacity value.
     // -------------------------------------------------------------------------
     @Test func opacityThresholds() {
-        // Full brightness
+        // Full brightness (relevance >= 0.7)
         #expect(DecayScoringService.opacity(for: 1.0)  == 1.0)
         #expect(DecayScoringService.opacity(for: 0.75) == 1.0)
+        #expect(DecayScoringService.opacity(for: 0.7)  == 1.0)
 
-        // Slightly faded
-        #expect(DecayScoringService.opacity(for: 0.5)  == 0.6)
-        #expect(DecayScoringService.opacity(for: 0.4)  == 0.6)
+        // Medium opacity (0.4 ..< 0.7)
+        #expect(DecayScoringService.opacity(for: 0.5)  == 0.85)
+        #expect(DecayScoringService.opacity(for: 0.4)  == 0.85)
 
-        // Noticeably faded
-        #expect(DecayScoringService.opacity(for: 0.3)  == 0.35)
-        #expect(DecayScoringService.opacity(for: 0.2)  == 0.35)
-
-        // Nearly invisible (about to be archived)
-        #expect(DecayScoringService.opacity(for: 0.19) == 0.2)
-        #expect(DecayScoringService.opacity(for: 0.0)  == 0.2)
+        // Floor opacity (below 0.4)
+        #expect(DecayScoringService.opacity(for: 0.3)  == 0.7)
+        #expect(DecayScoringService.opacity(for: 0.19) == 0.7)
+        #expect(DecayScoringService.opacity(for: 0.0)  == 0.7)
     }
 
     // -------------------------------------------------------------------------
-    // TEST: Font scale reduces for low-relevance articles
+    // TEST: Font scale is constant at 1.0 for all relevance values
     //
-    // Articles below the medium threshold (0.4) get slightly smaller text.
+    // The font scale was simplified to always return 1.0 — article text
+    // no longer shrinks based on relevance (opacity handles visual hierarchy).
     //
-    // Expected output:
-    //   relevance >= 0.4 -> fontScale 1.0 (normal)
-    //   relevance <  0.4 -> fontScale 0.92 (slightly smaller)
+    // Expected output: fontScale == 1.0 for all inputs.
     // -------------------------------------------------------------------------
     @Test func fontScaleMapping() {
         #expect(DecayScoringService.fontScale(for: 0.8) == 1.0)
         #expect(DecayScoringService.fontScale(for: 0.4) == 1.0)
-        #expect(DecayScoringService.fontScale(for: 0.39) == 0.92)
-        #expect(DecayScoringService.fontScale(for: 0.1) == 0.92)
+        #expect(DecayScoringService.fontScale(for: 0.39) == 1.0)
+        #expect(DecayScoringService.fontScale(for: 0.1) == 1.0)
     }
 }
 
