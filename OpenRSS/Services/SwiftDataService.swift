@@ -426,7 +426,11 @@ final class SwiftDataService: FeedDataService {
         var seen = Set<String>()
 
         for source in sources where source.isEnabled {
-            guard let url = URL(string: source.feedURL) else { continue }
+            // Upgrade http:// to https:// — iOS ATS blocks http:// requests.
+            let feedURLString = source.feedURL.hasPrefix("http://")
+                ? "https://" + source.feedURL.dropFirst(7)
+                : source.feedURL
+            guard let url = URL(string: feedURLString) else { continue }
 
             do {
                 // Fetch the raw feed data so we can run both FeedKit and (for
