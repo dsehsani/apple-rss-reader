@@ -11,6 +11,7 @@ import UIKit
 import BackgroundTasks
 import Network
 import CryptoKit
+import Combine
 
 @main
 struct OpenRSSApp: App {
@@ -108,6 +109,10 @@ struct OpenRSSApp: App {
     // MARK: - Background Task Registration
 
     private static let riverRefreshIdentifier = "com.openrss.riverRefresh"
+    /// Long-tail hero pre-fetch. Runs as a BGProcessingTask so the system can
+    /// pick a window when the device is on a charger and on Wi-Fi (typically
+    /// overnight) and we have a much larger runtime budget than a refresh task.
+    private static let heroPrefetchIdentifier = "com.openrss.heroPrefetch"
 
     private static func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(
@@ -119,6 +124,17 @@ struct OpenRSSApp: App {
                 return
             }
             handleRiverRefresh(task: bgTask)
+        }
+
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: heroPrefetchIdentifier,
+            using: nil
+        ) { task in
+            guard let bgTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handleHeroPrefetch(task: bgTask)
         }
     }
 
@@ -152,6 +168,12 @@ struct OpenRSSApp: App {
 
             store.lastRefreshedAt = Date()
 
+            // Pre-warm hero thumbnails for the top of the freshly-ingested
+            // river so the user's first scroll on next foreground paints from
+            // disk. Tight 8s budget keeps us comfortably inside the ~30s
+            // BGAppRefreshTask window.
+            await prewarmTopHeroes(count: 10, budgetSeconds: 8)
+
             task.setTaskCompleted(success: true)
         }
 
@@ -159,6 +181,40 @@ struct OpenRSSApp: App {
         task.expirationHandler = {
             workTask.cancel()
         }
+    }
+
+    /// Pulls the latest snapshot from the pipeline and warms hero thumbnails
+    /// for the top-N items via HeroPrefetcher. Used by both background tasks.
+    /// Falls back to the SQLiteStore directly if no snapshot has been emitted
+    /// yet (e.g. very first launch into background refresh).
+    private static func prewarmTopHeroes(
+        skip: Int = 0,
+        count: Int,
+        budgetSeconds: TimeInterval
+    ) async {
+        let snapshot = RiverPipeline.shared.snapshotPublisher.value
+        let slice = snapshot.items.dropFirst(skip).prefix(count)
+        guard !slice.isEmpty else { return }
+
+        var inputs: [HeroInput] = []
+        inputs.reserveCapacity(slice.count)
+        for item in slice {
+            switch item {
+            case .article(let f):
+                inputs.append(HeroInput(pageURL: f.link.absoluteString, imageURL: f.imageURL))
+            case .cluster(let c):
+                inputs.append(
+                    HeroInput(
+                        pageURL: c.canonicalItem.link.absoluteString,
+                        imageURL: c.canonicalItem.imageURL
+                    )
+                )
+            case .digest, .nudge:
+                continue
+            }
+        }
+        guard !inputs.isEmpty else { return }
+        await HeroPrefetcher.warm(inputs: inputs, budgetSeconds: budgetSeconds)
     }
 
     /// Returns true if the device has any usable network path.
@@ -188,6 +244,57 @@ struct OpenRSSApp: App {
         }
     }
 
+    // MARK: - Hero Pre-Fetch (Long Tail)
+
+    /// Handles the long-tail hero thumbnail pre-fetch task.
+    /// Warms items 11..50 of the latest river snapshot so the user can scroll
+    /// deep into the feed without ever waiting on hero downloads. Constrained
+    /// to charger + Wi-Fi via the BGProcessingTaskRequest so it doesn't burn
+    /// cellular data or battery.
+    private static func handleHeroPrefetch(task: BGProcessingTask) {
+        // Schedule the next one before doing work so we keep the cadence even
+        // if this run is killed.
+        scheduleNextHeroPrefetch()
+
+        let workTask = Task {
+            guard await isNetworkAvailable() else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            // Generous budget — well under the BGProcessingTask cap (~30 min)
+            // but long enough to download ~40 thumbnails on a slow link.
+            await prewarmTopHeroes(skip: 10, count: 40, budgetSeconds: 90)
+            task.setTaskCompleted(success: true)
+        }
+
+        task.expirationHandler = {
+            workTask.cancel()
+        }
+    }
+
+    /// Schedules the next BGProcessingTask request for hero pre-fetch.
+    /// `requiresExternalPower = true` and `requiresNetworkConnectivity = true`
+    /// so the OS only fires us when the user is plugged in on Wi-Fi —
+    /// typically overnight at the charging cable.
+    static func scheduleNextHeroPrefetch() {
+        // Honor the user's manual-refresh preference: if they don't want any
+        // background work, don't schedule the long-tail warm either.
+        guard RefreshStateStore.shared.refreshInterval != .manual else { return }
+
+        let request = BGProcessingTaskRequest(identifier: heroPrefetchIdentifier)
+        request.requiresExternalPower = true
+        request.requiresNetworkConnectivity = true
+        // Earliest begin: ~6 hours from now, so the OS picks a quiet moment
+        // (often the next overnight charging window) to actually run us.
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 6 * 60 * 60)
+
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("BGProcessingTask (heroPrefetch) scheduling failed: \(error)")
+        }
+    }
+
     // MARK: - App State
 
     @State private var appState = AppState()
@@ -212,13 +319,17 @@ struct OpenRSSApp: App {
                 ) { _ in
                     URLCache.shared.removeAllCachedResponses()
                 }
-                // Schedule background refresh when the app moves to background
+                // Schedule background refresh + hero pre-fetch when the app
+                // moves to background. Keeping these submissions co-located
+                // makes it obvious that both cadences are tied to the same
+                // user action (sending the app to background).
                 .onReceive(
                     NotificationCenter.default.publisher(
                         for: UIApplication.didEnterBackgroundNotification
                     )
                 ) { _ in
                     Self.scheduleNextRiverRefresh()
+                    Self.scheduleNextHeroPrefetch()
                 }
                 .onReceive(
                     NotificationCenter.default.publisher(
