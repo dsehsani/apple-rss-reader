@@ -50,10 +50,10 @@ struct ArticleCardView: View {
     // MARK: - State
 
     /// Resolved og:image URL for articles whose RSS feed provided no image.
+    /// Read from OGImageService cache; pre-warmed by the pipeline ingest stage
+    /// and the snapshot post-step in RiverViewModel, so by the time the card
+    /// is visible this is usually already set.
     @State private var ogImageURL: String?
-
-    /// Whether the hero image loaded successfully, hiding the placeholder.
-    @State private var heroImageLoaded: Bool = false
 
     /// Whether the expandable cluster chip is showing its sibling list.
     @State private var isClusterExpanded: Bool = false
@@ -120,11 +120,15 @@ struct ArticleCardView: View {
             }
         }
         .task(id: article.id) {
+            // Hero URL resolution. Most callers (river snapshot post-step,
+            // ingest pre-warm, BG refresh) will have already populated the
+            // OGImageService cache, so this is a sync read in the common case.
             guard article.imageURL == nil else { return }
             if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
                 ogImageURL = cached
                 return
             }
+            // Last-resort fetch — only happens if pre-warm hasn't reached this URL yet.
             await OGImageService.shared.prefetch(articleURL: article.articleURL)
             ogImageURL = await OGImageService.shared.cachedImageURL(for: article.articleURL)
         }
@@ -141,33 +145,22 @@ struct ArticleCardView: View {
     // MARK: - Subviews
 
     private var heroImage: some View {
-        Color.clear
+        let displayURL = article.imageURL ?? ogImageURL
+        return Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: 180)
             .overlay {
-                ZStack {
-                    if !heroImageLoaded {
+                CachedImageView(
+                    url: displayURL.flatMap(URL.init(string:)),
+                    pointSize: CGSize(width: 400, height: 180),
+                    contentMode: .fill
+                ) {
+                    ZStack {
                         placeholderHero
-                    }
-
-                    let displayURL = article.imageURL ?? ogImageURL
-                    if let urlString = displayURL, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .onAppear { heroImageLoaded = true }
-                            case .empty:
-                                Color.clear
-                                    .overlay(ProgressView().tint(.white.opacity(0.5)))
-                            case .failure:
-                                Color.clear
-                            @unknown default:
-                                Color.clear
-                            }
-                        }
+                        // Subtle motion so the empty state doesn't read as broken
+                        // while the bytes (or og:image URL) are still in flight.
+                        ShimmerView(cornerRadius: 0)
+                            .opacity(displayURL == nil ? 0.0 : 1.0)
                     }
                 }
             }

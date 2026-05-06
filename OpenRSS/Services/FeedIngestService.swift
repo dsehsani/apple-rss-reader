@@ -81,12 +81,13 @@ final class FeedIngestService: Sendable {
                 // Update velocity tier in affinity table
                 updateSourceAffinity(source: source, tier: tier)
 
-                // Pre-warm the OG image cache for items that came in without a
-                // feed-provided image (e.g. Hacker News). Detached + bounded so
-                // the pipeline isn't blocked and we don't hammer external hosts.
-                let needsOGImage = newItems.filter { $0.imageURL == nil }
-                if !needsOGImage.isEmpty {
-                    Self.prewarmOGImages(for: needsOGImage)
+                // Pre-warm hero thumbnails for newly inserted items so the first
+                // scroll after a refresh paints from disk, not the network.
+                // For items missing a feed-provided imageURL, this also resolves
+                // the og:image first. Detached + bounded so the pipeline isn't
+                // blocked and we don't hammer external hosts.
+                if !newItems.isEmpty {
+                    Self.prewarmHeroes(for: newItems)
                 }
 
             } catch {
@@ -248,37 +249,22 @@ final class FeedIngestService: Sendable {
         }
     }
 
-    // MARK: - OG Image Pre-Warm
+    // MARK: - Hero Pre-Warm
 
-    /// Maximum concurrent og:image lookups per ingest cycle. Higher than 4 risks
-    /// noisy network bursts; lower delays first-open hero images for big feeds.
-    private static let ogImagePrewarmConcurrency = 4
+    /// Wall-clock budget for the per-ingest hero warm. Generous because we
+    /// run detached at utility priority and don't block the pipeline; small
+    /// enough that even slow hosts don't pile up tasks across cycles.
+    private static let heroPrewarmBudgetSeconds: TimeInterval = 25
 
-    /// Fire-and-forget OG image resolution for the given items. Runs detached
-    /// at utility priority so it doesn't compete with user-initiated work.
-    /// OGImageService dedups and negative-caches internally, so repeat calls
-    /// are cheap.
-    private static func prewarmOGImages(for items: [FeedItem]) {
-        let urls = items.map(\.link.absoluteString)
+    /// Fire-and-forget hero thumbnail warm for newly inserted items.
+    /// Resolves og:image where missing, then asks ThumbnailService to download
+    /// + downsample + persist. Uses HeroPrefetcher's bounded concurrency.
+    private static func prewarmHeroes(for items: [FeedItem]) {
+        let inputs = items.map { item in
+            HeroInput(pageURL: item.link.absoluteString, imageURL: item.imageURL)
+        }
         Task.detached(priority: .utility) {
-            await withTaskGroup(of: Void.self) { group in
-                var iterator = urls.makeIterator()
-
-                for _ in 0..<ogImagePrewarmConcurrency {
-                    guard let url = iterator.next() else { break }
-                    group.addTask {
-                        await OGImageService.shared.prefetch(articleURL: url)
-                    }
-                }
-
-                while await group.next() != nil {
-                    if let url = iterator.next() {
-                        group.addTask {
-                            await OGImageService.shared.prefetch(articleURL: url)
-                        }
-                    }
-                }
-            }
+            await HeroPrefetcher.warm(inputs: inputs, budgetSeconds: heroPrewarmBudgetSeconds)
         }
     }
 
