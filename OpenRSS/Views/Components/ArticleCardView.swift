@@ -55,6 +55,9 @@ struct ArticleCardView: View {
     /// Whether the hero image loaded successfully, hiding the placeholder.
     @State private var heroImageLoaded: Bool = false
 
+    /// Whether the feed-provided image failed to load (triggers og:image fallback).
+    @State private var feedImageFailed: Bool = false
+
     /// Whether the expandable cluster chip is showing its sibling list.
     @State private var isClusterExpanded: Bool = false
 
@@ -120,14 +123,29 @@ struct ArticleCardView: View {
             }
         }
         .task(id: article.id) {
-            guard article.imageURL == nil else { return }
-            if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
-                ogImageURL = cached
-                return
+            // Try og:image fallback if the feed provided no image URL.
+            if article.imageURL == nil {
+                await resolveOGImage()
             }
-            await OGImageService.shared.prefetch(articleURL: article.articleURL)
-            ogImageURL = await OGImageService.shared.cachedImageURL(for: article.articleURL)
         }
+        .onChange(of: feedImageFailed) { _, failed in
+            // Feed image failed to load — try og:image as fallback.
+            if failed {
+                Task { await resolveOGImage() }
+            }
+        }
+    }
+
+    // MARK: - OG Image Fallback
+
+    /// Resolves og:image for articles with no feed image or a broken feed image.
+    private func resolveOGImage() async {
+        if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
+            ogImageURL = cached
+            return
+        }
+        await OGImageService.shared.prefetch(articleURL: article.articleURL)
+        ogImageURL = await OGImageService.shared.cachedImageURL(for: article.articleURL)
     }
 
     // MARK: - Decay Opacity
@@ -150,7 +168,7 @@ struct ArticleCardView: View {
                         placeholderHero
                     }
 
-                    let displayURL = article.imageURL ?? ogImageURL
+                    let displayURL = feedImageFailed ? ogImageURL : (article.imageURL ?? ogImageURL)
                     if let urlString = displayURL, let url = URL(string: urlString) {
                         AsyncImage(url: url) { phase in
                             switch phase {
@@ -164,6 +182,11 @@ struct ArticleCardView: View {
                                     .overlay(ProgressView().tint(.white.opacity(0.5)))
                             case .failure:
                                 Color.clear
+                                    .onAppear {
+                                        if !feedImageFailed && article.imageURL != nil {
+                                            feedImageFailed = true
+                                        }
+                                    }
                             @unknown default:
                                 Color.clear
                             }

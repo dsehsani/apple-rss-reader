@@ -144,11 +144,13 @@ final class RSSService {
                 imageURL = "https://" + url.dropFirst(7)
             }
 
-            // If no image came from standard fields, search content:encoded for the
-            // first <img src>. Covers feeds like MIT Sloan that embed their lead image
-            // directly in the article body HTML without using media:content or enclosure.
+            // If no image came from standard fields, search content:encoded or
+            // description HTML for the first <img src>. Many feeds (e.g. 9to5Mac,
+            // The Verge) embed their lead image only inside <description> rather
+            // than using media:content or content:encoded.
             if imageURL == nil {
                 imageURL = Self.firstImageURL(in: item.content?.contentEncoded)
+                    ?? Self.firstImageURL(in: item.description)
             }
 
             // Final fallback: use the channel-level image (essential for podcast feeds
@@ -191,6 +193,8 @@ final class RSSService {
 
     /// Finds the first absolute image URL from an `<img src>` attribute in raw HTML.
     /// Handles both double- and single-quoted src values.
+    /// Decodes HTML entities (e.g. `&#038;` → `&`, `&amp;` → `&`) so the URL
+    /// is valid for network requests.
     /// Returns nil if no absolute URL (starting with "http") is found.
     private static func firstImageURL(in html: String?) -> String? {
         guard let html else { return nil }
@@ -202,10 +206,31 @@ final class RSSService {
             let srcRange = Range(match.range(at: 1), in: html)
                         ?? Range(match.range(at: 2), in: html)
             guard let srcRange else { continue }
-            let candidate = String(html[srcRange])
+            let candidate = upgradeToHTTPS(decodeHTMLEntities(String(html[srcRange])))
             if candidate.hasPrefix("http") { return candidate }
         }
         return nil
+    }
+
+    /// Decodes common HTML entities in URLs extracted from feed HTML.
+    private static func decodeHTMLEntities(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "&#038;", with: "&")
+            .replacingOccurrences(of: "&#38;",  with: "&")
+            .replacingOccurrences(of: "&amp;",  with: "&")
+            .replacingOccurrences(of: "&#039;", with: "'")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&lt;",   with: "<")
+            .replacingOccurrences(of: "&gt;",   with: ">")
+    }
+
+    /// Upgrades http:// to https:// for ATS compliance.
+    /// iOS blocks all http:// image loads by default.
+    static func upgradeToHTTPS(_ url: String) -> String {
+        if url.hasPrefix("http://") {
+            return "https://" + url.dropFirst(7)
+        }
+        return url
     }
     
     /// Extract articles from Atom feed
@@ -240,8 +265,8 @@ final class RSSService {
             }
 
             // Get image: prefer media:content (non-audio), then media:thumbnail,
-            // then a non-audio enclosure link.
-            let imageURL = entry.media?.mediaContents?.first(where: {
+            // then a non-audio enclosure link, then <img> in content/summary HTML.
+            var imageURL = entry.media?.mediaContents?.first(where: {
                 !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
                 ($0.attributes?.medium ?? "") != "audio"
             })?.attributes?.url
@@ -250,6 +275,13 @@ final class RSSService {
                     $0.attributes?.rel == "enclosure" &&
                     !Self.isAudioMIMEType($0.attributes?.type ?? "")
                 })?.attributes?.href
+
+            // Fallback: search content or summary HTML for <img src>.
+            // Covers Atom feeds (e.g. The Verge) that embed images only in HTML.
+            if imageURL == nil {
+                imageURL = Self.firstImageURL(in: entry.content?.value)
+                    ?? Self.firstImageURL(in: entry.summary?.value)
+            }
 
             return ParsedArticle(
                 title: entry.title,

@@ -129,6 +129,10 @@ actor OGImageService {
             var candidate = String(html[srcRange])
             // Decode the one entity that commonly appears in URLs inside HTML attributes.
             candidate = candidate.replacingOccurrences(of: "&amp;", with: "&")
+            // Upgrade http:// to https:// — iOS ATS blocks http:// image loads.
+            if candidate.hasPrefix("http://") {
+                candidate = "https://" + candidate.dropFirst(7)
+            }
             if candidate.hasPrefix("http") { return candidate }
         }
         return nil
