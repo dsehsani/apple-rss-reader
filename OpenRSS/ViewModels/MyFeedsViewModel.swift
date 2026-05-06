@@ -118,7 +118,12 @@ final class MyFeedsViewModel {
 
     func deleteFeed(_ source: Source) {
         Task { [weak self] in
-            try? await self?.dataService.deleteFeed(id: source.id)
+            guard let self else { return }
+            try? await self.dataService.deleteFeed(id: source.id)
+            // Symmetry with deleteFolder/updateFolder: refresh after every
+            // mutation so any view observing `folders` re-renders immediately
+            // rather than waiting on the next reactive cycle.
+            self.refreshFolders()
         }
     }
 
