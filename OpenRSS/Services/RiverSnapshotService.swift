@@ -38,9 +38,16 @@ final class RiverSnapshotService: @unchecked Sendable {
     /// The service diffs against the previous snapshot's item IDs so downstream
     /// consumers can distinguish new vs. reordered items.
     ///
-    /// - Parameter rateGateResult: Output from Stage 3 (may be nil on scoring-only cycles).
+    /// - Parameters:
+    ///   - rateGateResult: Output from Stage 3 (may be nil on scoring-only cycles).
+    ///   - preferUniqueStories: Map of `sourceID → preferUniqueStories` flag. Cluster
+    ///     cards from sources marked `true` are deboosted in the sort order so unique
+    ///     stories from other sources rise above them. Empty map = legacy behaviour.
     /// - Returns: A `RiverSnapshot` containing the sorted river items.
-    func assembleSnapshot(rateGateResult: RateGateResult?) -> RiverSnapshot {
+    func assembleSnapshot(
+        rateGateResult: RateGateResult?,
+        preferUniqueStories: [UUID: Bool] = [:]
+    ) -> RiverSnapshot {
         // Use the full 30-day history so the feed is scrollable beyond the current
         // ~7-day aged-out window. river_visible=1 still respects rate gating.
         // Decay opacity in the UI provides the recency hierarchy — no hard cutoff needed.
@@ -94,8 +101,12 @@ final class RiverSnapshotService: @unchecked Sendable {
             }
         }
 
-        // Sort by positional weight (relevance score) descending
-        let sorted = items.sorted { $0.positionalWeight > $1.positionalWeight }
+        // Sort by positional weight, deboosting clustered items from sources that
+        // have "Prefer unique stories" turned on.
+        let sorted = items.sorted {
+            $0.adjustedPositionalWeight(preferUniqueStories: preferUniqueStories)
+                > $1.adjustedPositionalWeight(preferUniqueStories: preferUniqueStories)
+        }
 
         // Diff against previous snapshot
         let currentIDs = Set(sorted.map(\.id))

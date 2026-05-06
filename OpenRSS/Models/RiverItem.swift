@@ -40,6 +40,33 @@ enum RiverItem: Identifiable, Hashable, Sendable {
         }
     }
 
+    /// Sort weight that respects per-source "prefer unique stories" preferences.
+    ///
+    /// When the source backing this item has `preferUniqueStories == true` and the
+    /// item is part of a multi-article cluster, applies the same deboost as
+    /// `Article.riverScore(...)` and skips the +10% cluster boost. Standalone
+    /// articles, nudges, and digests are unaffected.
+    func adjustedPositionalWeight(preferUniqueStories: [UUID: Bool]) -> Double {
+        switch self {
+        case .article(let item):
+            return item.relevanceScore
+
+        case .cluster(let card):
+            let prefersUnique = preferUniqueStories[card.canonicalItem.sourceID] ?? false
+            if prefersUnique {
+                return Article.riverScore(
+                    decayScore: card.canonicalItem.relevanceScore,
+                    clusterSize: card.allItems.count,
+                    preferUniqueStories: true
+                )
+            }
+            return card.canonicalItem.relevanceScore * 1.1
+
+        case .nudge, .digest:
+            return positionalWeight
+        }
+    }
+
     /// The relevance score (used for decay-based opacity).
     var relevanceScore: Double {
         switch self {
