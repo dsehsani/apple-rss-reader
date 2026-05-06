@@ -206,7 +206,7 @@ final class RSSService {
             let srcRange = Range(match.range(at: 1), in: html)
                         ?? Range(match.range(at: 2), in: html)
             guard let srcRange else { continue }
-            let candidate = decodeHTMLEntities(String(html[srcRange]))
+            let candidate = upgradeToHTTPS(decodeHTMLEntities(String(html[srcRange])))
             if candidate.hasPrefix("http") { return candidate }
         }
         return nil
@@ -222,6 +222,15 @@ final class RSSService {
             .replacingOccurrences(of: "&quot;", with: "\"")
             .replacingOccurrences(of: "&lt;",   with: "<")
             .replacingOccurrences(of: "&gt;",   with: ">")
+    }
+
+    /// Upgrades http:// to https:// for ATS compliance.
+    /// iOS blocks all http:// image loads by default.
+    static func upgradeToHTTPS(_ url: String) -> String {
+        if url.hasPrefix("http://") {
+            return "https://" + url.dropFirst(7)
+        }
+        return url
     }
     
     /// Extract articles from Atom feed
