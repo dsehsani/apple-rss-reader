@@ -73,28 +73,16 @@ struct ClusterCardView: View {
     // MARK: - Subviews
 
     private var heroImage: some View {
-        ZStack {
-            placeholderHero
-
-            let displayURL = cluster.canonicalItem.imageURL ?? ogImageURL
-            if let urlString = displayURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .clipped()
-                    case .empty:
-                        Color.clear
-                            .overlay(ProgressView().tint(.white.opacity(0.5)))
-                    case .failure:
-                        Color.clear
-                    @unknown default:
-                        Color.clear
-                    }
-                }
+        let displayURL = cluster.canonicalItem.imageURL ?? ogImageURL
+        return CachedImageView(
+            url: displayURL.flatMap(URL.init(string:)),
+            pointSize: CGSize(width: 400, height: 180),
+            contentMode: .fill
+        ) {
+            ZStack {
+                placeholderHero
+                ShimmerView(cornerRadius: 0)
+                    .opacity(displayURL == nil ? 0.0 : 1.0)
             }
         }
         .frame(maxWidth: .infinity)

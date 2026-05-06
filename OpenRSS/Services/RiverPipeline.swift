@@ -51,6 +51,12 @@ final class RiverPipeline: @unchecked Sendable {
     /// Cached rate gate result from the last pipeline run (used by snapshot assembly).
     private var lastRateGateResult: RateGateResult?
 
+    /// Cached `sourceID → preferUniqueStories` map from the last pipeline run.
+    /// Captured on the main actor at the start of a cycle so subsequent
+    /// `runScoringCycle()` calls can re-sort using the same preferences without
+    /// hopping back to the main actor.
+    private var lastPreferUniqueStories: [UUID: Bool] = [:]
+
     private init() {}
 
     // MARK: - Public API
@@ -71,6 +77,13 @@ final class RiverPipeline: @unchecked Sendable {
         }
 
         let totalStart = CFAbsoluteTimeGetCurrent()
+
+        // Capture per-source "prefer unique stories" flags for the snapshot stage.
+        // Using the `sources` snapshot the caller already passed in keeps this
+        // off the main actor and avoids re-reading SwiftDataService here.
+        lastPreferUniqueStories = Dictionary(
+            uniqueKeysWithValues: sources.map { ($0.id, $0.preferUniqueStories) }
+        )
 
         // Stage 1 — Ingest
         let (_, _) = await timer.time("Stage1-Ingest") {
@@ -97,7 +110,10 @@ final class RiverPipeline: @unchecked Sendable {
 
         // Stage 5 — Snapshot Assembly (via RiverSnapshotService)
         let (snapshot, snapshotMs) = timer.time("Stage5-Snapshot") {
-            snapshotService.assembleSnapshot(rateGateResult: lastRateGateResult)
+            snapshotService.assembleSnapshot(
+                rateGateResult: lastRateGateResult,
+                preferUniqueStories: lastPreferUniqueStories
+            )
         }
         _ = snapshotMs
 
@@ -124,7 +140,10 @@ final class RiverPipeline: @unchecked Sendable {
         _ = scoringMs
 
         let (snapshot, _) = timer.time("Rescore-Snapshot") {
-            snapshotService.assembleSnapshot(rateGateResult: lastRateGateResult)
+            snapshotService.assembleSnapshot(
+                rateGateResult: lastRateGateResult,
+                preferUniqueStories: lastPreferUniqueStories
+            )
         }
 
         let totalMs = (CFAbsoluteTimeGetCurrent() - totalStart) * 1000

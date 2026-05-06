@@ -101,17 +101,30 @@ final class MyFeedsViewModel {
     // MARK: - CRUD
 
     func deleteFolder(_ folder: Category) {
-        try? dataService.deleteFolder(id: folder.id)
-        refreshFolders()
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.dataService.deleteFolder(id: folder.id)
+            self.refreshFolders()
+        }
     }
 
     func updateFolder(_ folder: Category, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) {
-        try? dataService.updateFolder(id: folder.id, name: name, iconName: iconName, colorHex: colorHex)
-        refreshFolders()
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.dataService.updateFolder(id: folder.id, name: name, iconName: iconName, colorHex: colorHex)
+            self.refreshFolders()
+        }
     }
 
     func deleteFeed(_ source: Source) {
-        try? dataService.deleteFeed(id: source.id)
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.dataService.deleteFeed(id: source.id)
+            // Symmetry with deleteFolder/updateFolder: refresh after every
+            // mutation so any view observing `folders` re-renders immediately
+            // rather than waiting on the next reactive cycle.
+            self.refreshFolders()
+        }
     }
 
     func toggleFeedEnabled(_ source: Source) {

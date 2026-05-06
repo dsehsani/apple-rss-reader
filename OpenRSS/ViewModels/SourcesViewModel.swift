@@ -130,7 +130,9 @@ final class SourcesViewModel {
 
     /// Delete a source from SwiftData.
     func deleteSource(_ source: Source) {
-        try? SwiftDataService.shared.deleteFeed(id: source.id)
+        Task {
+            try? await SwiftDataService.shared.deleteFeed(id: source.id)
+        }
     }
 
     /// Toggle a source's enabled state in SwiftData.

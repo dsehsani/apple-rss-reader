@@ -8,7 +8,12 @@
 import Foundation
 import SwiftUI
 
-/// Represents an RSS feed source
+/// Represents an RSS feed source.
+///
+/// `Hashable`/`Equatable` are synthesized — they include every stored property,
+/// so SwiftUI sees a value change when *any* field flips (e.g. `preferUniqueStories`).
+/// Don't add a manual `==` here that compares only identifying fields, or toggles
+/// bound to mutable properties of `Source` will appear stuck in the UI.
 struct Source: Identifiable, Hashable {
     let id: UUID
     let name: String
@@ -84,20 +89,3 @@ struct Source: Identifiable, Hashable {
     }
 }
 
-// MARK: - Hashable Conformance for Color
-
-extension Source {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(name)
-        hasher.combine(feedURL)
-        hasher.combine(categoryID)
-    }
-
-    static func == (lhs: Source, rhs: Source) -> Bool {
-        lhs.id == rhs.id &&
-        lhs.name == rhs.name &&
-        lhs.feedURL == rhs.feedURL &&
-        lhs.categoryID == rhs.categoryID
-    }
-}

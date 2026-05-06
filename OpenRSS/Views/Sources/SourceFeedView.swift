@@ -109,16 +109,25 @@ struct SourceFeedView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.7))
 
-            Toggle("Prefer unique stories", isOn: Binding(
+            Toggle(isOn: Binding(
                 get: { source.preferUniqueStories },
                 set: { newValue in
-                    try? SwiftDataService.shared.setPreferUniqueStories(feedID: source.id, value: newValue)
+                    do {
+                        try SwiftDataService.shared.setPreferUniqueStories(
+                            feedID: source.id,
+                            value: newValue
+                        )
+                    } catch {
+                        print("setPreferUniqueStories failed: \(error)")
+                    }
                 }
-            ))
-            .font(.system(size: 13))
-            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+            )) {
+                Label("Prefer unique stories", systemImage: "rectangle.stack.badge.minus")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+            }
             .tint(source.iconColor)
-            .padding(.top, 4)
+            .padding(.top, 6)
 
             // YouTube-only: per-feed content-type checklist
             if let feedURL = URL(string: source.feedURL),

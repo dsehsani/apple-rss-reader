@@ -337,8 +337,44 @@ final class RiverViewModel {
                     self.riverItems = snapshot.items
                     self.lastPipelineDurationMs = snapshot.pipelineDurationMs
                 }
+                // Pre-warm hero thumbnails for the top of the river so the
+                // user's first scroll frames don't have to wait on network I/O.
+                self.prewarmTopHeroes(snapshot: snapshot)
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Hero Pre-Warm
+
+    /// Kicks off a bounded, fire-and-forget warm of the top items' hero
+    /// thumbnails (and og:image URL resolution where the feed didn't supply one).
+    /// Foreground budget — keep it short so we don't compete with the user's
+    /// own scrolling-triggered fetches.
+    private func prewarmTopHeroes(snapshot: RiverSnapshot) {
+        let top = snapshot.items.prefix(30)
+        var inputs: [HeroInput] = []
+        inputs.reserveCapacity(top.count)
+
+        for item in top {
+            switch item {
+            case .article(let f):
+                inputs.append(HeroInput(pageURL: f.link.absoluteString, imageURL: f.imageURL))
+            case .cluster(let c):
+                inputs.append(
+                    HeroInput(
+                        pageURL: c.canonicalItem.link.absoluteString,
+                        imageURL: c.canonicalItem.imageURL
+                    )
+                )
+            case .digest, .nudge:
+                continue
+            }
+        }
+
+        guard !inputs.isEmpty else { return }
+        Task.detached(priority: .utility) {
+            await HeroPrefetcher.warm(inputs: inputs, budgetSeconds: 12)
+        }
     }
 
     // MARK: - Refresh Key

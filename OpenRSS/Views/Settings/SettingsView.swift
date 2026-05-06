@@ -463,11 +463,13 @@ struct SettingsView: View {
 
         case .success(let urls):
             guard let url = urls.first else { return }
-            do {
-                let importResult = try OPMLService.shared.importFromURL(url, into: SwiftDataService.shared)
-                opmlAlert = OPMLAlertItem(title: "Import Complete", message: importResult.summary)
-            } catch {
-                opmlAlert = OPMLAlertItem(title: "Import Failed", message: error.localizedDescription)
+            Task { @MainActor in
+                do {
+                    let importResult = try await OPMLService.shared.importFromURL(url, into: SwiftDataService.shared)
+                    opmlAlert = OPMLAlertItem(title: "Import Complete", message: importResult.summary)
+                } catch {
+                    opmlAlert = OPMLAlertItem(title: "Import Failed", message: error.localizedDescription)
+                }
             }
         }
     }

@@ -58,15 +58,14 @@ final class QuickAddViewModel {
                     isSaving = false
                     return
                 }
-                try SwiftDataService.shared.addFolder(
+                folderID = try await SwiftDataService.shared.addFolder(
                     name: name,
                     iconName: newFolderIcon,
                     colorHex: newFolderColorHex
                 )
-                folderID = SwiftDataService.shared.categories.last?.id
             }
 
-            try SwiftDataService.shared.addFeed(
+            try await SwiftDataService.shared.addFeed(
                 feedURL:    feed.feedURL,
                 title:      feed.name,
                 websiteURL: feed.websiteURL,

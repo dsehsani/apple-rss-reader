@@ -49,13 +49,15 @@ struct ArticleCardView: View {
 
     // MARK: - State
 
-    /// Resolved og:image URL for articles whose RSS feed provided no image.
+    /// Resolved og:image URL for articles whose RSS feed provided no image
+    /// (or whose feed-provided image URL turned out to be dead).
+    /// Read from OGImageService cache; pre-warmed by the pipeline ingest stage
+    /// and the snapshot post-step in RiverViewModel, so by the time the card
+    /// is visible this is usually already set.
     @State private var ogImageURL: String?
 
-    /// Whether the hero image loaded successfully, hiding the placeholder.
-    @State private var heroImageLoaded: Bool = false
-
-    /// Whether the feed-provided image failed to load (triggers og:image fallback).
+    /// Set to true when the feed-provided image URL fails to load (404, dead
+    /// CDN, etc.) so the view falls back to og:image extraction.
     @State private var feedImageFailed: Bool = false
 
     /// Whether the expandable cluster chip is showing its sibling list.
@@ -123,7 +125,10 @@ struct ArticleCardView: View {
             }
         }
         .task(id: article.id) {
-            // Try og:image fallback if the feed provided no image URL.
+            // Hero URL resolution. Most callers (river snapshot post-step,
+            // ingest pre-warm, BG refresh) have already populated the
+            // OGImageService cache, so resolveOGImage is a sync cache read in
+            // the common case. Skip entirely when the feed provided an image.
             if article.imageURL == nil {
                 await resolveOGImage()
             }
@@ -159,38 +164,36 @@ struct ArticleCardView: View {
     // MARK: - Subviews
 
     private var heroImage: some View {
-        Color.clear
+        // When the feed-provided image URL turns out to be dead, swap to the
+        // og:image fallback (which gets resolved in the onChange handler below).
+        let displayURL = feedImageFailed ? ogImageURL : (article.imageURL ?? ogImageURL)
+        // Whether we're showing the feed's URL (so a failure means we should
+        // try the og:image fallback) vs. an already-resolved og:image URL
+        // (failure there is terminal — no further fallback to attempt).
+        let isShowingFeedImage = !feedImageFailed && article.imageURL != nil
+
+        return Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: 180)
             .overlay {
-                ZStack {
-                    if !heroImageLoaded {
-                        placeholderHero
-                    }
-
-                    let displayURL = feedImageFailed ? ogImageURL : (article.imageURL ?? ogImageURL)
-                    if let urlString = displayURL, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .onAppear { heroImageLoaded = true }
-                            case .empty:
-                                Color.clear
-                                    .overlay(ProgressView().tint(.white.opacity(0.5)))
-                            case .failure:
-                                Color.clear
-                                    .onAppear {
-                                        if !feedImageFailed && article.imageURL != nil {
-                                            feedImageFailed = true
-                                        }
-                                    }
-                            @unknown default:
-                                Color.clear
-                            }
+                CachedImageView(
+                    url: displayURL.flatMap(URL.init(string:)),
+                    pointSize: CGSize(width: 400, height: 180),
+                    contentMode: .fill,
+                    onFailure: {
+                        // Only escalate to og:image when the *feed-provided*
+                        // URL fails — never loop back from an og:image failure.
+                        if isShowingFeedImage {
+                            feedImageFailed = true
                         }
+                    }
+                ) {
+                    ZStack {
+                        placeholderHero
+                        // Subtle motion so the empty state doesn't read as broken
+                        // while the bytes (or og:image URL) are still in flight.
+                        ShimmerView(cornerRadius: 0)
+                            .opacity(displayURL == nil ? 0.0 : 1.0)
                     }
                 }
             }

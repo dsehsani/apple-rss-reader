@@ -166,16 +166,18 @@ final class AddFeedViewModel {
                     isSaving = false
                     return
                 }
-                try SwiftDataService.shared.addFolder(name: name, iconName: newFolderIcon, colorHex: newFolderColorHex)
-                // The newly created folder is the last one
-                folderID = SwiftDataService.shared.categories.last?.id
+                folderID = try await SwiftDataService.shared.addFolder(
+                    name: name,
+                    iconName: newFolderIcon,
+                    colorHex: newFolderColorHex
+                )
             }
 
             let websiteURL = URL(string: normalizedURL)
                 .flatMap { URL(string: "https://\($0.host ?? "")") }?
                 .absoluteString ?? normalizedURL
 
-            try SwiftDataService.shared.addFeed(
+            try await SwiftDataService.shared.addFeed(
                 feedURL:    normalizedURL,
                 title:      displayTitle,
                 websiteURL: websiteURL,

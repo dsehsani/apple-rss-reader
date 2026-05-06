@@ -84,7 +84,7 @@ final class OPMLService: NSObject {
     /// Parses an OPML file and creates folders + feeds via SwiftDataService.
     /// Skips feeds whose feedURL already exists.
     @MainActor
-    func importFromURL(_ url: URL, into service: SwiftDataService) throws -> OPMLImportResult {
+    func importFromURL(_ url: URL, into service: SwiftDataService) async throws -> OPMLImportResult {
         // Resolve security-scoped resource if coming from Files app
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
@@ -109,8 +109,11 @@ final class OPMLService: NSObject {
                 if let existing = service.categories.first(where: { $0.name == groupName }) {
                     folderID = existing.id
                 } else {
-                    try service.addFolder(name: groupName, iconName: group.iconName, colorHex: group.colorHex)
-                    folderID = service.categories.last?.id
+                    folderID = try await service.addFolder(
+                        name: groupName,
+                        iconName: group.iconName,
+                        colorHex: group.colorHex
+                    )
                 }
             }
 
@@ -120,7 +123,7 @@ final class OPMLService: NSObject {
                     skipped += 1
                     continue
                 }
-                try service.addFeed(
+                try await service.addFeed(
                     feedURL: feed.feedURL,
                     title: feed.title ?? feed.feedURL,
                     websiteURL: feed.htmlURL ?? "",

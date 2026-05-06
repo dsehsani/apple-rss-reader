@@ -85,6 +85,15 @@ final class FeedIngestService: Sendable {
                 // Update velocity tier in affinity table
                 updateSourceAffinity(source: source, tier: tier)
 
+                // Pre-warm hero thumbnails for newly inserted items so the first
+                // scroll after a refresh paints from disk, not the network.
+                // For items missing a feed-provided imageURL, this also resolves
+                // the og:image first. Detached + bounded so the pipeline isn't
+                // blocked and we don't hammer external hosts.
+                if !newItems.isEmpty {
+                    Self.prewarmHeroes(for: newItems)
+                }
+
             } catch {
                 // Failed to fetch or parse this source — continue with others.
                 print("❌ Failed to ingest \(source.name): \(error)")
@@ -241,6 +250,25 @@ final class FeedIngestService: Sendable {
                 slotLimit: tier.defaultSlotLimit
             )
             store.upsertAffinity(record)
+        }
+    }
+
+    // MARK: - Hero Pre-Warm
+
+    /// Wall-clock budget for the per-ingest hero warm. Generous because we
+    /// run detached at utility priority and don't block the pipeline; small
+    /// enough that even slow hosts don't pile up tasks across cycles.
+    private static let heroPrewarmBudgetSeconds: TimeInterval = 25
+
+    /// Fire-and-forget hero thumbnail warm for newly inserted items.
+    /// Resolves og:image where missing, then asks ThumbnailService to download
+    /// + downsample + persist. Uses HeroPrefetcher's bounded concurrency.
+    private static func prewarmHeroes(for items: [FeedItem]) {
+        let inputs = items.map { item in
+            HeroInput(pageURL: item.link.absoluteString, imageURL: item.imageURL)
+        }
+        Task.detached(priority: .utility) {
+            await HeroPrefetcher.warm(inputs: inputs, budgetSeconds: heroPrewarmBudgetSeconds)
         }
     }
 
