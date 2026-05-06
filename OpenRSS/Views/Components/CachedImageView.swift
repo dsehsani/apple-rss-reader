@@ -13,11 +13,16 @@ import UIKit
 /// Memory-efficient async image view backed by `ThumbnailService`.
 /// Synchronous in-memory cache hits paint immediately; cold loads await the
 /// downsample + disk write before swapping the placeholder for the image.
+///
+/// `onFailure` (optional) fires once when the load fails (dead URL, decode
+/// error, etc.) so callers can attempt a fallback (e.g. og:image lookup
+/// when the feed-provided image URL is broken).
 struct CachedImageView<Placeholder: View>: View {
 
     let url: URL?
     let pointSize: CGSize
     let contentMode: ContentMode
+    var onFailure: (() -> Void)? = nil
     @ViewBuilder let placeholder: () -> Placeholder
 
     @State private var image: UIImage?
@@ -59,6 +64,7 @@ struct CachedImageView<Placeholder: View>: View {
             } catch {
                 if !Task.isCancelled {
                     failed = true
+                    onFailure?()
                 }
             }
         }

@@ -203,6 +203,10 @@ actor OGImageService {
             #"<meta[^>]+?content=["']([^"']+)["'][^>]+?(?:property|name)=["']\#(escaped)["']"#
         ]
         for pattern in patterns {
+            // Use shared firstCapture helper — entity decoding is handled
+            // there. The http -> https upgrade happens in resolveAndUpgrade(...)
+            // called by extractImageURL above, which applies it to ALL entry
+            // points (meta tags, link rel, first img src), not just og:image.
             if let captured = firstCapture(in: html, pattern: pattern) {
                 return captured
             }

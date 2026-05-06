@@ -77,8 +77,15 @@ final class AddFeedViewModel {
 
     /// URL with `https://` prepended if the user omitted the scheme.
     private var normalizedURL: String {
-        let raw = urlText.trimmingCharacters(in: .whitespaces)
-        return raw.hasPrefix("http") ? raw : "https://\(raw)"
+        var raw = urlText.trimmingCharacters(in: .whitespaces)
+        if !raw.hasPrefix("http") {
+            raw = "https://\(raw)"
+        }
+        // Upgrade http:// to https:// — iOS ATS blocks http:// requests.
+        if raw.hasPrefix("http://") {
+            raw = "https://" + raw.dropFirst(7)
+        }
+        return raw
     }
 
     // MARK: - Actions

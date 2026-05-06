@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:nyt="http://www.nytimes.com/namespaces/rss/2.0" version="2.0">
+  <channel>
+    <title>NYT &gt; Top Stories</title>
+    <link>https://www.nytimes.com</link>
+    <atom:link href="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" rel="self" type="application/rss+xml"></atom:link>
+    <description></description>
+    <language>en-us</language>
+    <copyright>Copyright 2026 The New York Times Company</copyright>
+    <lastBuildDate>Wed, 06 May 2026 17:51:06 +0000</lastBuildDate>
+    <pubDate>Wed, 06 May 2026 17:45:47 +0000</pubDate>
+    <image>
+      <title>NYT &gt; Top Stories</title>
+      <url>https://static01.nyt.com/images/misc/NYT_logo_rss_250x40.png</url>
+      <link>https://www.nytimes.com</link>
+    </image>
+    <item>
+      <title>Higher Gas Prices Are Hitting Lower-Income Americans the Hardest</title>
+      <link>https://www.nytimes.com/2026/05/06/business/economy/gas-prices-inequality-lower-income-consumers.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/economy/gas-prices-inequality-lower-income-consumers.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/economy/gas-prices-inequality-lower-income-consumers.html" rel="standout"></atom:link>
+      <description>People with lower incomes are driving less and devoting more of their budgets to transport as gas prices soar.</description>
+      <dc:creator>Talmon Joseph Smith</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:07:51 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Prices (Fares, Fees and Rates)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Income Inequality</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Economy</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Consumer Behavior</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Federal Reserve Bank of New York</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Federal Reserve System</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06biz-econ-gas-lkwc/06biz-econ-gas-lkwc-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Jenny Kane/Associated Press</media:credit>
+      <media:description>Gas prices have soared since the start of the war with Iran.</media:description>
+    </item>
+    <item>
+      <title>Why Is Gas So Much More Expensive in Some States Than Others?</title>
+      <link>https://www.nytimes.com/2026/05/06/business/energy-environment/gasoline-prices-states-iran-war.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/energy-environment/gasoline-prices-states-iran-war.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/energy-environment/gasoline-prices-states-iran-war.html" rel="standout"></atom:link>
+      <description>Shipping, taxes, competition and environmental regulations all play a part in the cost of gasoline. That can lead to stark differences in pump prices.</description>
+      <dc:creator>Emmett Lindner</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:26:32 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Prices (Fares, Fees and Rates)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Regulation and Deregulation of Industry</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Ships and Shipping</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Taxation</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Law and Legislation</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Refineries</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">States (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Gasoline Tax (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Air Pollution</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Shopping and Retail</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Sales and Excise Taxes</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Alaska</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">California</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Florida</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Texas</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Louisiana</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06biz-iran-gas-prices-pqkc/06biz-iran-gas-prices-pqkc-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Vincent Alban/The New York Times</media:credit>
+      <media:description>The national average gas price has soared about 50 percent since the start of the war with Iran.</media:description>
+    </item>
+    <item>
+      <title>Oil Prices Fall on Hope U.S.-Iran War Turmoil in the Gulf May Be Easing</title>
+      <link>https://www.nytimes.com/2026/05/06/business/oil-gas-price-iran.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/oil-gas-price-iran.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/oil-gas-price-iran.html" rel="standout"></atom:link>
+      <description>Oil prices fell and stocks rose after President Trump’s about-face to pause the U.S. operation to escort commercial ships through the Strait of Hormuz</description>
+      <dc:creator>Gregory Schmidt</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:30:00 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Stocks and Bonds</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Standard &amp; Poor&#39;s 500-Stock Index</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Economy</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Prices (Fares, Fees and Rates)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Strait of Hormuz</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Ships and Shipping</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06Biz-Oil-Stocks-Gas-promo-clgw/06Biz-Oil-Stocks-Gas-promo-clgw-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Brandon Bell/Getty Images</media:credit>
+    </item>
+    <item>
+      <title>Trump and Rubio Insist Iran War Is Over, Even as Missiles Fly During Cease-Fire</title>
+      <link>https://www.nytimes.com/2026/05/05/us/politics/trump-iran-war-political-crisis-rhetoric.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/05/us/politics/trump-iran-war-political-crisis-rhetoric.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/05/us/politics/trump-iran-war-political-crisis-rhetoric.html" rel="standout"></atom:link>
+      <description>The White House is turning to rhetorical leaps as President Trump tries to put the biggest political crisis of his presidency behind him.</description>
+      <dc:creator>David E. Sanger</dc:creator>
+      <pubDate>Wed, 06 May 2026 01:21:47 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Iran</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Nuclear Weapons</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Defense and Military Forces</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Defense and Military Forces</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States International Relations</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Strait of Hormuz</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Ships and Shipping</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">State Department</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Rubio, Marco</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Middle East</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/05/multimedia/05dc-ceasefire01-photo-mgph/05dc-ceasefire01-photo-mgph-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Tierney L. Cross/The New York Times</media:credit>
+      <media:description>Despite Secretary of State Marco Rubio’s declaration that the objectives of the war have been accomplished, they clearly have not.</media:description>
+    </item>
+    <item>
+      <title>Iran’s Oil Sector and Economy Are Under Pressure as U.S. Blockade Bites</title>
+      <link>https://www.nytimes.com/2026/05/06/world/middleeast/irans-oil-capacity-blockade.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/world/middleeast/irans-oil-capacity-blockade.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/world/middleeast/irans-oil-capacity-blockade.html" rel="standout"></atom:link>
+      <description>Tehran says it can endure the pain, but its oil may soon have nowhere to go.</description>
+      <dc:creator>Farnaz Fassihi</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:41:14 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Iran</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Embargoes and Sanctions</category>
+      <media:content height="1754" medium="image" url="https://static01.nyt.com/images/2025/06/16/multimedia/05int-iran-economy-2/16iran-oil-print-ltkf-mediumSquareAt3X.jpg" width="1752"></media:content>
+      <media:credit>Fatemeh Bahrami/Anadolu Agency, via Getty Images</media:credit>
+      <media:description>With the United States blockading Iranian shipping, Iran risks running out of room to store oil in places like Kharg Island.</media:description>
+    </item>
+    <item>
+      <title>Macron Wants U.S. and Iran to Open Strait While They Negotiate</title>
+      <link>https://www.nytimes.com/2026/05/06/world/middleeast/france-macron-strait-of-hormuz-iran-us.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/world/middleeast/france-macron-strait-of-hormuz-iran-us.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/world/middleeast/france-macron-strait-of-hormuz-iran-us.html" rel="standout"></atom:link>
+      <description>Emmanuel Macron, the French president, hopes the Strait of Hormuz can reopen even before the U.S.-Iran war formally ends. His plan has many pitfalls.</description>
+      <dc:creator>Mark Landler</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:24:05 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">France</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Iran</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Strait of Hormuz</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Macron, Emmanuel (1977- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Ships and Shipping</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06mideast-macron-qkhm/06mideast-macron-qkhm-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Karen Minasyan/Agence France-Presse — Getty Images</media:credit>
+      <media:description>President Emmanuel Macron of France has shown frustration about the economic costs of the blocked strait. </media:description>
+    </item>
+    <item>
+      <title>Ted Turner, Creator of CNN and the 24-Hour News Cycle, Dies at 87</title>
+      <link>https://www.nytimes.com/2026/05/06/business/media/ted-turner-dead.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/media/ted-turner-dead.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/media/ted-turner-dead.html" rel="standout"></atom:link>
+      <description>As one of the most important figures in media history, he oversaw a vast cable empire of news, sports and entertainment channels.</description>
+      <dc:creator>Jonathan Kandell</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:27:30 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cable Television</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">News and News Media</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Atlanta Braves</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">CNN</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Turner, Ted</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Deaths (Obituaries)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Television</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Media</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">America&#39;s Cup</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Fonda, Jane</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Montana</category>
+      <media:content height="151" medium="image" url="https://static01.nyt.com/images/2016/10/07/business/turner-video-obit-photo-1/turner-obit-1-moth.jpg" width="151"></media:content>
+      <media:credit>Chip Somodevilla/Getty Images</media:credit>
+      <media:description>Ted Turner was a visionary media mogul who dominated the cable television industry, and extended his reach into movies, major league baseball and even yachting.</media:description>
+    </item>
+    <item>
+      <title>Rupert Murdoch, David Zaslav and More Media Moguls Remember Ted Turner, CNN’s Founder</title>
+      <link>https://www.nytimes.com/2026/05/06/business/media/ted-turner-death-cnn-media-reaction.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/media/ted-turner-death-cnn-media-reaction.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/media/ted-turner-death-cnn-media-reaction.html" rel="standout"></atom:link>
+      <description>The CNN founder’s death was met with encomiums from leaders in the media industry, which he helped reinvent. “He will be remembered for generations,” said one.</description>
+      <dc:creator>Benjamin Mullin</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:26:29 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Media</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">News and News Media</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Turner, Ted</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/06/05/business/05TURNER-1/05TURNER-1-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Brian F Alpert/ZUMA Press Wire, via Shutterstock</media:credit>
+      <media:description>Ted Turner in the 1980s.</media:description>
+    </item>
+    <item>
+      <title>Tennessee Republicans Unveil New Congressional Map Carving Up Majority-Black House District</title>
+      <link>https://www.nytimes.com/2026/05/06/us/gop-memphis-tennessee-house-map.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/gop-memphis-tennessee-house-map.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/gop-memphis-tennessee-house-map.html" rel="standout"></atom:link>
+      <description>The General Assembly is expected to quickly approve the map, which slices up Memphis, a majority-Black city that makes up most of the state’s lone Democratic district.</description>
+      <dc:creator>Emily Cochrane</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:22:52 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Midterm Elections (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Redistricting and Reapportionment</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Voting Rights Act (1965)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">State Legislatures</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Memphis (Tenn)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Nashville (Tenn)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Tennessee</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Race and Ethnicity</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06nat-tennessee-redistrict-lvwq/06nat-tennessee-redistrict-lvwq-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Brad J. Vest for The New York Times</media:credit>
+      <media:description>Tennessee legislators are seen on the House floor in Nashville on Wednesday morning, where they were expected to unveil a new House map that affects the city of Memphis.</media:description>
+    </item>
+    <item>
+      <title>Obama Talks Trump, Mamdani, Aliens and More in Colbert Interview</title>
+      <link>https://www.nytimes.com/2026/05/06/us/obama-colbert-interview-trump.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/obama-colbert-interview-trump.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/obama-colbert-interview-trump.html" rel="standout"></atom:link>
+      <description>The former president was critical of President Trump, without ever naming him. Mr. Obama also urged Democrats to be plain-spoken, and talked about aliens.</description>
+      <dc:creator>Tim Balk</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:28:10 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Colbert, Stephen</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Obama, Barack</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+    </item>
+    <item>
+      <title>Tofersen, a New Treatment for A.L.S., Reverses Symptoms for Some</title>
+      <link>https://www.nytimes.com/2026/05/06/well/als-treatment-tofersen-qalsody.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/well/als-treatment-tofersen-qalsody.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/well/als-treatment-tofersen-qalsody.html" rel="standout"></atom:link>
+      <description>The drug is for a small subset of patients. But evidence that breathing and strength can get better for some of them is remarkable for a paralyzing, usually fatal disease.</description>
+      <dc:creator>Pam Belluck</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:09:19 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Amyotrophic Lateral Sclerosis</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Drugs (Pharmaceuticals)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Clinical Trials</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Health Insurance and Managed Care</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Genetics and Heredity</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/04/24/multimedia/00ALS-GeneTherapy-stillpromo-pkqv/00ALS-GeneTherapy-stillpromo-pkqv-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Eva Marie Uzcategui for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>A Look Inside the Case That Enshrined Political Power for Billionaires</title>
+      <link>https://www.nytimes.com/2026/05/06/us/politics/buckley-case-supreme-court-billionaires.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/politics/buckley-case-supreme-court-billionaires.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/politics/buckley-case-supreme-court-billionaires.html" rel="standout"></atom:link>
+      <description>After Watergate, Congress tried to curtail the role of money in politics. But a pivotal Supreme Court case nipped it in the bud. Years later, new details are emerging on how wealthy Americans were conferred with a “right to spend” on elections.</description>
+      <dc:creator>Danny Hakim</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:07:29 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Supreme Court (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Presidential Election of 2024</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Campaign Finance</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Decisions and Verdicts</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">High Net Worth Individuals</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Political Action Committees</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Watergate Affair</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Third-Party Politics (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Freedom of Speech and Expression</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Citizens United v Federal Election Commission (Supreme Court Decision)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">American Civil Liberties Union</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Common Cause (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Covington &amp; Burling</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Libertarian Party (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Bolton, John R</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Bork, Robert H</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Buckley, James L</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Ford, Gerald Rudolph Jr</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Koch, Charles G</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Keene, David A</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Koch, David H</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Musk, Elon</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Winter, Ralph K</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/03/25/us/00nat-billionaire-scotus-header/00nat-billionaire-scotus-header-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Keystone Press Agency/ZUMA Press Wire, via Reuters</media:credit>
+      <media:description>A landmark Supreme Court case laid the groundwork for the tremendous amounts spent on today’s elections. </media:description>
+    </item>
+    <item>
+      <title>Weather Service Races to Rehire as Storm Season Arrives</title>
+      <link>https://www.nytimes.com/2026/05/06/climate/weather-service-staff-storms.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/climate/weather-service-staff-storms.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/climate/weather-service-staff-storms.html" rel="standout"></atom:link>
+      <description>After deep cuts last year, the agency is hiring hundreds. But fears linger that it isn’t equipped for imminent tornado and hurricane threats.</description>
+      <dc:creator>Scott Dance, Judson Jones and Amy Graff</dc:creator>
+      <pubDate>Wed, 06 May 2026 13:56:53 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Weather</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Hurricanes and Tropical Storms</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Tornadoes</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Layoffs and Job Reductions</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Government Employees</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">National Weather Service</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">National Oceanic and Atmospheric Administration</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">National Severe Storms Laboratory</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Trump, Donald J</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/05/04/multimedia/04CLI-WEATHERCUTS-01b-mpfh/04CLI-WEATHERCUTS-01b-mpfh-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Julio Cortez/Associated Press</media:credit>
+      <media:description>A member of the National Weather Service surveying a storm-damaged area in Mineral Wells, Texas, last week.</media:description>
+    </item>
+    <item>
+      <title>Howard Lutnick Faces Questions From Congress About Epstein Ties</title>
+      <link>https://www.nytimes.com/2026/05/06/business/economy/howard-lutnick-jeffrey-epstein-house-oversight.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/economy/howard-lutnick-jeffrey-epstein-house-oversight.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/economy/howard-lutnick-jeffrey-epstein-house-oversight.html" rel="standout"></atom:link>
+      <description>The commerce secretary was in a closed-door session on Wednesday with the House Oversight Committee.</description>
+      <dc:creator>Ana Swanson and Michael Gold</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:26:50 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Commerce Department</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">House Committee on Oversight and Government Reform</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Epstein, Jeffrey E (1953- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Lutnick, Howard W</category>
+      <media:content height="1799" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06dc-epstein-lutnick-zkbg/06dc-epstein-lutnick-zkbg-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Tierney L. Cross/The New York Times</media:credit>
+      <media:description>Commerce Secretary Howard Lutnick on Capitol Hill in April. He is one of the highest-profile cabinet members to come under scrutiny in connection with Jeffrey Epstein.</media:description>
+    </item>
+    <item>
+      <title>Her Self-Experiment with Drug Detox Almost Broke Her</title>
+      <link>https://www.nytimes.com/2026/05/06/health/synthetic-drug-detox-experiment.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/health/synthetic-drug-detox-experiment.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/health/synthetic-drug-detox-experiment.html" rel="standout"></atom:link>
+      <description>Against expert advice, people are using new and unpredictable synthetic drugs to experiment on themselves in hopes of becoming free of addiction.</description>
+      <dc:creator>Matt Richtel and Meridith Kohut</dc:creator>
+      <pubDate>Wed, 06 May 2026 14:51:56 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Opioids and Opiates</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Pain-Relieving Drugs</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Drug Abuse and Traffic</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Drugs (Pharmaceuticals)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Content Type: Personal Profile</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Reddit Inc</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Scripps Research Institute</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">University of South Florida</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Moyers, William Cope</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/04/21/multimedia/00HS-DRUGS-RECOVERY-stillpromo/00HS-DRUGS-RECOVERY-tkcv-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Meridith Kohut for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>Leo XIV Is the First Pope From the U.S. He’s Making That an Asset.</title>
+      <link>https://www.nytimes.com/2026/05/06/world/europe/leo-first-american-pope.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/world/europe/leo-first-american-pope.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/world/europe/leo-first-american-pope.html" rel="standout"></atom:link>
+      <description>A year into his papacy, Leo has shown a readiness to challenge Washington, defying any concerns about the election of an American pontiff.</description>
+      <dc:creator>Motoko Rich and Elizabeth Dias</dc:creator>
+      <pubDate>Wed, 06 May 2026 15:02:05 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Europe</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">United States</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Leo XIV</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Roman Catholic Church</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Popes</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <media:content height="1801" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06int-pope-america-01-tqck/06int-pope-america-01-tqck-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Gregorio Borgia/Associated Press</media:credit>
+      <media:description>Pope Leo XIV arriving at St. Peter’s Square in the Vatican on Wednesday.</media:description>
+    </item>
+    <item>
+      <title>What Happened When Pope Leo XIV Had to Call Customer Service</title>
+      <link>https://www.nytimes.com/2026/05/05/us/pope-leo-xiv-bank-customer-service.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/05/us/pope-leo-xiv-bank-customer-service.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/05/us/pope-leo-xiv-bank-customer-service.html" rel="standout"></atom:link>
+      <description>Spoiler alert: There was no miracle.</description>
+      <dc:creator>Julie Bosman</dc:creator>
+      <pubDate>Tue, 05 May 2026 21:39:02 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Leo XIV</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Roman Catholic Church</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Chicago (Ill)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Content Type: Personal Profile</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/05/multimedia/05nat-pope-phonenumber-1-hcwj/05nat-pope-phonenumber-1-hcwj-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Alessandra Tarantino/Associated Press</media:credit>
+      <media:description>Pope Leo XIV has a palace, the Swiss Guard and the popemobile. But he also has hassles, just like everyone else. </media:description>
+    </item>
+    <item>
+      <title>The Longevity Secrets Helping Athletes Blow Past the Limits of Age</title>
+      <link>https://www.nytimes.com/2026/05/06/magazine/pro-athletes-longevity-secrets-age.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/magazine/pro-athletes-longevity-secrets-age.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/magazine/pro-athletes-longevity-secrets-age.html" rel="standout"></atom:link>
+      <description>With cutting-edge sports medicine and sci-fi gadgetry, more and more athletes are figuring out how to extend their careers.</description>
+      <dc:creator>Devin Gordon and Dina Litovsky</dc:creator>
+      <pubDate>Wed, 06 May 2026 09:01:20 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Athletics and Sports</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Longevity</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Diet and Nutrition</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Age, Chronological</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Saunas and Sweat Lodges</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Wearable Computing</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Surgery and Surgeons</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Sleep</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Brady, Tom</category>
+    </item>
+    <item>
+      <title>3 People Are Evacuated From Cruise Ship With Hantavirus Outbreak</title>
+      <link>https://www.nytimes.com/2026/05/06/world/hantavirus-cruise-ship.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/world/hantavirus-cruise-ship.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/world/hantavirus-cruise-ship.html" rel="standout"></atom:link>
+      <description>Three people with possible symptoms of the disease were evacuated on Wednesday morning from the Dutch-flagged MV Hondius.</description>
+      <dc:creator>Claire Moses and Aimee Ortiz</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:47:05 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cruises</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Hantavirus</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Deaths (Fatalities)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Oceanwide Expeditions BV</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Canary Islands</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">South Africa</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Cape Verde</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06int-cruise-virus-01-zghb/06int-cruise-virus-01-zghb-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Agence France-Presse — Getty Images</media:credit>
+      <media:description>The MV Hondius off the port of Praia, the capital of Cape Verde, on Wednesday.</media:description>
+    </item>
+    <item>
+      <title>Guy Goma’s Accidental BBC Interview Lives On After 20 Years</title>
+      <link>https://www.nytimes.com/2026/05/06/business/media/bbc-guy-goma-interview.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/business/media/bbc-guy-goma-interview.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/business/media/bbc-guy-goma-interview.html" rel="standout"></atom:link>
+      <description>Guy Goma thought he was interviewing for an I.T. job when he found himself on air on the BBC. What came next was familiar to anyone who has been unprepared at work.</description>
+      <dc:creator>Jonathan Wolfe</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:17:45 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Television</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">News and News Media</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">British Broadcasting Corp</category>
+    </item>
+    <item>
+      <title>Artifacts from the Titanic May Soon Be Auctioned</title>
+      <link>https://www.nytimes.com/2026/05/06/us/titanic-artifacts-auction-sale.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/titanic-artifacts-auction-sale.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/titanic-artifacts-auction-sale.html" rel="standout"></atom:link>
+      <description>The last time a sale was proposed, the idea drew objections from the U.S. and French governments, and from UNESCO and other cultural institutions.</description>
+      <dc:creator>Marc Davis</dc:creator>
+      <pubDate>Wed, 06 May 2026 15:00:11 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Shipwrecks (Historic)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Collectors and Collections</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Titanic (Ship)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Ships and Shipping</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Atlantic Ocean</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Newfoundland (Canada)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Norfolk (Va)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">White Star Line</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Maritime Accidents and Safety</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Drownings</category>
+    </item>
+    <item>
+      <title>In ‘Rocky Horror,’ Luke Evans Finds His Ballad of Sexual Liberation</title>
+      <link>https://www.nytimes.com/2026/05/06/theater/luke-evans-rocky-horror-show-broadway.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/theater/luke-evans-rocky-horror-show-broadway.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/theater/luke-evans-rocky-horror-show-broadway.html" rel="standout"></atom:link>
+      <description>What does it take to play Frank-N-Furter in “The Rocky Horror Show” on Broadway? Fishnets, five-inch heels, and an endless supply of glitter.</description>
+      <dc:creator>Zachary Small and Justin J Wee</dc:creator>
+      <pubDate>Wed, 06 May 2026 09:01:34 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Evans, Luke (1979- )</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Content Type: Personal Profile</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Actors and Actresses</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Theater</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Theater (Broadway)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">The Rocky Horror Show (Play)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Homosexuality and Bisexuality</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Jehovah&#39;s Witnesses</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Wales</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">vis-photo</category>
+      <media:content height="1799" medium="image" url="https://static01.nyt.com/images/2026/05/10/multimedia/10cul-luke-evans-fpjm/10cul-luke-evans-fpjm-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Justin J Wee for The New York Times</media:credit>
+    </item>
+    <item>
+      <title>Neil deGrasse Tyson: Give Us the Aliens</title>
+      <link>https://www.nytimes.com/2026/05/06/opinion/alien-files-trump-release.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/opinion/alien-files-trump-release.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/opinion/alien-files-trump-release.html" rel="standout"></atom:link>
+      <description>Is that too much to ask for?</description>
+      <dc:creator>Neil deGrasse Tyson</dc:creator>
+      <pubDate>Wed, 06 May 2026 15:00:06 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Extraterrestrial Life</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Space and Astronomy</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Classified Information and State Secrets</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Unidentified Flying Objects (UFO)</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/opinion/06degrassetyson-image/06degrassetyson-image-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Illustration by Sam Whitney/The New York Times</media:credit>
+    </item>
+    <item>
+      <title>John Roberts Believes in an America That Doesn’t Exist</title>
+      <link>https://www.nytimes.com/2026/05/06/opinion/callais-voting-rights-act-discrimination.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/opinion/callais-voting-rights-act-discrimination.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/opinion/callais-voting-rights-act-discrimination.html" rel="standout"></atom:link>
+      <description>Guess who benefits from a “colorblind Constitution.”</description>
+      <dc:creator>Jamelle Bouie</dc:creator>
+      <pubDate>Wed, 06 May 2026 15:20:17 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Voting Rights Act (1965)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Minorities</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">State Legislatures</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Federal-State Relations (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Voting Rights, Registration and Requirements</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Midterm Elections (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Black People</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Redistricting and Reapportionment</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Supreme Court (US)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">House of Representatives</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Senate</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Douglass, Frederick</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Roberts, John G Jr</category>
+      <media:content height="1072" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06bouie-gljk/06bouie-gljk-mediumSquareAt3X.jpg" width="1072"></media:content>
+      <media:credit>Tierney L. Cross/The New York Times</media:credit>
+    </item>
+    <item>
+      <title>The Cruise From Hell</title>
+      <link>https://www.nytimes.com/2026/05/06/briefing/the-cruise-from-hell.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/briefing/the-cruise-from-hell.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/briefing/the-cruise-from-hell.html" rel="standout"></atom:link>
+      <description>We look into the hantavirus crisis onboard the Hondius.</description>
+      <dc:creator>Sam Sifton</dc:creator>
+      <pubDate>Wed, 06 May 2026 10:58:55 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">internal-storyline-no</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Hantavirus</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cruises</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Quarantines</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Oceanwide Expeditions BV</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06themorning-hantavirus1-hlzc/06themorning-hantavirus1-hlzc-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Agence France-Presse — Getty Images</media:credit>
+      <media:description>The cruise ship MV Hondius near Cape Verde yesterday.</media:description>
+    </item>
+    <item>
+      <title>Tell Us How High Gas Prices Have Affected Your Finances</title>
+      <link>https://www.nytimes.com/2026/05/05/business/high-gas-prices-your-finances.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/05/business/high-gas-prices-your-finances.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/05/business/high-gas-prices-your-finances.html" rel="standout"></atom:link>
+      <description>With fuel costs soaring from the war with Iran, we want to hear how you’re feeling about the U.S. economy.</description>
+      <dc:creator>Tony Romm</dc:creator>
+      <pubDate>Tue, 05 May 2026 18:43:06 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Prices (Fares, Fees and Rates)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Oil (Petroleum) and Gasoline</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Content Type: Service</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Economy</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">United States</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">internal-reader-callout</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/05/multimedia/05DC-GAS-PRICES-czjw/05DC-GAS-PRICES-czjw-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Vincent Alban/The New York Times</media:credit>
+      <media:description>Gas prices have soared since the start of the war with Iran.</media:description>
+    </item>
+    <item>
+      <title>Office of Virginia State Senator Louise Lucas Raided by F.B.I. Agents</title>
+      <link>https://www.nytimes.com/2026/05/06/us/politics/louise-lucas-fbi-raid.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/politics/louise-lucas-fbi-raid.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/politics/louise-lucas-fbi-raid.html" rel="standout"></atom:link>
+      <description>Two people familiar with the case said the search of a Democratic lawmaker’s office was related to a Biden-era investigation of possible corruption and bribery related to marijuana businesses.</description>
+      <dc:creator>Devlin Barrett</dc:creator>
+      <pubDate>Wed, 06 May 2026 17:03:31 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">United States Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Cannabis Foods and Products</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Corruption (Institutional)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">State Legislatures</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Marijuana</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Redistricting and Reapportionment</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Search and Seizure</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Federal Bureau of Investigation</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Virginia</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06dc-virginia-raid-photo-pltv/06dc-virginia-raid-photo-pltv-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Ryan M. Kelly/Associated Press</media:credit>
+      <media:description>State Senator Louise Lucas in the legislative chamber in Richmond this year.</media:description>
+    </item>
+    <item>
+      <title>Reclaiming the Name of the Black Hero Who Inspired ‘Uncle Tom’s Cabin’</title>
+      <link>https://www.nytimes.com/2026/05/06/world/canada/uncle-toms-cabin-ontario-josiah-henson.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/world/canada/uncle-toms-cabin-ontario-josiah-henson.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/world/canada/uncle-toms-cabin-ontario-josiah-henson.html" rel="standout"></atom:link>
+      <description>After 42 years of slavery, Josiah Henson escaped to Canada, where he wrote a memoir, founded a school and led others to freedom. But his home long bore the name “Uncle Tom,” to the offense of many.</description>
+      <dc:creator>Ian Austen and Ian Willms</dc:creator>
+      <pubDate>Wed, 06 May 2026 09:00:27 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_ttl">Uncle Tom&#39;s Cabin (Book)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Black People</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Slavery (Historical)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Ontario (Canada)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Race and Ethnicity</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Canada</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Museums</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Discrimination</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">Stowe, Harriet Beecher</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Books and Literature</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/04/28/multimedia/00int-canada-uncletom-dispatch-promo/00int-canada-uncletom-dispatch-lbhv-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Ian Willms for The New York Times</media:credit>
+      <media:description>The Henson House at the Josiah Henson Museum of African-Canadian History in Dresden, Canada.</media:description>
+    </item>
+    <item>
+      <title>An Audit Has Fired Up Massachusetts Voters. Yes, Really.</title>
+      <link>https://www.nytimes.com/2026/05/06/us/diana-dizoglio-audit-massachusetts-legislature.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/diana-dizoglio-audit-massachusetts-legislature.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/diana-dizoglio-audit-massachusetts-legislature.html" rel="standout"></atom:link>
+      <description>Voters approved a ballot measure in 2024 authorizing Diana DiZoglio, the state auditor, to closely scrutinize the State Legislature. Lawmakers are resisting.</description>
+      <dc:creator>Jenna Russell</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:20:47 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">State Legislatures</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Politics and Government</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Corruption (Institutional)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Referendums</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Suits and Litigation (Civil)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Midterm Elections (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_per">DiZoglio, Diana</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_org">Democratic Party</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Massachusetts</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06nat-mass-auditor-vzfm/06nat-mass-auditor-vzfm-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Sophie Park for The New York Times</media:credit>
+      <media:description>Diana DiZoglio, a Democrat, has faced stiff resistance from lawmakers in her own party.</media:description>
+    </item>
+    <item>
+      <title>Guido Reichstadter Comes Down From Frederick Douglass Memorial Bridge After 6 Days</title>
+      <link>https://www.nytimes.com/2026/05/06/us/guido-reichstadter-frederick-douglass-memorial-bridge.html</link>
+      <guid isPermaLink="true">https://www.nytimes.com/2026/05/06/us/guido-reichstadter-frederick-douglass-memorial-bridge.html</guid>
+      <atom:link href="https://www.nytimes.com/2026/05/06/us/guido-reichstadter-frederick-douglass-memorial-bridge.html" rel="standout"></atom:link>
+      <description>Guido Reichstadter, a 45-year-old former jeweler, began sitting atop the Frederick Douglass Memorial Bridge on May 1 to protest A.I. development and the war in Iran.</description>
+      <dc:creator>Chris Hippensteel</dc:creator>
+      <pubDate>Wed, 06 May 2026 16:18:21 +0000</pubDate>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Demonstrations, Protests and Riots</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Anacostia River</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/nyt_geo">Washington (DC)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Bridges and Tunnels</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">Artificial Intelligence</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">US and Israeli Attack on Iran (2026)</category>
+      <category domain="http://www.nytimes.com/namespaces/keywords/des">War and Armed Conflicts</category>
+      <media:content height="1800" medium="image" url="https://static01.nyt.com/images/2026/05/06/multimedia/06nat-bridge-protest-ends-hfvj/06nat-bridge-protest-ends-hfvj-mediumSquareAt3X.jpg" width="1800"></media:content>
+      <media:credit>Julia Demaree-Nikhinson/Associated Press</media:credit>
+      <media:description>Emergency personnel remove Guido Reichstadter, 45, from the Frederick Douglass Memorial Bridge on Wednesday.</media:description>
+    </item>
+  </channel>
+</rss>

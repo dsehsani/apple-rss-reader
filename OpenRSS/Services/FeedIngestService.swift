@@ -39,7 +39,11 @@ final class FeedIngestService: Sendable {
         var allNewItems: [FeedItem] = []
 
         for source in sources where source.isEnabled {
-            guard let feedURL = URL(string: source.feedURL) else { continue }
+            // Upgrade http:// to https:// — iOS ATS blocks all http:// requests.
+            let urlString = source.feedURL.hasPrefix("http://")
+                ? "https://" + source.feedURL.dropFirst(7)
+                : source.feedURL
+            guard let feedURL = URL(string: urlString) else { continue }
 
             do {
                 let (data, changed) = try await fetchWithConditionalGET(url: feedURL)
