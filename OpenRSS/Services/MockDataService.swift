@@ -539,7 +539,11 @@ final class MockDataService: FeedDataService {
         var seen = Set<String>() // de-dupe key
 
         for source in sources {
-            guard let url = URL(string: source.feedURL) else { continue }
+            // Upgrade http:// to https:// — iOS ATS blocks http:// requests.
+            let feedURLString = source.feedURL.hasPrefix("http://")
+                ? "https://" + source.feedURL.dropFirst(7)
+                : source.feedURL
+            guard let url = URL(string: feedURLString) else { continue }
 
             do {
                 let parsed = try await rssService.fetchAndParseFeed(from: url)
