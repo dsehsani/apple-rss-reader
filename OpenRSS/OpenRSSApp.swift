@@ -39,11 +39,20 @@ struct OpenRSSApp: App {
 
         // Check Keychain directly — AuthenticationManager isn't configured yet.
         // If an Apple user ID is stored, the user was previously signed in.
-        let isSignedIn = KeychainService.loadAppleUserID() != nil
+        var isSignedIn = KeychainService.loadAppleUserID() != nil
+
+        // Disable CloudKit on simulator/DEBUG builds so local development never
+        // blocks on CloudKit sync round-trips. Production device builds keep
+        // the original behavior: enable CloudKit when the user is signed in.
+        #if targetEnvironment(simulator) || DEBUG
+        let cloudKitDB: ModelConfiguration.CloudKitDatabase = .none
+        #else
+        let cloudKitDB: ModelConfiguration.CloudKitDatabase = isSignedIn ? .automatic : .none
+        #endif
 
         let config = ModelConfiguration(
             schema: schema,
-            cloudKitDatabase: isSignedIn ? .automatic : .none
+            cloudKitDatabase: cloudKitDB
         )
 
         do {
@@ -66,7 +75,17 @@ struct OpenRSSApp: App {
             do {
                 container = try ModelContainer(for: schema, configurations: config)
             } catch {
-                fatalError("Failed to recreate SwiftData ModelContainer: \(error)")
+                print("⚠️ CloudKit-enabled container still failing — falling back to local-only: \(error)")
+                isSignedIn = false
+                let localConfig = ModelConfiguration(
+                    schema: schema,
+                    cloudKitDatabase: .none
+                )
+                do {
+                    container = try ModelContainer(for: schema, configurations: localConfig)
+                } catch {
+                    fatalError("Failed to create local-only SwiftData ModelContainer: \(error)")
+                }
             }
         }
 
