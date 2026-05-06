@@ -1,0 +1,2289 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>9to5Mac</title>
+	<atom:link href="https://9to5mac.com/feed/" rel="self" type="application/rss+xml" />
+	<link>https://9to5mac.com/</link>
+	<description>Apple News &#38; Mac Rumors Breaking All Day</description>
+	<lastBuildDate>Wed, 06 May 2026 17:29:17 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=6.9.4</generator>
+
+<image>
+	<url>https://9to5mac.com/wp-content/uploads/sites/6/2019/10/cropped-cropped-mac1-1.png?w=32</url>
+	<title>9to5Mac</title>
+	<link>https://9to5mac.com/</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+<site xmlns="com-wordpress:feed-additions:1">146091842</site>	<item>
+		<title>9to5Mac Daily: May 6, 2026 – Apple settles Siri lawsuit for $250M, more</title>
+		<link>https://9to5mac.com/2026/05/06/daily-may-6-2026/</link>
+					<comments>https://9to5mac.com/2026/05/06/daily-may-6-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Seth Kurkowski]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 17:29:17 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051160</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2021/12/9to5Mac-Daily-art-lead.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">Listen to a recap of the top stories of the day from </span><em style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">9to5Mac</em><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">. 9to5Mac Daily is available </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://podcasts.apple.com/us/podcast/9to5mac-daily/id1331816080" target="_blank" rel="noreferrer noopener">on iTunes and Apple’s Podcasts app</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://www.stitcher.com/podcast/9to5mac-daily">Stitcher</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://tunein.com/radio/9to5Mac-Daily-p1089524/">TuneIn</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://play.google.com/music/m/I5d4dzs7dauazmfxvvrynyiuram?t=9to5Mac_Daily">Google Play</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, or through our </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://feedpress.me/9to5macdaily">dedicated RSS feed</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);"> for Overcast and other podcast players.</span></p>
+
+
+
+<p><a href="https://bit.ly/48staRo"><strong>Sponsored by Bitwarden</strong>:</a> Make your life easier with Bitwarden, featuring a secure, open source password manager with end-to-end encryption and seamless autofill across all your devices.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/MacDaily_5-6-26.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-daily,podcast" data-layer-viewtype="unknown" data-post-id="1051160" href="https://9to5mac.com/2026/05/06/daily-may-6-2026/#more-1051160" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/daily-may-6-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051160</post-id>	</item>
+		<item>
+		<title>tvOS 26 has added five new ways to customize your Apple TV 4K</title>
+		<link>https://9to5mac.com/2026/05/06/tvos-26-has-added-five-new-ways-to-customize-your-apple-tv-4k/</link>
+					<comments>https://9to5mac.com/2026/05/06/tvos-26-has-added-five-new-ways-to-customize-your-apple-tv-4k/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 17:04:18 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051161</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/12/apple-tv-4k-tvos-26-lg.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>We’re still waiting for a <a href="https://9to5mac.com/2025/12/31/new-apple-tv-4k-is-coming-heres-what-the-rumors-say/" type="post" id="1033860">new Apple TV 4K to launch</a>, but tvOS at least keeps improving, including with five new settings in tvOS 26 for customizing your Apple TV.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-tv,apple-tv-4k,tvos-26" data-layer-viewtype="unknown" data-post-id="1051161" href="https://9to5mac.com/2026/05/06/tvos-26-has-added-five-new-ways-to-customize-your-apple-tv-4k/#more-1051161" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/tvos-26-has-added-five-new-ways-to-customize-your-apple-tv-4k/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051161</post-id>	</item>
+		<item>
+		<title>Disney+ to become ‘super app’ that goes beyond streaming service: report</title>
+		<link>https://9to5mac.com/2026/05/06/disney-to-become-super-app-that-goes-beyond-streaming-service-report/</link>
+					<comments>https://9to5mac.com/2026/05/06/disney-to-become-super-app-that-goes-beyond-streaming-service-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 15:51:40 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051151</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/10/disney-plus-logo-featured-titles.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>A <em>Bloomberg</em> <a href="https://www.bloomberg.com/news/articles/2026-05-01/disney-is-exploring-a-super-app-for-theme-park-tickets-movies-and-more?embedded-checkout=true">report</a> last week claimed that Disney intends to make Disney+ into a “super app” that features much more than just a streaming service. And today on Disney’s earnings call, that direction was strongly signaled by company leadership.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="disney,disney-plus" data-layer-viewtype="unknown" data-post-id="1051151" href="https://9to5mac.com/2026/05/06/disney-to-become-super-app-that-goes-beyond-streaming-service-report/#more-1051151" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/disney-to-become-super-app-that-goes-beyond-streaming-service-report/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051151</post-id>	</item>
+		<item>
+		<title>Deals: MacBook Neo w/ delivery tomorrow at $590, M5 MacBook Air $220 off, 2TB M5 Pro $250 off, MagSafe cables, more</title>
+		<link>https://9to5mac.com/2026/05/06/deals-macbook-neo-m5-macbook-air-magsafe-cables/</link>
+					<comments>https://9to5mac.com/2026/05/06/deals-macbook-neo-m5-macbook-air-magsafe-cables/#respond</comments>
+		
+		<dc:creator><![CDATA[Justin Kahn]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 15:30:13 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051136</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Apple-deals-MacBook-Neo-MagSafe-cable-M5-Pro.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Today’s <em>9to5Toys Lunch Break</em> is headlined by Amazon now delivering MacBook Neo as early as tomorrow from $590 alongside the ongoing <a href="https://9to5toys.com/2026/05/06/amazon-macbook-neo-delivery-tomorrow/">Mother’s Day AirPods Pro 3 deal</a>, but there’s plenty more than that. We have the <a href="https://9to5toys.com/2026/05/06/best-15-inch-m5-macbook-air-deals-yet/">best 15-inch M5 MacBook Air deals yet at up to $220 off</a> as well as <a href="https://9to5toys.com/2026/05/06/apple-most-affordable-2tb-m5-pro-macbook-pro-amazon-best-price/">Apple’s most affordable 2TB M5 Pro MacBook Pro</a> hitting the Amazon all-time low <a href="https://9to5toys.com/2026/05/06/apple-most-affordable-2tb-m5-pro-macbook-pro-amazon-best-price/">at over $250 off</a>, and a chance to score Mom a new current-gen <a href="https://9to5toys.com/2026/05/06/mom-gift-ipad-cheap-deal/">iPad at $299 (all colors)</a>. Those deals also join a host of official Apple accessory offers from around $6 a pop this week: black <a href="https://9to5toys.com/2026/05/05/official-black-apple-usb-cables-deal/">USB-C cables from $7</a> or standard white <a href="https://9to5toys.com/2026/05/05/extra-apple-usbc-charge-cables-deal/">from $6.50</a>, Apple Watch Sport Band <a href="https://9to5toys.com/2026/05/06/official-apple-watch-sport-bands-deals-2/">clearance deals</a> down as low <a href="https://9to5toys.com/2026/05/06/official-apple-watch-sport-bands-deals-2/">as $10</a>, and <a href="https://9to5toys.com/2026/05/06/apple-magsafe-3-cable-deals/">MagSafe 3 Cables</a> for your MacBook<a href="https://9to5toys.com/2026/05/06/apple-magsafe-3-cable-deals/"> from $23</a>. Check it all out below. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5toys,9to5toys-lunch-break,deals" data-layer-viewtype="unknown" data-post-id="1051136" href="https://9to5mac.com/2026/05/06/deals-macbook-neo-m5-macbook-air-magsafe-cables/#more-1051136" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/deals-macbook-neo-m5-macbook-air-magsafe-cables/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051136</post-id>	</item>
+		<item>
+		<title>iPadOS 26.5 will add three new features for iPad, here’s what’s coming</title>
+		<link>https://9to5mac.com/2026/05/06/ipados-26-5-will-add-three-new-features-for-ipad-heres-whats-coming/</link>
+					<comments>https://9to5mac.com/2026/05/06/ipados-26-5-will-add-three-new-features-for-ipad-heres-whats-coming/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 15:20:43 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051126</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/ipad-pro-ipados-26-5-lock-screen.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iPadOS 26.5 is <a href="https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/" type="post" id="1046457">launching very soon</a>, and with it three new features for your iPad. Here’s what’s new.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ipados-26,ipados-26-5" data-layer-viewtype="unknown" data-post-id="1051126" href="https://9to5mac.com/2026/05/06/ipados-26-5-will-add-three-new-features-for-ipad-heres-whats-coming/#more-1051126" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/ipados-26-5-will-add-three-new-features-for-ipad-heres-whats-coming/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051126</post-id>	</item>
+		<item>
+		<title>CarPlay in iOS 26 promises video playback feature, here&#8217;s the latest</title>
+		<link>https://9to5mac.com/2026/05/06/carplay-video-ios-26/</link>
+					<comments>https://9to5mac.com/2026/05/06/carplay-video-ios-26/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 15:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1005884</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/06/Apple-WWDC25-iOS-26-CarPlay-Dark-mode-250609_big.jpg.large_2x.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple made a major U-turn with CarPlay after a decade of not allowing video playback. Starting with iOS 26, Apple technically allows apps to display video through the CarPlay screen while parked. Here’s the latest on where things stand for the feature.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="carplay,ios-26" data-layer-viewtype="unknown" data-post-id="1005884" href="https://9to5mac.com/2026/05/06/carplay-video-ios-26/#more-1005884" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/carplay-video-ios-26/feed/</wfw:commentRss>
+			<slash:comments>42</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1005884</post-id>	</item>
+		<item>
+		<title>Apple TV reveals John Travolta’s directorial debut in new trailer</title>
+		<link>https://9to5mac.com/2026/05/06/apple-tv-reveals-john-travoltas-directorial-debut-in-new-trailer/</link>
+					<comments>https://9to5mac.com/2026/05/06/apple-tv-reveals-john-travoltas-directorial-debut-in-new-trailer/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 13:59:55 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051113</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/propeller-one-way-night-coach-key-art-2.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Propeller One-Way Night Coach is Apple TV’s next movie, <a href="https://9to5mac.com/2026/05/01/heres-everything-new-apple-tv-has-coming-in-may-2026/" type="post" id="1049589">premiering later this month</a> from first-time director John Travolta. Here’s the new trailer.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-tv" data-layer-viewtype="unknown" data-post-id="1051113" href="https://9to5mac.com/2026/05/06/apple-tv-reveals-john-travoltas-directorial-debut-in-new-trailer/#more-1051113" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/apple-tv-reveals-john-travoltas-directorial-debut-in-new-trailer/feed/</wfw:commentRss>
+			<slash:comments>5</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051113</post-id>	</item>
+		<item>
+		<title>iPhone 18 Pro getting new display upgrade with two benefits, per report</title>
+		<link>https://9to5mac.com/2026/05/06/iphone-18-pro-getting-new-display-upgrade-with-two-benefits-per-report/</link>
+					<comments>https://9to5mac.com/2026/05/06/iphone-18-pro-getting-new-display-upgrade-with-two-benefits-per-report/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 13:33:11 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051107</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/01/iphone-17-pro-dark.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iPhone 18 Pro and Pro Max are <a href="https://9to5mac.com/2026/05/04/iphone-18-pro-six-new-features-are-coming-later-this-year/" type="post" id="1033425">expected to have</a> the same 6.3-inch and 6.9-inch sizes as their predecessors, but a <a href="https://www.thelec.net/news/articleView.html?idxno=10214">new report</a> says those displays are coming with a key technology upgrade.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-18-pro,iphone-18-pro-max" data-layer-viewtype="unknown" data-post-id="1051107" href="https://9to5mac.com/2026/05/06/iphone-18-pro-getting-new-display-upgrade-with-two-benefits-per-report/#more-1051107" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/iphone-18-pro-getting-new-display-upgrade-with-two-benefits-per-report/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051107</post-id>	</item>
+		<item>
+		<title>Adobe Acrobat now lets users turn PDFs into shareable AI-powered workspaces</title>
+		<link>https://9to5mac.com/2026/05/06/adobe-acrobat-now-lets-users-turn-pdfs-into-shareable-ai-powered-workspaces/</link>
+					<comments>https://9to5mac.com/2026/05/06/adobe-acrobat-now-lets-users-turn-pdfs-into-shareable-ai-powered-workspaces/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 13:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051092</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/adobe-pdf-spaces.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Adobe is rolling out new sharing capabilities for PDF Spaces in Acrobat today, letting users turn static materials into interactive, AI-powered summaries, audio overviews, branded presentations, and even a custom chatbot for recipients. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="adobe" data-layer-viewtype="unknown" data-post-id="1051092" href="https://9to5mac.com/2026/05/06/adobe-acrobat-now-lets-users-turn-pdfs-into-shareable-ai-powered-workspaces/#more-1051092" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/adobe-acrobat-now-lets-users-turn-pdfs-into-shareable-ai-powered-workspaces/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051092</post-id>	</item>
+		<item>
+		<title>Energizer now offers child-safe batteries for your AirTags</title>
+		<link>https://9to5mac.com/2026/05/06/energizer-now-offers-child-safe-batteries-for-your-airtags/</link>
+					<comments>https://9to5mac.com/2026/05/06/energizer-now-offers-child-safe-batteries-for-your-airtags/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 12:56:50 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051100</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Energizer-now-offers-child-safe-batteries-for-your-AirTags.jpg?quality=82&#038;strip=all&#038;w=1380" /></div><p>Safety regulators have <a href="https://9to5mac.com/2021/06/28/keep-airtags-away-from-children/" target="_blank" rel="noreferrer noopener">long expressed concern</a> about the potential risks to children posed by the easily-opened battery compartment of <a href="https://9to5mac.com/guides/airtag/" target="_blank" rel="noreferrer noopener">AirTags</a>. It’s not uncommon for children to swallow objects with a similar size and shape to candy – like the coin batteries used – and this can potentially cause life-threatening injuries … </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="airtags" data-layer-viewtype="unknown" data-post-id="1051100" href="https://9to5mac.com/2026/05/06/energizer-now-offers-child-safe-batteries-for-your-airtags/#more-1051100" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/energizer-now-offers-child-safe-batteries-for-your-airtags/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051100</post-id>	</item>
+		<item>
+		<title>Sketchy iPhone 18 Pro Dynamic Island rumors continue with claimed CAD images</title>
+		<link>https://9to5mac.com/2026/05/06/sketchy-iphone-18-pro-dynamic-island-rumors-continue-with-claimed-cad-images/</link>
+					<comments>https://9to5mac.com/2026/05/06/sketchy-iphone-18-pro-dynamic-island-rumors-continue-with-claimed-cad-images/#respond</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 12:31:07 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051091</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2023/02/Under-screen-Face-ID.jpeg?quality=82&#038;strip=all&#038;w=1500" /></div><p>Rumors of a smaller <a href="https://9to5mac.com/guides/dynamic-island/" target="_blank" rel="noreferrer noopener">Dynamic Island</a> are <a href="https://9to5mac.com/2025/07/11/leaker-teases-dynamic-islands-significant-evolution-ahead/" target="_blank" rel="noreferrer noopener">nothing new</a>, but there’s been considerable speculation about this in respect of the <a href="https://9to5mac.com/guides/iphone-18-pro/" target="_blank" rel="noreferrer noopener">iPhone 18 Pro</a>.</p>
+
+
+
+<p>Adding fuel to the fire are claimed CAD images showing a smaller Dynamic Island, but we reiterate our earlier skepticism …</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="dynamic-island,iphone-18,iphone-18-pro" data-layer-viewtype="unknown" data-post-id="1051091" href="https://9to5mac.com/2026/05/06/sketchy-iphone-18-pro-dynamic-island-rumors-continue-with-claimed-cad-images/#more-1051091" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/sketchy-iphone-18-pro-dynamic-island-rumors-continue-with-claimed-cad-images/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051091</post-id>	</item>
+		<item>
+		<title>Pornhub is now using Apple&#8217;s own age verification feature in the UK</title>
+		<link>https://9to5mac.com/2026/05/06/pornhub-is-now-using-apples-own-age-verification-feature-in-the-uk/</link>
+					<comments>https://9to5mac.com/2026/05/06/pornhub-is-now-using-apples-own-age-verification-feature-in-the-uk/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 11:56:37 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051085</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Pornhub-is-now-using-Apples-own-age-verification-feature-in-the-UK.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>I guess this is one “benefit” of the <a href="https://9to5mac.com/guides/aapl/" target="_blank" rel="noreferrer noopener">Apple</a> ecosystem that won’t make it into a press release from the Cupertino company: Pornhub’s parent company has announced that it will be relying on <a href="https://9to5mac.com/2026/03/31/apple-continues-to-roll-out-age-verification-around-the-world-more-uk-methods/" target="_blank" rel="noreferrer noopener">Apple’s own age verification feature</a> for its UK web visitors … </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1051085" href="https://9to5mac.com/2026/05/06/pornhub-is-now-using-apples-own-age-verification-feature-in-the-uk/#more-1051085" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/pornhub-is-now-using-apples-own-age-verification-feature-in-the-uk/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051085</post-id>	</item>
+		<item>
+		<title>Apple may have just made one of the most important new Siri announcements</title>
+		<link>https://9to5mac.com/2026/05/06/apple-may-have-just-made-one-of-the-most-important-new-siri-announcements/</link>
+					<comments>https://9to5mac.com/2026/05/06/apple-may-have-just-made-one-of-the-most-important-new-siri-announcements/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 11:19:59 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051082</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/09/siri-services-apps.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://9to5mac.com/guides/aapl/" target="_blank" rel="noreferrer noopener">Apple’s</a> painfully slow launch of the new <a href="https://9to5mac.com/guides/siri/" target="_blank" rel="noreferrer noopener">Siri</a> has become such a long-running saga, it seems to have all the makings of a movie – though probably not one we will see launch on Apple TV.</p>
+
+
+
+<p>The announcement at the start of this year that it will be powered by Google’s Gemini models finally gave us reason for optimism, and the latest Apple AI news could be an equally important development …</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,apple-intelligence,opinion,siri" data-layer-viewtype="unknown" data-post-id="1051082" href="https://9to5mac.com/2026/05/06/apple-may-have-just-made-one-of-the-most-important-new-siri-announcements/#more-1051082" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/06/apple-may-have-just-made-one-of-the-most-important-new-siri-announcements/feed/</wfw:commentRss>
+			<slash:comments>13</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051082</post-id>	</item>
+		<item>
+		<title>Intel’s stock jumped 13% today over Apple chip manufacturing report</title>
+		<link>https://9to5mac.com/2026/05/05/intels-stock-jumped-13-today-over-apple-chip-manufacturing-report/</link>
+					<comments>https://9to5mac.com/2026/05/05/intels-stock-jumped-13-today-over-apple-chip-manufacturing-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Wed, 06 May 2026 02:32:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051079</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/08/15000-Intel-job-cuts.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Intel’s stock hit a record high today in the aftermath of a <a href="https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/"><em>Bloomberg</em> report</a> that claimed Apple is exploring Intel and Samsung Electronics as potential manufacturing partners for future device chips. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,intel" data-layer-viewtype="unknown" data-post-id="1051079" href="https://9to5mac.com/2026/05/05/intels-stock-jumped-13-today-over-apple-chip-manufacturing-report/#more-1051079" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/intels-stock-jumped-13-today-over-apple-chip-manufacturing-report/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051079</post-id>	</item>
+		<item>
+		<title>Apple pressed by Maryland lawmakers over closure of first unionized U.S. store</title>
+		<link>https://9to5mac.com/2026/05/05/apple-pressed-by-maryland-lawmakers-over-closure-of-first-unionized-u-s-store/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-pressed-by-maryland-lawmakers-over-closure-of-first-unionized-u-s-store/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 22:43:50 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051076</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/12/apple-logo-store.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>A group of two U.S. Senators and seven Members of Congress sent a letter to Tim Cook and John Ternus pressing Apple for answers over the planned closure of its Towson retail store. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1051076" href="https://9to5mac.com/2026/05/05/apple-pressed-by-maryland-lawmakers-over-closure-of-first-unionized-u-s-store/#more-1051076" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-pressed-by-maryland-lawmakers-over-closure-of-first-unionized-u-s-store/feed/</wfw:commentRss>
+			<slash:comments>10</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051076</post-id>	</item>
+		<item>
+		<title>9to5Mac Daily: May 5, 2026 – iOS 26.5 RC, Apple chip partners</title>
+		<link>https://9to5mac.com/2026/05/05/daily-may-5-2026/</link>
+					<comments>https://9to5mac.com/2026/05/05/daily-may-5-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Seth Kurkowski]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 21:35:19 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051055</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2021/12/9to5Mac-Daily-art-lead.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">Listen to a recap of the top stories of the day from </span><em style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">9to5Mac</em><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">. 9to5Mac Daily is available </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://podcasts.apple.com/us/podcast/9to5mac-daily/id1331816080" target="_blank" rel="noreferrer noopener">on iTunes and Apple’s Podcasts app</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://www.stitcher.com/podcast/9to5mac-daily">Stitcher</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://tunein.com/radio/9to5Mac-Daily-p1089524/">TuneIn</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://play.google.com/music/m/I5d4dzs7dauazmfxvvrynyiuram?t=9to5Mac_Daily">Google Play</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, or through our </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://feedpress.me/9to5macdaily">dedicated RSS feed</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);"> for Overcast and other podcast players.</span></p>
+
+
+
+<p><a href="https://bit.ly/48staRo"><strong>Sponsored by Bitwarden</strong>:</a> Make your life easier with Bitwarden, featuring a secure, open source password manager with end-to-end encryption and seamless autofill across all your devices.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/MacDaily_5-5-26.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-daily,podcast" data-layer-viewtype="unknown" data-post-id="1051055" href="https://9to5mac.com/2026/05/05/daily-may-5-2026/#more-1051055" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/daily-may-5-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051055</post-id>	</item>
+		<item>
+		<title>Threads starts rolling out DMs on the web, but there are a few catches</title>
+		<link>https://9to5mac.com/2026/05/05/threads-starts-rolling-out-dms-on-the-web-but-there-are-a-few-catches/</link>
+					<comments>https://9to5mac.com/2026/05/05/threads-starts-rolling-out-dms-on-the-web-but-there-are-a-few-catches/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 21:22:41 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051069</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/08/Cross-post-from-Instagram-and-Facebook-to-Threads.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last July, Threads finally gave in and <a href="https://9to5mac.com/2025/07/01/threads-officially-rolls-out-standalone-dms-and-debuts-visual-highlights/">uncoupled its DMs from Instagram</a>. Now, the platform is turning to another long-standing gap: bringing DMs to the web. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="threads" data-layer-viewtype="unknown" data-post-id="1051069" href="https://9to5mac.com/2026/05/05/threads-starts-rolling-out-dms-on-the-web-but-there-are-a-few-catches/#more-1051069" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/threads-starts-rolling-out-dms-on-the-web-but-there-are-a-few-catches/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051069</post-id>	</item>
+		<item>
+		<title>Apple Manufacturing Academy highlights AI adoption across U.S. industry</title>
+		<link>https://9to5mac.com/2026/05/05/apple-manufacturing-academy-highlights-ai-adoption-across-u-s-industry/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-manufacturing-academy-highlights-ai-adoption-across-u-s-industry/#respond</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 21:01:11 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051065</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/apple-manufacturing-forum.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple and Michigan State University recently held the inaugural Spring Forum for the Apple Manufacturing Academy, focused on how AI is being implemented across multiple manufacturing workflows. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1051065" href="https://9to5mac.com/2026/05/05/apple-manufacturing-academy-highlights-ai-adoption-across-u-s-industry/#more-1051065" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-manufacturing-academy-highlights-ai-adoption-across-u-s-industry/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051065</post-id>	</item>
+		<item>
+		<title>iPhone users could get up to $95 per device as Apple reaches $250M settlement over Siri delays</title>
+		<link>https://9to5mac.com/2026/05/05/apple-reaches-250m-settlement-over-siri-delays-users-could-get-up-to-95-per-device/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-reaches-250m-settlement-over-siri-delays-users-could-get-up-to-95-per-device/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 20:47:39 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051056</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/08/apple-intelligence-when.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last March, Apple was <a href="https://9to5mac.com/2025/03/20/apple-intelligence-lawsuit-advertising/">hit with a class action lawsuit</a> after <a href="https://9to5mac.com/2025/03/07/apple-intelligence-personal-siri-delayed/">delaying</a> the launch of the “more personalized Siri” that was first announced at WWDC 2024.</p>
+
+
+
+<p>Apple agreed to settle the case in December, and the full settlement terms are now available.</p>
+
+
+
+<p>Apple is set to pay $250 million to settle the lawsuit, equating to an estimated $25 per device. That number could reach up to $95 per device, depending on how many users submit claims.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1051056" href="https://9to5mac.com/2026/05/05/apple-reaches-250m-settlement-over-siri-delays-users-could-get-up-to-95-per-device/#more-1051056" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-reaches-250m-settlement-over-siri-delays-users-could-get-up-to-95-per-device/feed/</wfw:commentRss>
+			<slash:comments>21</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051056</post-id>	</item>
+		<item>
+		<title>watchOS 26 added hypertension alerts for Apple Watch, here’s how to use them</title>
+		<link>https://9to5mac.com/2026/05/05/how-to-use-apple-watchs-hypertension-feature-in-watchos-26/</link>
+					<comments>https://9to5mac.com/2026/05/05/how-to-use-apple-watchs-hypertension-feature-in-watchos-26/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 20:22:05 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1020268</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/09/hypertension-notifications-apple-watch.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>watchOS 26 introduced a new hypertension detection feature not only for Apple Watch Ultra 3 and Series 11, but for select older Apple Watch models too. Here’s how to set it up, and which models are compatible.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-health,apple-watch,watchos-26" data-layer-viewtype="unknown" data-post-id="1020268" href="https://9to5mac.com/2026/05/05/how-to-use-apple-watchs-hypertension-feature-in-watchos-26/#more-1020268" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/how-to-use-apple-watchs-hypertension-feature-in-watchos-26/feed/</wfw:commentRss>
+			<slash:comments>12</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1020268</post-id>	</item>
+		<item>
+		<title>Canceled Apple TV show might have shot at revival as spinoff wins acclaim</title>
+		<link>https://9to5mac.com/2026/05/05/canceled-apple-tv-show-might-have-shot-at-revival-as-spinoff-wins-acclaim/</link>
+					<comments>https://9to5mac.com/2026/05/05/canceled-apple-tv-show-might-have-shot-at-revival-as-spinoff-wins-acclaim/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 18:54:03 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051031</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/02/schmigadoon-season2.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple TV’s musical comedy <a href="https://tv.apple.com/show/schmigadoon/umc.cmc.1tqmf2znhr4oui4vo69ircyui?itscg=30200&amp;itsct=tv_box_link&amp;mttnsubad=umc.cmc.1tqmf2znhr4oui4vo69ircyui&amp;at=1000l3cvR">Schmigadoon!</a> earned a loyal following, but <a href="https://9to5mac.com/2024/01/18/schmigadoon-season-3/">was canceled</a> after two seasons. Now though, a <a href="https://9to5mac.com/2025/09/30/apple-tv-schmigadoon-was-canceled-but-now-its-back-as-broadway-musical/">Broadway spinoff</a> has proven a hit and earned significant acclaim, as evidenced by today’s Tony nominations. And that could be good news for a prospective season 3 of Schmigadoon! on Apple TV.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-tv" data-layer-viewtype="unknown" data-post-id="1051031" href="https://9to5mac.com/2026/05/05/canceled-apple-tv-show-might-have-shot-at-revival-as-spinoff-wins-acclaim/#more-1051031" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/canceled-apple-tv-show-might-have-shot-at-revival-as-spinoff-wins-acclaim/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051031</post-id>	</item>
+		<item>
+		<title>Apple&#8217;s most powerful Mac Studio loses its last remaining RAM upgrade option</title>
+		<link>https://9to5mac.com/2026/05/05/apples-most-powerful-mac-studio-loses-its-last-remaining-ram-upgrade-option/</link>
+					<comments>https://9to5mac.com/2026/05/05/apples-most-powerful-mac-studio-loses-its-last-remaining-ram-upgrade-option/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 18:34:54 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051037</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/02/mac-studio-displays-fi.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple’s most powerful Mac Studio no longer includes RAM upgrade options. This comes after Apple has seemingly ran out of inventory for the two highest memory options supposed by the machine.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="m3-ultra,mac,mac-studio" data-layer-viewtype="unknown" data-post-id="1051037" href="https://9to5mac.com/2026/05/05/apples-most-powerful-mac-studio-loses-its-last-remaining-ram-upgrade-option/#more-1051037" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apples-most-powerful-mac-studio-loses-its-last-remaining-ram-upgrade-option/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051037</post-id>	</item>
+		<item>
+		<title>Apple just released new AirPods Max 2 firmware</title>
+		<link>https://9to5mac.com/2026/05/05/apple-just-released-new-airpods-max-2-firmware/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-just-released-new-airpods-max-2-firmware/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 18:26:19 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051036</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/airpods-max-2-midnight-fi.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last week Apple <a href="https://9to5mac.com/2026/04/30/apple-just-released-new-airpods-pro-3-firmware-update/">shipped new firmware</a> for AirPods Pro 3, and now today AirPods Max 2 have gotten a fresh firmware update too.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="airpods,airpods-max-2" data-layer-viewtype="unknown" data-post-id="1051036" href="https://9to5mac.com/2026/05/05/apple-just-released-new-airpods-max-2-firmware/#more-1051036" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-just-released-new-airpods-max-2-firmware/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051036</post-id>	</item>
+		<item>
+		<title>iOS 27 will let you choose between Gemini, Claude, and more for AI features: report</title>
+		<link>https://9to5mac.com/2026/05/05/ios-27-will-let-you-choose-between-gemini-claude-and-more-for-ai-features-report/</link>
+					<comments>https://9to5mac.com/2026/05/05/ios-27-will-let-you-choose-between-gemini-claude-and-more-for-ai-features-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 17:49:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051032</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/11/ios-27.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://9to5mac.com/2026/03/20/ios-27-new-features/">iOS 27</a> will give users a new way to integrate with third-party AI platforms, according to a new report. This will let iPhone users choose from multiple third-party models from companies like Google and Anthropic, including the ability to set custom voices in Siri depending on which external model is responding.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios,ios-27" data-layer-viewtype="unknown" data-post-id="1051032" href="https://9to5mac.com/2026/05/05/ios-27-will-let-you-choose-between-gemini-claude-and-more-for-ai-features-report/#more-1051032" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/ios-27-will-let-you-choose-between-gemini-claude-and-more-for-ai-features-report/feed/</wfw:commentRss>
+			<slash:comments>13</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051032</post-id>	</item>
+		<item>
+		<title>OpenAI releases GPT-5.5 Instant update to make ChatGPT smarter with fewer emoji</title>
+		<link>https://9to5mac.com/2026/05/05/gpt-5-5-instant-makes-chatgpt-more-accurate-while-nixing-gratuitous-emojis/</link>
+					<comments>https://9to5mac.com/2026/05/05/gpt-5-5-instant-makes-chatgpt-more-accurate-while-nixing-gratuitous-emojis/#respond</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 17:27:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051021</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/chatgpt-blue.webp?w=1600" /></div><p>ChatGPT should feel “smarter and more accurate” starting today, according to OpenAI. That’s because the company is replacing the default model with an update called GPT-5.5 Instant. OpenAI also says the model upgrade cuts back on the “gratuitous emojis” in responses. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ai,chatgpt,openai" data-layer-viewtype="unknown" data-post-id="1051021" href="https://9to5mac.com/2026/05/05/gpt-5-5-instant-makes-chatgpt-more-accurate-while-nixing-gratuitous-emojis/#more-1051021" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/gpt-5-5-instant-makes-chatgpt-more-accurate-while-nixing-gratuitous-emojis/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051021</post-id>	</item>
+		<item>
+		<title>iOS 26.5 makes Reminders app better by improving one of my top features</title>
+		<link>https://9to5mac.com/2026/05/05/ios-26-5-makes-reminders-app-better-by-improving-one-of-my-top-features/</link>
+					<comments>https://9to5mac.com/2026/05/05/ios-26-5-makes-reminders-app-better-by-improving-one-of-my-top-features/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 17:15:31 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1051012</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/06/reminders-ios-26.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 26.5 is expected to <a href="https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/" type="post" id="1046457">launch next week</a>, and a newly discovered improvement makes one of my most-used Reminders features even better.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26,ios-26-5,reminders" data-layer-viewtype="unknown" data-post-id="1051012" href="https://9to5mac.com/2026/05/05/ios-26-5-makes-reminders-app-better-by-improving-one-of-my-top-features/#more-1051012" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/ios-26-5-makes-reminders-app-better-by-improving-one-of-my-top-features/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1051012</post-id>	</item>
+		<item>
+		<title>Amazon just redesigned its Photos app for iPhone, here&#8217;s what&#8217;s new</title>
+		<link>https://9to5mac.com/2026/05/05/amazon-just-redesigned-its-photos-app-for-iphone-heres-whats-new/</link>
+					<comments>https://9to5mac.com/2026/05/05/amazon-just-redesigned-its-photos-app-for-iphone-heres-whats-new/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 15:45:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050996</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Amazon-Photos-iPhoneapp.webp?w=1600" /></div><p>Prime members have access to unlimited photo back, and Amazon just redesigned its Photos app for iPhone users.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="amazon,apps,photos" data-layer-viewtype="unknown" data-post-id="1050996" href="https://9to5mac.com/2026/05/05/amazon-just-redesigned-its-photos-app-for-iphone-heres-whats-new/#more-1050996" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/amazon-just-redesigned-its-photos-app-for-iphone-heres-whats-new/feed/</wfw:commentRss>
+			<slash:comments>5</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050996</post-id>	</item>
+		<item>
+		<title>Apple says watchOS 26.5 fixes two key Apple Watch bugs</title>
+		<link>https://9to5mac.com/2026/05/05/apple-says-watchos-26-5-fixes-two-key-apple-watch-bugs/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-says-watchos-26-5-fixes-two-key-apple-watch-bugs/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 15:35:16 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050999</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/watchOS-26.5-hero.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/">Alongside iOS 26.5</a>, Apple also released the watchOS 26.5 RC yesterday. The update includes a new Pride Luminance watch face with a ton of customization options, as Zac <a href="https://9to5mac.com/2026/05/05/watchos-26-5-adds-a-colorful-new-apple-watch-face-with-these-customization-options/">covered earlier today</a>. There are also two key bug fixes that Apple Watch users will appreciate.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-watch,watchos,watchos-26,watchos-26-5" data-layer-viewtype="unknown" data-post-id="1050999" href="https://9to5mac.com/2026/05/05/apple-says-watchos-26-5-fixes-two-key-apple-watch-bugs/#more-1050999" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-says-watchos-26-5-fixes-two-key-apple-watch-bugs/feed/</wfw:commentRss>
+			<slash:comments>8</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050999</post-id>	</item>
+		<item>
+		<title>Deals: M4 iPad Air $110 off, M4 MacBook Air $400 off orig. price, M5 MacBook Pro, Apple cables, more</title>
+		<link>https://9to5mac.com/2026/05/05/deals-m4-ipad-air-m4-macbook-air-m5-macbook-pro/</link>
+					<comments>https://9to5mac.com/2026/05/05/deals-m4-ipad-air-m4-macbook-air-m5-macbook-pro/#respond</comments>
+		
+		<dc:creator><![CDATA[Justin Kahn]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 15:29:39 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050992</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Apple-deals-MacBook-Pro-M4-iPad-Air-Beats-cable.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Alongside the ongoing AirPods Pro 3 deal and the new Amazon all-time low on AirPods Max 2, today’s <em>9to5Toys Lunch Break</em> is headlined by Apple’s new mid-range <a href="https://9to5toys.com/2026/05/05/apple-new-mid-256gb-13-inch-m4-ipad-air-lowest-price/">256GB 13-inch M4 iPad Air</a> hitting a new all-time low at <a href="https://9to5toys.com/2026/05/05/apple-new-mid-256gb-13-inch-m4-ipad-air-lowest-price/">nearly $110 off</a>. We also have clearance pricing live on <a href="https://9to5toys.com/2026/05/05/clearance-m4-macbook-air-16gb-512gb-sale/">M4 MacBook Air 16GB/512GB</a> at nearly <a href="https://9to5toys.com/2026/05/05/clearance-m4-macbook-air-16gb-512gb-sale/">$400 off list price</a> and the return of all-time low pricing on the <a href="https://9to5toys.com/2026/05/05/24gb-m5-macbook-pro-live-best-deal/">24GB M5 MacBook Pro at $300 off</a> the original launch price joined by some accessory deals – <a href="https://9to5toys.com/2026/05/05/extra-apple-usbc-charge-cables-deal/">Apple USB-C Charge Cables from $6.50</a> and<a href="https://9to5toys.com/2026/05/05/extra-apple-usbc-charge-cables-deal/"> </a>Apple’s <a href="https://9to5toys.com/2026/05/05/apple-airtag-loop-2-deal/">AirTag Loop down at just $6</a>. Head below for a closer look. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5toys,9to5toys-lunch-break,deals" data-layer-viewtype="unknown" data-post-id="1050992" href="https://9to5mac.com/2026/05/05/deals-m4-ipad-air-m4-macbook-air-m5-macbook-pro/#more-1050992" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/deals-m4-ipad-air-m4-macbook-air-m5-macbook-pro/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050992</post-id>	</item>
+		<item>
+		<title>iOS 27: Seven new features are being announced next month</title>
+		<link>https://9to5mac.com/2026/05/05/ios-27-seven-new-features-are-being-announced-next-month/</link>
+					<comments>https://9to5mac.com/2026/05/05/ios-27-seven-new-features-are-being-announced-next-month/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 15:17:54 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050974</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/11/ios-27.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple will unveil iOS 27 next month <a href="https://9to5mac.com/2026/03/23/apple-announces-wwdc-2026-for-june-8-ios-27-set-to-be-revealed/" type="post" id="1043860">on June 8</a> during WWDC’s kickoff. Here are seven new iPhone features rumored to be coming in iOS 27.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-27" data-layer-viewtype="unknown" data-post-id="1050974" href="https://9to5mac.com/2026/05/05/ios-27-seven-new-features-are-being-announced-next-month/#more-1050974" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/ios-27-seven-new-features-are-being-announced-next-month/feed/</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050974</post-id>	</item>
+		<item>
+		<title>Here’s the next Apple Watch face coming in watchOS 26.5 and how to customize it</title>
+		<link>https://9to5mac.com/2026/05/05/watchos-26-5-adds-a-colorful-new-apple-watch-face-with-these-customization-options/</link>
+					<comments>https://9to5mac.com/2026/05/05/watchos-26-5-adds-a-colorful-new-apple-watch-face-with-these-customization-options/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 14:40:43 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050951</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/apple-watch-26.5.webp?w=1600" /></div><p>Apple Watch is gaining a new watch face with the watchOS 26.5 software update. The new option is an analog watch face with a wide range of personalization options. It can be as colorful or as monochromatic as you’d like.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050951" href="https://9to5mac.com/2026/05/05/watchos-26-5-adds-a-colorful-new-apple-watch-face-with-these-customization-options/#more-1050951" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/watchos-26-5-adds-a-colorful-new-apple-watch-face-with-these-customization-options/feed/</wfw:commentRss>
+			<slash:comments>10</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050951</post-id>	</item>
+		<item>
+		<title>iPhone 18 release date just got new evidence of delay, per leak</title>
+		<link>https://9to5mac.com/2026/05/05/iphone-18-release-date-just-got-new-evidence-of-delay-per-leak/</link>
+					<comments>https://9to5mac.com/2026/05/05/iphone-18-release-date-just-got-new-evidence-of-delay-per-leak/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 13:58:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050948</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/12/iphone-17-black.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Rumors have indicated for a while now that this fall’s iPhone lineup will have a major change, with no base iPhone 18 launching. And we just got even more evidence of an iPhone 18 release date delay via a new leak.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050948" href="https://9to5mac.com/2026/05/05/iphone-18-release-date-just-got-new-evidence-of-delay-per-leak/#more-1050948" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/iphone-18-release-date-just-got-new-evidence-of-delay-per-leak/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050948</post-id>	</item>
+		<item>
+		<title>OpenAI’s new phone being fast-tracked to launch next year, per report</title>
+		<link>https://9to5mac.com/2026/05/05/openais-new-phone-being-fast-tracked-to-launch-next-year-per-report/</link>
+					<comments>https://9to5mac.com/2026/05/05/openais-new-phone-being-fast-tracked-to-launch-next-year-per-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 13:41:09 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050935</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/openai-phone-chatgpt-fi.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last week Ming-Chi Kuo <a href="https://9to5mac.com/2026/04/27/openai-is-making-its-own-phone-to-compete-with-the-iphone-report/">broke the news</a> that OpenAI’s hardware ambitions now include a smartphone to directly compete with the iPhone. And a <a href="https://x.com/mingchikuo/status/2051523855286776034?s=61&amp;t=a-bloX1n-TZ50ofqhetO1A">new update</a> from Kuo suggests the company is moving even faster than anticipated to launch the first OpenAI phone.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="chatgpt,openai" data-layer-viewtype="unknown" data-post-id="1050935" href="https://9to5mac.com/2026/05/05/openais-new-phone-being-fast-tracked-to-launch-next-year-per-report/#more-1050935" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/openais-new-phone-being-fast-tracked-to-launch-next-year-per-report/feed/</wfw:commentRss>
+			<slash:comments>10</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050935</post-id>	</item>
+		<item>
+		<title>Meta AI will analyze faces of teen users &#8216;but it&#8217;s not face recognition&#8217;</title>
+		<link>https://9to5mac.com/2026/05/05/meta-ai-will-analyze-faces-of-teen-users-but-its-not-face-recognition/</link>
+					<comments>https://9to5mac.com/2026/05/05/meta-ai-will-analyze-faces-of-teen-users-but-its-not-face-recognition/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 12:54:26 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050909</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Meta-AI-will-analyze-faces-of-teen-users-but-its-not-face-recognition.jpg?quality=82&#038;strip=all&#038;w=1500" /></div><p><a href="https://9to5mac.com/guides/meta/" target="_blank" rel="noreferrer noopener">Meta’s</a> latest attempt to comply with age verification requirements in Europe, Brazil and the US is to roll out AI-powered tech to analyse the faces of teenage users of <a href="https://9to5mac.com/guides/facebook/" target="_blank" rel="noreferrer noopener">Facebook</a> and <a href="https://9to5mac.com/guides/instagram/" target="_blank" rel="noreferrer noopener">Instagram</a>.</p>
+
+
+
+<p>The company says AI analysis will be used to estimate the ages of faces but that it does not amount to face recognition … </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apps,facebook,instagram,meta" data-layer-viewtype="unknown" data-post-id="1050909" href="https://9to5mac.com/2026/05/05/meta-ai-will-analyze-faces-of-teen-users-but-its-not-face-recognition/#more-1050909" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/meta-ai-will-analyze-faces-of-teen-users-but-its-not-face-recognition/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050909</post-id>	</item>
+		<item>
+		<title>Bose AirPlay speakers see return of the 1990s Lifestyle branding, targets HomePod</title>
+		<link>https://9to5mac.com/2026/05/05/bose-airplay-speakers-see-return-of-the-1990s-lifestyle-branding-targets-homepod/</link>
+					<comments>https://9to5mac.com/2026/05/05/bose-airplay-speakers-see-return-of-the-1990s-lifestyle-branding-targets-homepod/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 12:31:48 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050905</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Bose-AirPlay-speakers-see-return-of-the-1990s-Lifestyle-branding.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Three new Bose <a href="https://9to5mac.com/guides/airplay/" target="_blank" rel="noreferrer noopener">AirPlay</a> speakers have launched today, and the Bose Lifestyle Ultra Speaker appears to be going head-to-head with the original HomePod.</p>
+
+
+
+<p>Bose has dusted off the Lifestyle sub-branding it first introduced in 1990 before discontinuing in 2022. The original Lifestyle speakers achieved iconic status, so perhaps choosing this name for the latest lineup reflects the company’s hopes here …</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050905" href="https://9to5mac.com/2026/05/05/bose-airplay-speakers-see-return-of-the-1990s-lifestyle-branding-targets-homepod/#more-1050905" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/bose-airplay-speakers-see-return-of-the-1990s-lifestyle-branding-targets-homepod/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050905</post-id>	</item>
+		<item>
+		<title>Leaker suggests seven new features coming to iPhone 20 – but read with care</title>
+		<link>https://9to5mac.com/2026/05/05/leaker-suggests-seven-new-features-coming-to-iphone-20-but-read-with-care/</link>
+					<comments>https://9to5mac.com/2026/05/05/leaker-suggests-seven-new-features-coming-to-iphone-20-but-read-with-care/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 12:02:16 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050902</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/06/iPhone-20th-anniversary-mockup-ios26-01.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Leaker Instant Digital has a decent track record when it comes to iPhones, but their latest post may need to be treated with a certain amount of caution.</p>
+
+
+
+<p>They list seven new features we might expect from the 20th anniversary model, but it may be more of a wish list than a leak … </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050902" href="https://9to5mac.com/2026/05/05/leaker-suggests-seven-new-features-coming-to-iphone-20-but-read-with-care/#more-1050902" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/leaker-suggests-seven-new-features-coming-to-iphone-20-but-read-with-care/feed/</wfw:commentRss>
+			<slash:comments>8</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050902</post-id>	</item>
+		<item>
+		<title>Three takeouts from the Apple chip report, with one worrying prospect</title>
+		<link>https://9to5mac.com/2026/05/05/three-takeouts-from-the-apple-chip-report-with-one-worrying-prospect/</link>
+					<comments>https://9to5mac.com/2026/05/05/three-takeouts-from-the-apple-chip-report-with-one-worrying-prospect/#comments</comments>
+		
+		<dc:creator><![CDATA[Ben Lovejoy]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 11:25:41 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050897</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/10/a20.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/" target="_blank" rel="noreferrer noopener"><em>Bloomberg</em> yesterday reported</a> that <a href="https://9to5mac.com/guides/aapl/" target="_blank" rel="noreferrer noopener">Apple</a> has been in discussion with both <a href="https://9to5mac.com/guides/intel/" target="_blank" rel="noreferrer noopener">Intel</a> and <a href="https://9to5mac.com/guides/samsung/" target="_blank" rel="noreferrer noopener">Samsung</a> regarding future production of its device processors.</p>
+
+
+
+<p>The move is said to be motivated by Apple seeking to reduce its reliance on Taiwan’s <a href="https://9to5mac.com/guides/tsmc/" target="_blank" rel="noreferrer noopener">TSMC</a> as its sole supplier of A-series and M-series chips … </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050897" href="https://9to5mac.com/2026/05/05/three-takeouts-from-the-apple-chip-report-with-one-worrying-prospect/#more-1050897" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/three-takeouts-from-the-apple-chip-report-with-one-worrying-prospect/feed/</wfw:commentRss>
+			<slash:comments>17</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050897</post-id>	</item>
+		<item>
+		<title>Apple @ Work Podcast: This is why you can&#8217;t delay macOS updates</title>
+		<link>https://9to5mac.com/2026/05/05/apple-work-podcast-this-is-why-you-cant-delay-macos-updates/</link>
+					<comments>https://9to5mac.com/2026/05/05/apple-work-podcast-this-is-why-you-cant-delay-macos-updates/#comments</comments>
+		
+		<dc:creator><![CDATA[Bradley C]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 10:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050121</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/08/Apple-at-Work-Liquid-Glass-light.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><em><a href="https://mosyle.net/3RDn" target="_blank" rel="noreferrer noopener">Apple @ Work is exclusively brought to you by Mosyle</a>, the only Apple Unified Platform. Mosyle is the only solution that integrates in a single professional-grade platform all the solutions necessary to seamlessly and automatically deploy, manage &amp; protect Apple devices at work. Over 45,000 organizations trust Mosyle to make millions of Apple devices work-ready with no effort and at an affordable cost. </em><a href="https://mosyle.net/3RDn" target="_blank" rel="noreferrer noopener"><em>Request your EXTENDED TRIAL</em></a><em> today and understand why Mosyle is everything you need to work with Apple</em>.</p>
+
+
+
+<p><span style="margin: 0px; padding: 0px;">In this episode of Apple @ Work, </span>Ray Canzanese from <a href="https://www.netskope.com/">Netskope</a> joins the show to talk about the latest news around the <a href="https://www.netskope.com/blog/macos-clickfix-campaign-applescript-stealers-new-terminal-protections" type="link" id="https://www.netskope.com/blog/macos-clickfix-campaign-applescript-stealers-new-terminal-protections">macOS ClickFix campaign</a>.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/Click1FiX-leveled.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-work-podcast" data-layer-viewtype="unknown" data-post-id="1050121" href="https://9to5mac.com/2026/05/05/apple-work-podcast-this-is-why-you-cant-delay-macos-updates/#more-1050121" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/05/apple-work-podcast-this-is-why-you-cant-delay-macos-updates/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050121</post-id>	</item>
+		<item>
+		<title>Report: Apple considers Intel and Samsung to diversify chip manufacturing away from TSMC</title>
+		<link>https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/</link>
+					<comments>https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Tue, 05 May 2026 03:45:42 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050892</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2023/09/Apple-Silicon-chips.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://www.bloomberg.com/news/articles/2026-05-05/apple-explores-using-intel-and-samsung-to-build-main-device-chips-in-the-us?srnd=undefined&amp;embedded-checkout=true"><em>Bloomberg</em></a> reports that Apple has been exploring early-stage talks with Intel and evaluating facilities from Samsung Electronics as it looks to diversify production of its core device chips beyond TSMC. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,intel,samsung-electronics,tsmc" data-layer-viewtype="unknown" data-post-id="1050892" href="https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/#more-1050892" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/report-apple-considers-intel-and-samsung-to-diversify-chip-manufacturing-away-from-tsmc/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050892</post-id>	</item>
+		<item>
+		<title>Apple files for Supreme Court stay in Epic case over off-App Store commission dispute [U]</title>
+		<link>https://9to5mac.com/2026/05/04/apple-files-for-supreme-court-stay-in-epic-case-over-off-app-store-commission-dispute/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-files-for-supreme-court-stay-in-epic-case-over-off-app-store-commission-dispute/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 23:21:53 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050887</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/03/epic-app-store.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><strong>Update, 9:18 p.m. ET: </strong>Epic Games CEO Tim Sweeney has commented on Apple’s filing to the Supreme Court. Details below.</p>
+
+
+
+<p>Apple has filed an application with the Supreme Court asking it to stay the Ninth Circuit’s mandate, which would send the case back to the District Court to determine what it can charge for purchases made outside the App Store. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,app-store,epic-games" data-layer-viewtype="unknown" data-post-id="1050887" href="https://9to5mac.com/2026/05/04/apple-files-for-supreme-court-stay-in-epic-case-over-off-app-store-commission-dispute/#more-1050887" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-files-for-supreme-court-stay-in-epic-case-over-off-app-store-commission-dispute/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050887</post-id>	</item>
+		<item>
+		<title>Video offers clearest look yet at foldable iPhone Ultra dummy unit</title>
+		<link>https://9to5mac.com/2026/05/04/video-offers-clearest-look-yet-at-foldable-iphone-ultra-dummy-unit/</link>
+					<comments>https://9to5mac.com/2026/05/04/video-offers-clearest-look-yet-at-foldable-iphone-ultra-dummy-unit/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 23:15:56 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050883</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/iphone-ultra-fold-mockup.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><a href="https://www.youtube.com/watch?v=S19NVJNr3Xk">Unbox Therapy</a> has published a 10-minute close-up look at a dummy unit that aligns with what the iPhone Ultra is increasingly expected to look like. Watch it below.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-fold,iphone-ultra" data-layer-viewtype="unknown" data-post-id="1050883" href="https://9to5mac.com/2026/05/04/video-offers-clearest-look-yet-at-foldable-iphone-ultra-dummy-unit/#more-1050883" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/video-offers-clearest-look-yet-at-foldable-iphone-ultra-dummy-unit/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050883</post-id>	</item>
+		<item>
+		<title>Report: iPhone 17 ranked as world’s top-selling smartphone in Q1 2026</title>
+		<link>https://9to5mac.com/2026/05/04/report-iphone-17-ranked-as-worlds-top-selling-smartphone-in-q1-2026/</link>
+					<comments>https://9to5mac.com/2026/05/04/report-iphone-17-ranked-as-worlds-top-selling-smartphone-in-q1-2026/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 20:33:29 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050876</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/09/iphone-17-model-colors.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>A new Counterpoint Research report shows that the iPhone 17 overtook the iPhone 17 Pro Max and became the world’s best-selling smartphone during the first three months of 2026. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="counterpoint-research,iphone-17" data-layer-viewtype="unknown" data-post-id="1050876" href="https://9to5mac.com/2026/05/04/report-iphone-17-ranked-as-worlds-top-selling-smartphone-in-q1-2026/#more-1050876" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/report-iphone-17-ranked-as-worlds-top-selling-smartphone-in-q1-2026/feed/</wfw:commentRss>
+			<slash:comments>3</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050876</post-id>	</item>
+		<item>
+		<title>Hands-on: This charging station has quietly become a desk essential [Video]</title>
+		<link>https://9to5mac.com/2026/05/04/hands-on-this-charging-station-has-quietly-become-a-desk-essential-video/</link>
+					<comments>https://9to5mac.com/2026/05/04/hands-on-this-charging-station-has-quietly-become-a-desk-essential-video/#comments</comments>
+		
+		<dc:creator><![CDATA[Fernando Silva]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 20:26:59 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050854</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Baseus-FI.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>One of the best ways to judge how good a product is, is simply how long it sticks around. There are tons of products that hit my desk that, for one reason or another, do not make it past one month of use. It could be poorly built, too cheap, not a good fit for my aesthetic, or for any other reason. But if a product earns a permanent spot on my desk or nightstand and I stop thinking about replacing it, that’s usually a really good sign. So when I noticed I had been using my Nomos charging station for about a year, I knew I had to give you my review. Here is what it is and how well it’s held up. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-accessories,magsafe" data-layer-viewtype="unknown" data-post-id="1050854" href="https://9to5mac.com/2026/05/04/hands-on-this-charging-station-has-quietly-become-a-desk-essential-video/#more-1050854" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/hands-on-this-charging-station-has-quietly-become-a-desk-essential-video/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050854</post-id>	</item>
+		<item>
+		<title>MagSafe Monday: The ESR Geo Wallet Boost is the ultimate Find My accessory</title>
+		<link>https://9to5mac.com/2026/05/04/esr-geo-wallet-boost/</link>
+					<comments>https://9to5mac.com/2026/05/04/esr-geo-wallet-boost/#comments</comments>
+		
+		<dc:creator><![CDATA[Bradley C]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 20:16:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1048370</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/bradley.webp?w=1500" /></div><p>When I first picked up the ESR Geo Wallet Boost last year, I had a thought: I was either living in the future or an absolute moron for plugging my wallet into a wall charger. Obviously, charging your wallet sounds like a massive hassle on paper, but after using it off and on, I can confidently say the functionality you get is completely worth the minor inconvenience of charging, as it feels more like charging a Kindle here and there vs something you really worry/think about.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="magsafe-monday" data-layer-viewtype="unknown" data-post-id="1048370" href="https://9to5mac.com/2026/05/04/esr-geo-wallet-boost/#more-1048370" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/esr-geo-wallet-boost/feed/</wfw:commentRss>
+			<slash:comments>5</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1048370</post-id>	</item>
+		<item>
+		<title>iPhone 18 Pro: Six new features are coming later this year</title>
+		<link>https://9to5mac.com/2026/05/04/iphone-18-pro-six-new-features-are-coming-later-this-year/</link>
+					<comments>https://9to5mac.com/2026/05/04/iphone-18-pro-six-new-features-are-coming-later-this-year/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 19:52:10 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1033425</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/01/iphone-18-mockup-red.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>This fall’s iPhone 18 lineup will bring a <a href="https://9to5mac.com/2026/04/15/iphone-ultra-is-coming-six-new-features-in-apples-high-end-model/" type="post" id="1048163">brand new ‘iPhone Ultra’ foldable</a>, but the most popular models will no doubt be the iPhone 18 Pro and Pro Max. Here are six new features rumored for iPhone 18 Pro.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-18-pro,iphone-18-pro-max" data-layer-viewtype="unknown" data-post-id="1033425" href="https://9to5mac.com/2026/05/04/iphone-18-pro-six-new-features-are-coming-later-this-year/#more-1033425" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/iphone-18-pro-six-new-features-are-coming-later-this-year/feed/</wfw:commentRss>
+			<slash:comments>20</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1033425</post-id>	</item>
+		<item>
+		<title>iOS 26.5 RC sets up support for app sideloading in Brazil</title>
+		<link>https://9to5mac.com/2026/05/04/ios-26-5-rc-sets-up-support-for-app-sideloading-in-brazil/</link>
+					<comments>https://9to5mac.com/2026/05/04/ios-26-5-rc-sets-up-support-for-app-sideloading-in-brazil/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 19:49:58 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050858</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/12/brazil-app-store.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Following a decision from Brazil’s competition watchdog last year, Apple is now gearing up to allow app sideloading in the country. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="app-store,ios-26,ios-26-5" data-layer-viewtype="unknown" data-post-id="1050858" href="https://9to5mac.com/2026/05/04/ios-26-5-rc-sets-up-support-for-app-sideloading-in-brazil/#more-1050858" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/ios-26-5-rc-sets-up-support-for-app-sideloading-in-brazil/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050858</post-id>	</item>
+		<item>
+		<title>iOS 26.5 adds beautiful wallpapers for your iPhone, here’s what’s new</title>
+		<link>https://9to5mac.com/2026/05/04/ios-26-5-adds-beautiful-wallpapers-for-your-iphone-heres-whats-new/</link>
+					<comments>https://9to5mac.com/2026/05/04/ios-26-5-adds-beautiful-wallpapers-for-your-iphone-heres-whats-new/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 18:33:57 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050833</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/ios-26-5-wallpapers-pride.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 26.5 is launching <a href="https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/" type="post" id="1046457">very soon</a>, and the RC that debuted today revealed that Apple’s <a href="https://9to5mac.com/2026/05/04/ios-26-5s-new-pride-wallpaper-revealed-plus-apple-watch-face/">latest Pride wallpaper</a> actually comes in 11 colorful variations, plus a custom option for creating your own.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26,ios-26-5" data-layer-viewtype="unknown" data-post-id="1050833" href="https://9to5mac.com/2026/05/04/ios-26-5-adds-beautiful-wallpapers-for-your-iphone-heres-whats-new/#more-1050833" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/ios-26-5-adds-beautiful-wallpapers-for-your-iphone-heres-whats-new/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050833</post-id>	</item>
+		<item>
+		<title>iOS 27: Apple Wallet adding new ‘Create a Pass’ feature, per report</title>
+		<link>https://9to5mac.com/2026/05/04/ios-27-apple-wallet-adding-new-create-a-pass-feature-per-report/</link>
+					<comments>https://9to5mac.com/2026/05/04/ios-27-apple-wallet-adding-new-create-a-pass-feature-per-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 18:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050834</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/11/ios-27-concept-03.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 27 is again rumored to include a useful new feature for the Wallet app. A new report today says iOS 27 will add a “Create a Pass” feature to the Wallet app, allowing users to convert physical passes to digital ones. Here’s how it will work.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios,ios-27" data-layer-viewtype="unknown" data-post-id="1050834" href="https://9to5mac.com/2026/05/04/ios-27-apple-wallet-adding-new-create-a-pass-feature-per-report/#more-1050834" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/ios-27-apple-wallet-adding-new-create-a-pass-feature-per-report/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050834</post-id>	</item>
+		<item>
+		<title>Apple confirms iOS 26.5 Messages app adds RCS end-to-end encryption</title>
+		<link>https://9to5mac.com/2026/05/04/apple-confirms-ios-26-5-messages-app-adds-rcs-end-to-end-encryption/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-confirms-ios-26-5-messages-app-adds-rcs-end-to-end-encryption/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:41:28 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050826</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/12/messages-app-icon-ios-26.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 26.5’s RC is <a href="https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/">available now</a>, along with official <a href="https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/">release notes</a>, and with them Apple has confirmed that the update will bring a key RCS upgrade to the Messages app.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26,ios-26-5,messages,rcs" data-layer-viewtype="unknown" data-post-id="1050826" href="https://9to5mac.com/2026/05/04/apple-confirms-ios-26-5-messages-app-adds-rcs-end-to-end-encryption/#more-1050826" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-confirms-ios-26-5-messages-app-adds-rcs-end-to-end-encryption/feed/</wfw:commentRss>
+			<slash:comments>34</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050826</post-id>	</item>
+		<item>
+		<title>OpenAI releases a separate ChatGPT iOS app for enterprise users</title>
+		<link>https://9to5mac.com/2026/05/04/openai-releases-a-separate-chatgpt-ios-app-for-schools-and-work-organizations/</link>
+					<comments>https://9to5mac.com/2026/05/04/openai-releases-a-separate-chatgpt-ios-app-for-schools-and-work-organizations/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:38:19 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050818</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/chatgpt-teal.webp?w=1600" /></div><p>OpenAI now has a new iOS app on the App Store, although it’s <a href="https://9to5mac.com/2026/04/30/openai-may-be-teasing-its-next-iphone-app-launch-with-these-clues/">not quite Codex related</a>. Instead, it’s a separate version of ChatGPT for iPhone and iPad created specifically for school and work organizations.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ai,chatgpt,openai" data-layer-viewtype="unknown" data-post-id="1050818" href="https://9to5mac.com/2026/05/04/openai-releases-a-separate-chatgpt-ios-app-for-schools-and-work-organizations/#more-1050818" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/openai-releases-a-separate-chatgpt-ios-app-for-schools-and-work-organizations/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050818</post-id>	</item>
+		<item>
+		<title>Apple highlights 3 enhancements coming to iPhone with iOS 26.5</title>
+		<link>https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:22:18 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050820</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/ios-26.5.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple has released the first <a href="https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/">iOS 26.5 RC build</a>, highlighting three enhancements coming to your iPhone. iOS 26.5 will likely be released to everyone next week.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios,ios-26,ios-26-5,iphone" data-layer-viewtype="unknown" data-post-id="1050820" href="https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/#more-1050820" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-highlights-3-enhancements-coming-to-iphone-with-ios-26-5/feed/</wfw:commentRss>
+			<slash:comments>12</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050820</post-id>	</item>
+		<item>
+		<title>9to5Mac Daily: May 4, 2026 – Mac mini changes, more</title>
+		<link>https://9to5mac.com/2026/05/04/daily-may-4-2026/</link>
+					<comments>https://9to5mac.com/2026/05/04/daily-may-4-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Seth Kurkowski]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:20:48 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050815</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2021/12/9to5Mac-Daily-art-lead.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">Listen to a recap of the top stories of the day from </span><em style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">9to5Mac</em><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">. 9to5Mac Daily is available </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://podcasts.apple.com/us/podcast/9to5mac-daily/id1331816080" target="_blank" rel="noreferrer noopener">on iTunes and Apple’s Podcasts app</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://www.stitcher.com/podcast/9to5mac-daily">Stitcher</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://tunein.com/radio/9to5Mac-Daily-p1089524/">TuneIn</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://play.google.com/music/m/I5d4dzs7dauazmfxvvrynyiuram?t=9to5Mac_Daily">Google Play</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, or through our </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://feedpress.me/9to5macdaily">dedicated RSS feed</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);"> for Overcast and other podcast players.</span></p>
+
+
+
+<p><a href="https://bit.ly/48staRo"><strong>Sponsored by Bitwarden</strong>:</a> Make your life easier with Bitwarden, featuring a secure, open source password manager with end-to-end encryption and seamless autofill across all your devices.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/MacDaily_5-4-26.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-daily,podcast" data-layer-viewtype="unknown" data-post-id="1050815" href="https://9to5mac.com/2026/05/04/daily-may-4-2026/#more-1050815" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/daily-may-4-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050815</post-id>	</item>
+		<item>
+		<title>Apple rolls out macOS 26.5 RC, here’s what’s coming</title>
+		<link>https://9to5mac.com/2026/05/04/apple-rolls-out-macos-26-5-rc-heres-whats-coming/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-rolls-out-macos-26-5-rc-heres-whats-coming/#respond</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:14:25 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050809</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/macOS-26.5-rc.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Developers and public beta testerscan now download the first Release Candidate of macOS 26.5, ahead of the official rollout in the coming days. Here’s what to expect from macOS 26.5.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="macos,macos-26,macos-26-5" data-layer-viewtype="unknown" data-post-id="1050809" href="https://9to5mac.com/2026/05/04/apple-rolls-out-macos-26-5-rc-heres-whats-coming/#more-1050809" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-rolls-out-macos-26-5-rc-heres-whats-coming/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050809</post-id>	</item>
+		<item>
+		<title>Apple debuts RC for iPadOS 26.5, watchOS 26.5, and more</title>
+		<link>https://9to5mac.com/2026/05/04/apple-debuts-rc-for-ipados-26-5-watchos-26-5-and-more/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-debuts-rc-for-ipados-26-5-watchos-26-5-and-more/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:14:12 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050800</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/02/apple-devices-lineup-liquid-glass.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple has shipped the RC (release candidate) versions of iPadOS 26.5, watchOS 26.5, tvOS 26.5, and more. Here’s what that means.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ipados-26,ipados-26-5" data-layer-viewtype="unknown" data-post-id="1050800" href="https://9to5mac.com/2026/05/04/apple-debuts-rc-for-ipados-26-5-watchos-26-5-and-more/#more-1050800" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-debuts-rc-for-ipados-26-5-watchos-26-5-and-more/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050800</post-id>	</item>
+		<item>
+		<title>Apple releases iOS 26.5 RC</title>
+		<link>https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 17:09:45 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050726</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/iOS-26.5-rc.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>The first iOS 26.5 release candidate is now available for iPhone. After several beta versions, this is likely the version of iOS 26.5 that will reach customers in a few days. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios,ios-26,ios-26-5,iphone" data-layer-viewtype="unknown" data-post-id="1050726" href="https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/#more-1050726" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-releases-ios-26-5-rc/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050726</post-id>	</item>
+		<item>
+		<title>Deals: Entry M5 MacBook Air all-time low, AirPods Max 2, M3 iPad Air $300 off, Magic Mouse Amazon low, more</title>
+		<link>https://9to5mac.com/2026/05/04/deals-entry-m5-macbook-air-airpods-max-2-magic-mouse/</link>
+					<comments>https://9to5mac.com/2026/05/04/deals-entry-m5-macbook-air-airpods-max-2-magic-mouse/#respond</comments>
+		
+		<dc:creator><![CDATA[Justin Kahn]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 15:30:16 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050795</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Apple-deals-M5-MacBook-Air-AirPods-Max-2.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Joining all of the Star Wars May the 4th deals we have live today (<a href="https://9to5toys.com/2026/05/04/star-wars-day-2026-deals/">scope out our deal hub</a>), your <em>9to5Toys Lunch Break</em> is ready to roll starting with the most affordable new <a href="https://9to5toys.com/2026/05/04/most-affordable-new-m5-macbook-air-drops-to-new-low-at-949-150-off-more-up-to-219-off/">M5 MacBook Air dropping to the $949 low ($150 off)</a> alongside other models at <a href="https://9to5toys.com/2026/05/04/most-affordable-new-m5-macbook-air-drops-to-new-low-at-949-150-off-more-up-to-219-off/">up to $219 off</a>. Apple’s least expensive new <a href="https://9to5toys.com/2026/05/04/apples-least-expensive-new-m4-ipad-air-just-dropped-to-a-new-amazon-low-more-up-to-100-off/">M4 iPad Air has now hit a new Amazon low</a> while the <a href="https://9to5toys.com/2026/05/04/apple-256gb-13-inch-m3-ipad-air-clearance/">256GB 13-inch M3 model</a> drops to its best clearance price <a href="https://9to5toys.com/2026/05/04/apple-256gb-13-inch-m3-ipad-air-clearance/">at $300 off</a>. We have Apple’s new <a href="https://9to5toys.com/2026/05/04/apple-new-airpods-max-2-lowest-amazon-price/">AirPods Max 2 down at a new Amazon all-time low</a>, the ongoing AirPods Pro 3 Mother’s Day deal, and the latest <a href="https://9to5toys.com/2026/05/04/apple-magic-mouse-best-amazon-price-ever/">Magic Mouse back to the best Amazon price ever</a>. Head below for a closer look.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050795" href="https://9to5mac.com/2026/05/04/deals-entry-m5-macbook-air-airpods-max-2-magic-mouse/#more-1050795" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/deals-entry-m5-macbook-air-airpods-max-2-magic-mouse/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050795</post-id>	</item>
+		<item>
+		<title>MacBook Ultra could bring ‘Neo’ energy, but for the high-end</title>
+		<link>https://9to5mac.com/2026/05/04/macbook-ultra-could-bring-neo-energy-but-for-the-high-end/</link>
+					<comments>https://9to5mac.com/2026/05/04/macbook-ultra-could-bring-neo-energy-but-for-the-high-end/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 15:20:44 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050769</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/m5-pro-macbook-pro-fi.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple is <a href="https://9to5mac.com/2026/04/27/apples-new-macbook-ultra-could-be-exactly-what-ive-been-wanting/">rumored to launch</a> its first ever ‘MacBook Ultra’ later this year, and it could bring MacBook Neo energy but for high-end users.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="mac,macbook-ultra" data-layer-viewtype="unknown" data-post-id="1050769" href="https://9to5mac.com/2026/05/04/macbook-ultra-could-bring-neo-energy-but-for-the-high-end/#more-1050769" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/macbook-ultra-could-bring-neo-energy-but-for-the-high-end/feed/</wfw:commentRss>
+			<slash:comments>12</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050769</post-id>	</item>
+		<item>
+		<title>New iPhone redesign is coming next year, inspired by Liquid Glass: report</title>
+		<link>https://9to5mac.com/2026/05/04/new-iphone-redesign-is-coming-next-year-inspired-by-liquid-glass-report/</link>
+					<comments>https://9to5mac.com/2026/05/04/new-iphone-redesign-is-coming-next-year-inspired-by-liquid-glass-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 14:17:25 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050755</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/12/ios-26-2-liquid-glass-lock-screen-clock.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple has a unique iPhone redesign coming next year for the product’s 20th anniversary, and it <a href="https://www.bloomberg.com/news/newsletters/2026-05-03/how-will-john-ternus-run-apple-as-ceo-with-more-investments-fewer-buybacks">reportedly</a> was created to blend seamlessly with iOS 26’s Liquid Glass design.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-20" data-layer-viewtype="unknown" data-post-id="1050755" href="https://9to5mac.com/2026/05/04/new-iphone-redesign-is-coming-next-year-inspired-by-liquid-glass-report/#more-1050755" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/new-iphone-redesign-is-coming-next-year-inspired-by-liquid-glass-report/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050755</post-id>	</item>
+		<item>
+		<title>iOS 26.5’s new Pride wallpaper revealed, plus Apple Watch face</title>
+		<link>https://9to5mac.com/2026/05/04/ios-26-5s-new-pride-wallpaper-revealed-plus-apple-watch-face/</link>
+					<comments>https://9to5mac.com/2026/05/04/ios-26-5s-new-pride-wallpaper-revealed-plus-apple-watch-face/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 13:13:34 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050721</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/ios-26-5-pride-wallpaper.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple has <a href="https://www.apple.com/newsroom/2026/05/apple-introduces-a-new-pride-collection/">just announced</a> its new Pride Collection for 2026, including a new wallpaper in iOS and iPadOS 26.5 and a new watch face in watchOS 26.5. There’s a new Apple Watch band <a href="https://9to5mac.com/2026/05/04/apple-unveils-pride-edition-sport-loop-for-apple-watch-order-today/">available too</a>. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26,ios-26-5,watchos-26-5" data-layer-viewtype="unknown" data-post-id="1050721" href="https://9to5mac.com/2026/05/04/ios-26-5s-new-pride-wallpaper-revealed-plus-apple-watch-face/#more-1050721" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/ios-26-5s-new-pride-wallpaper-revealed-plus-apple-watch-face/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050721</post-id>	</item>
+		<item>
+		<title>Apple unveils Pride Edition Sport Loop for Apple Watch, order today</title>
+		<link>https://9to5mac.com/2026/05/04/apple-unveils-pride-edition-sport-loop-for-apple-watch-order-today/</link>
+					<comments>https://9to5mac.com/2026/05/04/apple-unveils-pride-edition-sport-loop-for-apple-watch-order-today/#respond</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 13:08:17 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050723</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/pride-2026.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple continued the tradition today and <a href="https://www.apple.com/newsroom/2026/05/apple-introduces-a-new-pride-collection/">unveiled</a> a new Apple Watch band in celebration of Pride Month. The new Apple Watch Pride Edition Sport Loop is “woven from a rainbow of 11 colors of nylon yarns.” </p>
+
+
+
+<p>It’s available to order today for $49. Apple says it is “proud to financially support organizations that serve LGBTQ+ communities.” </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-watch" data-layer-viewtype="unknown" data-post-id="1050723" href="https://9to5mac.com/2026/05/04/apple-unveils-pride-edition-sport-loop-for-apple-watch-order-today/#more-1050723" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/apple-unveils-pride-edition-sport-loop-for-apple-watch-order-today/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050723</post-id>	</item>
+		<item>
+		<title>CarPlay Ultra coming to these cars, according to Apple</title>
+		<link>https://9to5mac.com/2026/05/04/carplay-ultra-automakers/</link>
+					<comments>https://9to5mac.com/2026/05/04/carplay-ultra-automakers/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Mon, 04 May 2026 12:50:49 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1001436</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/05/carplay-ultra-boot.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last year, Apple <a href="https://9to5mac.com/2025/05/15/next-gen-carplay-ultra-available-today/">officially announced</a> CarPlay Ultra, the next-generation version of CarPlay that it first teased way back at WWDC 2022.</p>
+
+
+
+<p>CarPlay Ultra began rolling out in May to Aston Martin owners in the United States and Canada. What about other automakers? Here’s what we know. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="carplay,carplay-ultra" data-layer-viewtype="unknown" data-post-id="1001436" href="https://9to5mac.com/2026/05/04/carplay-ultra-automakers/#more-1001436" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/04/carplay-ultra-automakers/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1001436</post-id>	</item>
+		<item>
+		<title>Why you need a digital spring cleaning (and how Incogni makes it effortless)</title>
+		<link>https://9to5mac.com/2026/05/03/why-you-need-digital-spring-cleaning-how-incogni-makes-effortless-sponsored/</link>
+					<comments>https://9to5mac.com/2026/05/03/why-you-need-digital-spring-cleaning-how-incogni-makes-effortless-sponsored/#comments</comments>
+		
+		<dc:creator><![CDATA[Sponsored Post]]></dc:creator>
+		<pubDate>Sun, 03 May 2026 13:42:17 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1047215</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Incogni.webp?w=1200" /></div><p>As winter finally thaws and the weather warms up, we’re all tackling our annual spring cleaning routines. We declutter our closets and deep-clean our homes, yet we often overlook our digital lives.</p>
+
+
+
+<p>Personal information like your home address, phone number, date of birth, and financial history are all scattered across the internet. It’s actively being collected and sold by invisible data brokers. Spring is the time to take out the digital trash and <a href="https://bit.ly/4swsdyH" target="_blank" rel="noreferrer noopener sponsored nofollow">reclaim your privacy with Incogni</a>, and 9to5Mac readers can save 55% right now.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1047215" href="https://9to5mac.com/2026/05/03/why-you-need-digital-spring-cleaning-how-incogni-makes-effortless-sponsored/#more-1047215" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/03/why-you-need-digital-spring-cleaning-how-incogni-makes-effortless-sponsored/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1047215</post-id>	</item>
+		<item>
+		<title>Indie App Spotlight: &#8216;This Day&#8217; turns photo cleanup into a simple daily habit</title>
+		<link>https://9to5mac.com/2026/05/02/indie-app-spotlight-this-day-photo-cleanup-tool/</link>
+					<comments>https://9to5mac.com/2026/05/02/indie-app-spotlight-this-day-photo-cleanup-tool/#comments</comments>
+		
+		<dc:creator><![CDATA[Michael Burkhardt]]></dc:creator>
+		<pubDate>Sat, 02 May 2026 19:30:10 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050657</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/This-Day-app.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><em>Welcome to <a href="https://9to5mac.com/guides/indie-app-spotlight">Indie App Spotlight</a>. This is a weekly 9to5Mac series where we showcase the latest apps in the indie app world. If you’re a developer and would like your app featured, get <a href="https://9to5mac.com/author/michaelb">in contact</a></em>.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity">
+
+
+
+<p>Everyone probably has a massive photo library going back for years, maybe even over a decade. Over time, that consumes more and more storage – and this becomes a problem, especially if you’re paying for iCloud storage. On the other hand, decluttering isn’t easy. </p>
+
+
+
+<p><a href="https://bit.ly/4eknP2t">This Day</a> turns photo decluttering into a habit, by designing an interface that allows you to address it one day at a time.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apps,indie-app-spotlight" data-layer-viewtype="unknown" data-post-id="1050657" href="https://9to5mac.com/2026/05/02/indie-app-spotlight-this-day-photo-cleanup-tool/#more-1050657" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/02/indie-app-spotlight-this-day-photo-cleanup-tool/feed/</wfw:commentRss>
+			<slash:comments>11</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050657</post-id>	</item>
+		<item>
+		<title>Limited-time Apple Card promo offers $100 Bonus Daily Cash when you add a co-owner</title>
+		<link>https://9to5mac.com/2026/05/02/apple-card-co-owner-bonus-daily-cash-promo/</link>
+					<comments>https://9to5mac.com/2026/05/02/apple-card-co-owner-bonus-daily-cash-promo/#respond</comments>
+		
+		<dc:creator><![CDATA[Michael Burkhardt]]></dc:creator>
+		<pubDate>Sat, 02 May 2026 18:31:18 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050644</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/11/apple-card-iphone-titanium.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple Card has been throwing around loads of <a href="https://9to5mac.com/2026/04/04/new-apple-card-offer-5-percent-back-on-groceries/">limited-time sign up offers lately</a>, but those only help new customers – not existing ones. This new offer, however, benefits existing Apple Card users.</p>
+
+
+
+<p>Through May 18th, Apple Card users can <a href="https://offers.applecard.apple/co-owner-100-dollars-april2026">add a co-owner to their account </a>and get $100 in Daily Cash after the new co-owner spends $100 in their first 30 days.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050644" href="https://9to5mac.com/2026/05/02/apple-card-co-owner-bonus-daily-cash-promo/#more-1050644" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/02/apple-card-co-owner-bonus-daily-cash-promo/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050644</post-id>	</item>
+		<item>
+		<title>Apple CarPlay is gaining a third AI chatbot app</title>
+		<link>https://9to5mac.com/2026/05/02/xai-is-bringing-grok-voice-mode-to-apple-carplay/</link>
+					<comments>https://9to5mac.com/2026/05/02/xai-is-bringing-grok-voice-mode-to-apple-carplay/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Sat, 02 May 2026 18:24:54 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050645</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/grok-carplay.webp?w=1600" /></div><p>Apple CarPlay recently gained support for AI chatbots, and the third app to add support is coming soon: Grok.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ai,carplay,grok,iphone,xai" data-layer-viewtype="unknown" data-post-id="1050645" href="https://9to5mac.com/2026/05/02/xai-is-bringing-grok-voice-mode-to-apple-carplay/#more-1050645" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/02/xai-is-bringing-grok-voice-mode-to-apple-carplay/feed/</wfw:commentRss>
+			<slash:comments>16</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050645</post-id>	</item>
+		<item>
+		<title>Apple @ Work: Unpacking the top mobile threats facing your Apple fleet this year</title>
+		<link>https://9to5mac.com/2026/05/02/unpacking-the-top-mobile-threats-facing-your-apple-fleet-this-year/</link>
+					<comments>https://9to5mac.com/2026/05/02/unpacking-the-top-mobile-threats-facing-your-apple-fleet-this-year/#respond</comments>
+		
+		<dc:creator><![CDATA[Bradley C]]></dc:creator>
+		<pubDate>Sat, 02 May 2026 13:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1047360</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/08/Apple-at-Work-Liquid-Glass-light.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><em><a href="https://mosyle.net/3RDn" target="_blank" rel="noreferrer noopener">Apple @ Work is exclusively brought to you by Mosyle</a>, the only Apple Unified Platform. Mosyle is the only solution that integrates in a single professional-grade platform all the solutions necessary to seamlessly and automatically deploy, manage, and protect Apple devices at work. Over 45,000 organizations trust Mosyle to make millions of Apple devices work-ready with no effort and at an affordable cost. <a href="https://mosyle.net/3RDn" target="_blank" rel="noreferrer noopener">Request your EXTENDED TRIAL</a> today and understand why Mosyle is everything you need to work with Apple</em>.</p>
+
+
+
+<p>If you spend enough time managing Apple devices in an enterprise environment, you start to spot patterns in how security incidents happen. It is rarely a cinematic Ocean’s 11-style hack. Instead, it is usually a user delaying an iOS update for three months or an employee connecting to an open Wi-Fi network at a hotel or coffee shop. Jamf recently released its <a href="https://www.jamf.com/resources/white-papers/security-360-annual-trends-report/">Security 360: Annual Trends Report on Mobile Devices</a>, and the data paints a very clear picture of the vulnerabilities that IT departments are currently facing. Even in the age of AI, what’s old is new again</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-at-work" data-layer-viewtype="unknown" data-post-id="1047360" href="https://9to5mac.com/2026/05/02/unpacking-the-top-mobile-threats-facing-your-apple-fleet-this-year/#more-1047360" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/02/unpacking-the-top-mobile-threats-facing-your-apple-fleet-this-year/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1047360</post-id>	</item>
+		<item>
+		<title>I think I just vibe coded Lil Finder Guy onto my Mac</title>
+		<link>https://9to5mac.com/2026/05/01/i-think-i-just-vibe-coded-lil-finder-guy-onto-my-mac/</link>
+					<comments>https://9to5mac.com/2026/05/01/i-think-i-just-vibe-coded-lil-finder-guy-onto-my-mac/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 23:47:33 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050626</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Codex-Finder-Pal.webp?w=1600" /></div><p>Look, it’s Friday. OpenAI updated Codex. It has Tamagotchi-style pets. You can make your own. Lil Finder Guy is hovering over my Dock. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ai,apps,codex,mac,openai" data-layer-viewtype="unknown" data-post-id="1050626" href="https://9to5mac.com/2026/05/01/i-think-i-just-vibe-coded-lil-finder-guy-onto-my-mac/#more-1050626" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/i-think-i-just-vibe-coded-lil-finder-guy-onto-my-mac/feed/</wfw:commentRss>
+			<slash:comments>11</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050626</post-id>	</item>
+		<item>
+		<title>Apple escalates fight with India antitrust watchdog over access to global financials</title>
+		<link>https://9to5mac.com/2026/05/01/apple-escalates-fight-with-india-antitrust-watchdog-over-access-to-global-financials/</link>
+					<comments>https://9to5mac.com/2026/05/01/apple-escalates-fight-with-india-antitrust-watchdog-over-access-to-global-financials/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 23:35:57 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050630</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/08/More-great-wallpaper-in-the-run-up-to-two-more-Apple-Stores-in-India.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple has accused the Competition Commission of India (CCI) of overstepping its judicial authority in a new court filing tied to an ongoing antitrust case in the country. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,india" data-layer-viewtype="unknown" data-post-id="1050630" href="https://9to5mac.com/2026/05/01/apple-escalates-fight-with-india-antitrust-watchdog-over-access-to-global-financials/#more-1050630" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/apple-escalates-fight-with-india-antitrust-watchdog-over-access-to-global-financials/feed/</wfw:commentRss>
+			<slash:comments>7</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050630</post-id>	</item>
+		<item>
+		<title>WhatsApp working to bring Liquid Glass to the in-chat interface</title>
+		<link>https://9to5mac.com/2026/05/01/whatsapp-working-to-bring-liquid-glass-to-the-in-chat-interface/</link>
+					<comments>https://9to5mac.com/2026/05/01/whatsapp-working-to-bring-liquid-glass-to-the-in-chat-interface/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 22:45:01 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050622</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/08/whatsapp-glass.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>As WhatsApp continues its glacially-paced rollout of the Liquid Glass look to the main Chats screen, Meta is also working to add the revamped look to the in-chat interface. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="liquid-glass,whatsapp" data-layer-viewtype="unknown" data-post-id="1050622" href="https://9to5mac.com/2026/05/01/whatsapp-working-to-bring-liquid-glass-to-the-in-chat-interface/#more-1050622" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/whatsapp-working-to-bring-liquid-glass-to-the-in-chat-interface/feed/</wfw:commentRss>
+			<slash:comments>7</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050622</post-id>	</item>
+		<item>
+		<title>Miami GP: Cue talks F1 movie sequel, streaming rights expansion, Ternus’s love for racing</title>
+		<link>https://9to5mac.com/2026/05/01/miami-gp-cue-talks-f1-movie-sequel-streaming-rights-expansion-ternuss-love-for-racing/</link>
+					<comments>https://9to5mac.com/2026/05/01/miami-gp-cue-talks-f1-movie-sequel-streaming-rights-expansion-ternuss-love-for-racing/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 21:51:47 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050618</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/eddy-cue.webp?w=1600" /></div><p>As the 2026 F1 season lands in Miami for the first of three U.S. races for the year, Apple SVP of Services and Health Eddy Cue spoke to the press about the company’s growing involvement in the sport, including John Ternus’s passion for racing. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-tv,eddy-cue,f1" data-layer-viewtype="unknown" data-post-id="1050618" href="https://9to5mac.com/2026/05/01/miami-gp-cue-talks-f1-movie-sequel-streaming-rights-expansion-ternuss-love-for-racing/#more-1050618" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/miami-gp-cue-talks-f1-movie-sequel-streaming-rights-expansion-ternuss-love-for-racing/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050618</post-id>	</item>
+		<item>
+		<title>Following Apple shoutout, Perplexity elaborates on Mac-native &#8216;Personal Computer&#8217; platform</title>
+		<link>https://9to5mac.com/2026/05/01/following-apple-shoutout-perplexity-elaborates-on-mac-native-personal-computer-platform/</link>
+					<comments>https://9to5mac.com/2026/05/01/following-apple-shoutout-perplexity-elaborates-on-mac-native-personal-computer-platform/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 20:35:45 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050610</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/perplexity-computer.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple gave Perplexity a shoutout during its Q2 2026 earnings call yesterday, and now the company is offering more details on why it is building its Mac-first Personal Computer platform. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="mac,perplexity" data-layer-viewtype="unknown" data-post-id="1050610" href="https://9to5mac.com/2026/05/01/following-apple-shoutout-perplexity-elaborates-on-mac-native-personal-computer-platform/#more-1050610" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/following-apple-shoutout-perplexity-elaborates-on-mac-native-personal-computer-platform/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050610</post-id>	</item>
+		<item>
+		<title>Tim Cook&#8217;s top Apple acquisitions mix hardware, software, and services</title>
+		<link>https://9to5mac.com/2026/05/01/tim-cooks-top-apple-acquisitions-mix-hardware-software-and-services/</link>
+					<comments>https://9to5mac.com/2026/05/01/tim-cooks-top-apple-acquisitions-mix-hardware-software-and-services/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 20:30:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050603</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2014/08/cookdrecuejimmy.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Tim Cook’s Apple may have <a href="https://9to5mac.com/2024/02/28/apple-car-tesla-siri/">passed</a> on buying Tesla, but the company sure has an interesting list of smaller companies it bought during the <a href="https://9to5mac.com/2026/04/20/apple-ceo-tim-cook-stepping-down-john-ternus-confirmed-as-new-apple-ceo/">outgoing CEO’s</a> tenure.</p>
+
+
+
+<p>Let’s stroll down Mergers and Acquisitions memory lane and revisit some of the top company takeovers during Tim Cook’s time at the top.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1050603" href="https://9to5mac.com/2026/05/01/tim-cooks-top-apple-acquisitions-mix-hardware-software-and-services/#more-1050603" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/tim-cooks-top-apple-acquisitions-mix-hardware-software-and-services/feed/</wfw:commentRss>
+			<slash:comments>3</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050603</post-id>	</item>
+		<item>
+		<title>iOS 26’s new Phone app won me over with two excellent features</title>
+		<link>https://9to5mac.com/2026/05/01/ios-26s-new-phone-app-won-me-over-with-two-excellent-features/</link>
+					<comments>https://9to5mac.com/2026/05/01/ios-26s-new-phone-app-won-me-over-with-two-excellent-features/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 19:45:20 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050598</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/06/ios-26-phone-app.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 26 <a href="https://9to5mac.com/2025/08/19/heres-everything-new-for-the-phone-app-in-ios-26/">overhauled</a> one of the iPhone’s original and most iconic apps: the Phone app. While I’ve never enjoyed phone calls, two excellent new features make them a lot better in iOS 26—and have made me a big fan of the app.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26" data-layer-viewtype="unknown" data-post-id="1050598" href="https://9to5mac.com/2026/05/01/ios-26s-new-phone-app-won-me-over-with-two-excellent-features/#more-1050598" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/ios-26s-new-phone-app-won-me-over-with-two-excellent-features/feed/</wfw:commentRss>
+			<slash:comments>8</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050598</post-id>	</item>
+		<item>
+		<title>Apple discontinues base Mac mini, now starts at $799 with 512GB storage</title>
+		<link>https://9to5mac.com/2026/05/01/apple-discontinues-base-mac-mini-now-starts-at-799-with-512gb-storage/</link>
+					<comments>https://9to5mac.com/2026/05/01/apple-discontinues-base-mac-mini-now-starts-at-799-with-512gb-storage/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 18:51:44 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050590</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/10/ASUS-ProArt-6K-Display-Review-single-Thunderbolt-cable-Mac-mini.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Last week, the base model $599 Mac mini with 256GB went <a href="https://9to5mac.com/2026/04/22/more-mac-mini-out-of-stock/">completely out of stock</a> at the Apple Store. After extended delays, Apple updated the shipping estimates to simply say “currently unavailable.”</p>
+
+
+
+<p>Now, Apple has taken the next step: the base model $599 Mac mini is no longer listed on its website at all. It has effectively been discontinued.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="mac,mac-mini" data-layer-viewtype="unknown" data-post-id="1050590" href="https://9to5mac.com/2026/05/01/apple-discontinues-base-mac-mini-now-starts-at-799-with-512gb-storage/#more-1050590" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/apple-discontinues-base-mac-mini-now-starts-at-799-with-512gb-storage/feed/</wfw:commentRss>
+			<slash:comments>24</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050590</post-id>	</item>
+		<item>
+		<title>Here’s everything Apple has coming this May, and what not to expect</title>
+		<link>https://9to5mac.com/2026/05/01/heres-everything-apple-has-coming-this-may-and-what-not-to-expect/</link>
+					<comments>https://9to5mac.com/2026/05/01/heres-everything-apple-has-coming-this-may-and-what-not-to-expect/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 18:19:32 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050560</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/10/tim-cook-apple-park-rainbow-bg.jpeg?quality=82&#038;strip=all&#038;w=1600" /></div><p>May is here, which means we’re only one month away from Apple’s <a href="https://9to5mac.com/2026/03/23/apple-announces-wwdc-2026-for-june-8-ios-27-set-to-be-revealed/" type="post" id="1043860">big WWDC reveals</a>. But the company still has plenty happening in May, here’s everything we know is coming this month.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1050560" href="https://9to5mac.com/2026/05/01/heres-everything-apple-has-coming-this-may-and-what-not-to-expect/#more-1050560" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/heres-everything-apple-has-coming-this-may-and-what-not-to-expect/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050560</post-id>	</item>
+		<item>
+		<title>HomeKit Weekly: A look into the first Matter certified camera from Aqara</title>
+		<link>https://9to5mac.com/2026/05/01/aqara-camera-hub-g350/</link>
+					<comments>https://9to5mac.com/2026/05/01/aqara-camera-hub-g350/#respond</comments>
+		
+		<dc:creator><![CDATA[Bradley C]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 18:15:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1044553</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/Aqara-Camera-Hub-G350.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>When Aqara first announced the Camera Hub G350, the headline that caught my eye was the claim that it is the <a href="https://csa-iot.org/newsroom/matter-1-5-introduces-cameras-closures-and-enhanced-energy-management-capabilities/">first Matter-certified camera on the market</a>. Matter, while not perfect, is a huge part of what I want out of the smart home industry: freedom from vendor lock-in. Let’s take a look at the new Aqara Camera Hub G350 and see how it works with Matter and HomeKit.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="homekit-weekly" data-layer-viewtype="unknown" data-post-id="1044553" href="https://9to5mac.com/2026/05/01/aqara-camera-hub-g350/#more-1044553" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/aqara-camera-hub-g350/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1044553</post-id>	</item>
+		<item>
+		<title>iPhone-controlled Anthbot M9 robot lawn mower has replaced cutting grass for me</title>
+		<link>https://9to5mac.com/2026/05/01/iphone-controlled-anthbot-m9-robot-lawn-mower-has-replaced-cutting-grass-for-me/</link>
+					<comments>https://9to5mac.com/2026/05/01/iphone-controlled-anthbot-m9-robot-lawn-mower-has-replaced-cutting-grass-for-me/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 18:00:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050537</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Anthbot-M9-iPhone-app.webp?w=1600" /></div><p>I haven’t mowed my lawn in over a month, but it’s manicured like a golf course. That’s because I switched from a push mower to a robot lawn mower that I manage from my iPhone. It’s the <a href="https://anthbot.com/products/m9-robot-lawn-mower?ref=MAC">Anthbot M9</a>, and it’s by far my favorite new piece of technology I’ve tried this year.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="review" data-layer-viewtype="unknown" data-post-id="1050537" href="https://9to5mac.com/2026/05/01/iphone-controlled-anthbot-m9-robot-lawn-mower-has-replaced-cutting-grass-for-me/#more-1050537" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/iphone-controlled-anthbot-m9-robot-lawn-mower-has-replaced-cutting-grass-for-me/feed/</wfw:commentRss>
+			<slash:comments>7</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050537</post-id>	</item>
+		<item>
+		<title>iOS 26.5 release date: Here’s when new iPhone features are coming</title>
+		<link>https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/</link>
+					<comments>https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 17:31:00 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1046457</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/ios-26.5-when.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>iOS 26.5 is coming soon, complete with <a href="https://9to5mac.com/2026/04/28/ios-26-5-new-iphone-features/">new iPhone features</a>. Here’s when iOS 26.5 is expected to launch to all users.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ios-26,ios-26-5" data-layer-viewtype="unknown" data-post-id="1046457" href="https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/#more-1046457" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/ios-26-5-release-date-heres-when-new-iphone-features-are-coming/feed/</wfw:commentRss>
+			<slash:comments>11</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1046457</post-id>	</item>
+		<item>
+		<title>Apple shares new AirPods findings from Hearing Study</title>
+		<link>https://9to5mac.com/2026/05/01/apple-shares-new-airpods-findings-from-hearing-study/</link>
+					<comments>https://9to5mac.com/2026/05/01/apple-shares-new-airpods-findings-from-hearing-study/#comments</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 16:52:04 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050551</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/AirPods-Pro-1.jpg?quality=82&#038;strip=all&#038;w=1500" /></div><p>The <a href="https://sph.umich.edu/applehearingstudy/">Apple Hearing Study</a>, run in collaboration with the University of Michigan, is out with new findings this week that highlight the importance of the Apple’s hearing health features for AirPods.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="airpods" data-layer-viewtype="unknown" data-post-id="1050551" href="https://9to5mac.com/2026/05/01/apple-shares-new-airpods-findings-from-hearing-study/#more-1050551" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/apple-shares-new-airpods-findings-from-hearing-study/feed/</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050551</post-id>	</item>
+		<item>
+		<title>9to5Mac Daily: May 1, 2026 – Apple reports Q2 earnings</title>
+		<link>https://9to5mac.com/2026/05/01/daily-may-1-2026/</link>
+					<comments>https://9to5mac.com/2026/05/01/daily-may-1-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Seth Kurkowski]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 16:34:30 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050544</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2021/12/9to5Mac-Daily-art-lead.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">Listen to a recap of the top stories of the day from </span><em style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">9to5Mac</em><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">. 9to5Mac Daily is available </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://podcasts.apple.com/us/podcast/9to5mac-daily/id1331816080" target="_blank" rel="noreferrer noopener">on iTunes and Apple’s Podcasts app</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://www.stitcher.com/podcast/9to5mac-daily">Stitcher</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://tunein.com/radio/9to5Mac-Daily-p1089524/">TuneIn</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://play.google.com/music/m/I5d4dzs7dauazmfxvvrynyiuram?t=9to5Mac_Daily">Google Play</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, or through our </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://feedpress.me/9to5macdaily">dedicated RSS feed</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);"> for Overcast and other podcast players.</span></p>
+
+
+
+<p><a href="https://bit.ly/48staRo"><strong>Sponsored by Bitwarden</strong>:</a> Make your life easier with Bitwarden, featuring a secure, open source password manager with end-to-end encryption and seamless autofill across all your devices.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/MacDaily_5-1-25.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-daily,podcast" data-layer-viewtype="unknown" data-post-id="1050544" href="https://9to5mac.com/2026/05/01/daily-may-1-2026/#more-1050544" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/daily-may-1-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050544</post-id>	</item>
+		<item>
+		<title>Next year’s iPhone Pro models could get all-new design, quad-curved display</title>
+		<link>https://9to5mac.com/2026/05/01/next-years-iphone-pro-models-could-get-all-new-design-quad-curved-display/</link>
+					<comments>https://9to5mac.com/2026/05/01/next-years-iphone-pro-models-could-get-all-new-design-quad-curved-display/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 16:17:09 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050538</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/06/iPhone-20th-anniversary-mockup-ios26-01.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple is rumored to have a <a href="https://9to5mac.com/2025/05/16/jony-ives-dream-iphone-thats-all-screen-may-finally-be-coming-true/" type="post" id="1001655">special 20th anniversary iPhone</a> coming next year, but according to a new report, this won’t be a standalone new model, but rather an all-new design for the iPhone Pro line.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-20" data-layer-viewtype="unknown" data-post-id="1050538" href="https://9to5mac.com/2026/05/01/next-years-iphone-pro-models-could-get-all-new-design-quad-curved-display/#more-1050538" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/next-years-iphone-pro-models-could-get-all-new-design-quad-curved-display/feed/</wfw:commentRss>
+			<slash:comments>7</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050538</post-id>	</item>
+		<item>
+		<title>Apple plans ‘aggressive pricing’ for iPhone 18 Pro models, per report</title>
+		<link>https://9to5mac.com/2026/05/01/apple-plans-aggressive-pricing-for-iphone-18-pro-models-per-report/</link>
+					<comments>https://9to5mac.com/2026/05/01/apple-plans-aggressive-pricing-for-iphone-18-pro-models-per-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 15:51:19 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050526</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/01/iphone-17-pro-dark.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Rising memory costs have led to price increases on many Android smartphones, but in a new report, analyst Jeff Pu predicts that Apple will use “aggressive pricing” for this fall’s iPhone 18 Pro and Pro Max.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-18-pro,iphone-18-pro-max" data-layer-viewtype="unknown" data-post-id="1050526" href="https://9to5mac.com/2026/05/01/apple-plans-aggressive-pricing-for-iphone-18-pro-models-per-report/#more-1050526" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/apple-plans-aggressive-pricing-for-iphone-18-pro-models-per-report/feed/</wfw:commentRss>
+			<slash:comments>7</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050526</post-id>	</item>
+		<item>
+		<title>Deals: Most affordable M5 Pro MacBook Pro $250 off, M5 Max $300 off, Apple Watch, Beats 240W cables $17, more</title>
+		<link>https://9to5mac.com/2026/05/01/deals-m5-pro-max-macbook-apple-watch-beats-cables/</link>
+					<comments>https://9to5mac.com/2026/05/01/deals-m5-pro-max-macbook-apple-watch-beats-cables/#respond</comments>
+		
+		<dc:creator><![CDATA[Justin Kahn]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 15:35:58 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050527</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/Apple-deals-MacBook-Pro-M5-Max-Beats-240W-AirPods.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Today’s <em>9to5Toys Lunch Break</em> is headlined by the ongoing AirPods Pro 3 price drop, but it’s really all about the MacBooks today. We have the most affordable <a href="https://9to5toys.com/2026/05/01/affordable-m5-pro-macbook-pro-lowest-price/">M5 Pro MacBook Pro</a> back to the all-time low <a href="https://9to5toys.com/2026/05/01/affordable-m5-pro-macbook-pro-lowest-price/">at $250 off</a>, Apple’s least expensive <a href="https://9to5toys.com/2026/05/01/apple-least-expensive-m5-max-macbook-pro-best-price/">M5 Max MacBook Pro at $300 off</a> and some of the best <a href="https://9to5toys.com/2026/04/30/best-m5-macbook-air-deals-apple-latest/">M5 MacBook Air deals</a> to date <a href="https://9to5toys.com/2026/04/30/best-m5-macbook-air-deals-apple-latest/">at up to $219 off</a>. Those offers join the lowest price ever on <a href="https://9to5toys.com/2026/05/01/best-price-ever-live-apple-watch-series-11-cell/">46mm Apple Watch Series 11 Cell models </a>in all four colors <a href="https://9to5toys.com/2026/05/01/best-price-ever-live-apple-watch-series-11-cell/">at $130 off</a> and new all-time lows on the latest <a href="https://9to5toys.com/2026/05/01/new-beats-240w-usb-c-braided-cable-deal/">240W Beats USB-C Braided Cables at $17</a>. Head below for a closer look.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5toys,9to5toys-lunch-break,deals" data-layer-viewtype="unknown" data-post-id="1050527" href="https://9to5mac.com/2026/05/01/deals-m5-pro-max-macbook-apple-watch-beats-cables/#more-1050527" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/deals-m5-pro-max-macbook-apple-watch-beats-cables/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050527</post-id>	</item>
+		<item>
+		<title>Tim Cook explains iPhone 17’s success, 99% customer satisfaction</title>
+		<link>https://9to5mac.com/2026/05/01/tim-cook-explains-iphone-17s-success-99-customer-satisfaction/</link>
+					<comments>https://9to5mac.com/2026/05/01/tim-cook-explains-iphone-17s-success-99-customer-satisfaction/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 14:58:23 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050520</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/03/tim-cook-iphone-event-apple.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Another huge quarter for Apple came with <a href="https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/">across-the-board strong performance</a>, but the iPhone 17 family was a big part of the company’s earnings. Here’s why Tim Cook says the iPhone 17 is performing so well, based on customer feedback.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-17" data-layer-viewtype="unknown" data-post-id="1050520" href="https://9to5mac.com/2026/05/01/tim-cook-explains-iphone-17s-success-99-customer-satisfaction/#more-1050520" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/tim-cook-explains-iphone-17s-success-99-customer-satisfaction/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050520</post-id>	</item>
+		<item>
+		<title>MacBook Neo starts May with delivery dates stretching to month&#8217;s end</title>
+		<link>https://9to5mac.com/2026/05/01/macbook-neo-starts-may-with-delivery-dates-stretching-to-months-end/</link>
+					<comments>https://9to5mac.com/2026/05/01/macbook-neo-starts-may-with-delivery-dates-stretching-to-months-end/#respond</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 14:35:30 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050516</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/03/macbook-neo-hello-silver.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>May has arrived, so let’s check in with MacBook Neo inventory for the new month. In April, Apple <a href="https://9to5mac.com/2026/04/16/macbook-neo-sells-out-for-april-as-demand-for-apples-affordable-laptop-outpaces-supply/">sold through its online inventory</a> for the month after just 15 days. For May, Apple is starting out the month with MacBook Neo shipping estimates ranging from May 18 to May 26.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050516" href="https://9to5mac.com/2026/05/01/macbook-neo-starts-may-with-delivery-dates-stretching-to-months-end/#more-1050516" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/macbook-neo-starts-may-with-delivery-dates-stretching-to-months-end/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050516</post-id>	</item>
+		<item>
+		<title>Apple just strongly hinted that one rumored product isn’t launching soon</title>
+		<link>https://9to5mac.com/2026/05/01/apple-just-strongly-hinted-that-one-rumored-product-isnt-launching-soon/</link>
+					<comments>https://9to5mac.com/2026/05/01/apple-just-strongly-hinted-that-one-rumored-product-isnt-launching-soon/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 14:13:58 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050508</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/tim-cook-apple-50-concert.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple reported a <a href="https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/">hugely successful quarter</a> yesterday, and while giving guidance for the next quarter, the company strongly implied that one specific new product is unlikely to launch very soon.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050508" href="https://9to5mac.com/2026/05/01/apple-just-strongly-hinted-that-one-rumored-product-isnt-launching-soon/#more-1050508" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/apple-just-strongly-hinted-that-one-rumored-product-isnt-launching-soon/feed/</wfw:commentRss>
+			<slash:comments>5</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050508</post-id>	</item>
+		<item>
+		<title>Fortnite returns to iPhone in Japan with Epic Games Store launch, still unavailable on Mac</title>
+		<link>https://9to5mac.com/2026/05/01/fortnite-returns-to-iphone-in-japan-with-epic-games-store-launch-still-unavailable-on-mac/</link>
+					<comments>https://9to5mac.com/2026/05/01/fortnite-returns-to-iphone-in-japan-with-epic-games-store-launch-still-unavailable-on-mac/#respond</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 13:59:47 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050502</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/05/epic-games-store-iphone-japan.webp?w=1600" /></div><p>Epic Games has launched its Star Wars-themed Fortnite update for May, and the release comes with the arrival of Fortnite on the iPhone in Japan.</p>
+
+
+
+<p>Fortnite returned to the iPhone and iPad in the US this month a year ago. Next, Epic Games is targeting iOS availability in another region soon. Meanwhile, Fortnite’s return to the Mac doesn’t sound too promising.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050502" href="https://9to5mac.com/2026/05/01/fortnite-returns-to-iphone-in-japan-with-epic-games-store-launch-still-unavailable-on-mac/#more-1050502" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/fortnite-returns-to-iphone-in-japan-with-epic-games-store-launch-still-unavailable-on-mac/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050502</post-id>	</item>
+		<item>
+		<title>Here’s everything new Apple TV has coming in May</title>
+		<link>https://9to5mac.com/2026/05/01/heres-everything-new-apple-tv-has-coming-in-may-2026/</link>
+					<comments>https://9to5mac.com/2026/05/01/heres-everything-new-apple-tv-has-coming-in-may-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 13:02:09 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1049589</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/10/apple-tv-tvos26-screensaver-07.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple TV has a strong lineup of <a href="https://9to5mac.com/2026/04/13/apple-tv-is-about-to-have-three-top-tier-shows-airing-all-at-once/">top-tier shows currently airing</a>, but May will bring several more brand new series, plus the first film directed by John Travolta, and more. Here’s everything new coming to Apple TV in May.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="apple-tv" data-layer-viewtype="unknown" data-post-id="1049589" href="https://9to5mac.com/2026/05/01/heres-everything-new-apple-tv-has-coming-in-may-2026/#more-1049589" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/05/01/heres-everything-new-apple-tv-has-coming-in-may-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1049589</post-id>	</item>
+		<item>
+		<title>Apple stock sees slight bump following Q2 2026 earnings report</title>
+		<link>https://9to5mac.com/2026/04/30/apple-stock-sees-slight-bump-following-q2-2026-earnings-report/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-stock-sees-slight-bump-following-q2-2026-earnings-report/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Fri, 01 May 2026 01:41:45 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050497</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/06/apple-stock-up.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Following the release of Apple’s earnings report for the second fiscal quarter of 2026, shares rose slightly in after-hours trading as the market digested the results and outlook for Q3 2026. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1050497" href="https://9to5mac.com/2026/04/30/apple-stock-sees-slight-bump-following-q2-2026-earnings-report/#more-1050497" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-stock-sees-slight-bump-following-q2-2026-earnings-report/feed/</wfw:commentRss>
+			<slash:comments>11</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050497</post-id>	</item>
+		<item>
+		<title>Apple’s R&#038;D spending hits new record as AI investment ramps up</title>
+		<link>https://9to5mac.com/2026/04/30/apples-rd-spending-hits-new-record-as-ai-investment-ramps-up/</link>
+					<comments>https://9to5mac.com/2026/04/30/apples-rd-spending-hits-new-record-as-ai-investment-ramps-up/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 23:35:08 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050493</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/07/Apple-Intelligence-Liquid-Glass.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple’s spending on research and development hit an all-time high in the company’s latest quarterly results, reflecting an industry-wide continued push into AI development. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050493" href="https://9to5mac.com/2026/04/30/apples-rd-spending-hits-new-record-as-ai-investment-ramps-up/#more-1050493" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apples-rd-spending-hits-new-record-as-ai-investment-ramps-up/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050493</post-id>	</item>
+		<item>
+		<title>Apple to seek tariff refunds, plans to reinvest money in U.S. manufacturing</title>
+		<link>https://9to5mac.com/2026/04/30/apple-to-seek-tariff-refunds-plans-to-reinvest-money-in-u-s-manufacturing/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-to-seek-tariff-refunds-plans-to-reinvest-money-in-u-s-manufacturing/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 22:28:52 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050486</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2023/10/apple-park-dusk.jpeg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple CEO Tim Cook said today that the company is seeking refunds for duties it paid under tariffs Donald Trump announced last year, which the Supreme Court recently ruled unconstitutional. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050486" href="https://9to5mac.com/2026/04/30/apple-to-seek-tariff-refunds-plans-to-reinvest-money-in-u-s-manufacturing/#more-1050486" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-to-seek-tariff-refunds-plans-to-reinvest-money-in-u-s-manufacturing/feed/</wfw:commentRss>
+			<slash:comments>10</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050486</post-id>	</item>
+		<item>
+		<title>9to5Mac Daily: April 30, 2026 – OpenAI smartphone, more </title>
+		<link>https://9to5mac.com/2026/04/30/9to5mac-daily-april-30-2026/</link>
+					<comments>https://9to5mac.com/2026/04/30/9to5mac-daily-april-30-2026/#respond</comments>
+		
+		<dc:creator><![CDATA[Seth Kurkowski]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 22:26:52 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050472</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2021/12/9to5Mac-Daily-art-lead.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">Listen to a recap of the top stories of the day from </span><em style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">9to5Mac</em><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">. 9to5Mac Daily is available </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://podcasts.apple.com/us/podcast/9to5mac-daily/id1331816080" target="_blank" rel="noreferrer noopener">on iTunes and Apple’s Podcasts app</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://www.stitcher.com/podcast/9to5mac-daily">Stitcher</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://tunein.com/radio/9to5Mac-Daily-p1089524/">TuneIn</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://play.google.com/music/m/I5d4dzs7dauazmfxvvrynyiuram?t=9to5Mac_Daily">Google Play</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);">, or through our </span><a style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);" href="https://feedpress.me/9to5macdaily">dedicated RSS feed</a><span style="font-size: revert; white-space: normal; font-family: var(--font-primary-sans);"> for Overcast and other podcast players.</span></p>
+
+
+
+<p><a href="https://bit.ly/48staRo"><strong>Sponsored by Bitwarden</strong>:</a> Make your life easier with Bitwarden, featuring a secure, open source password manager with end-to-end encryption and seamless autofill across all your devices.</p>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/MacDaily_4-30-26.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-daily,podcast" data-layer-viewtype="unknown" data-post-id="1050472" href="https://9to5mac.com/2026/04/30/9to5mac-daily-april-30-2026/#more-1050472" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/9to5mac-daily-april-30-2026/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050472</post-id>	</item>
+		<item>
+		<title>Apple shares June quarter guidance with 14% to 17% revenue growth outlook</title>
+		<link>https://9to5mac.com/2026/04/30/apple-shares-june-quarter-guidance-with-14-to-17-revenue-growth-outlook/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-shares-june-quarter-guidance-with-14-to-17-revenue-growth-outlook/#respond</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 21:50:14 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050475</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/12/apple-logo-store.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple today provided its guidance for the June quarter of fiscal 2026, outlining expectations for revenue growth, margins, and key business trends amid the ongoing memory shortage. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1050475" href="https://9to5mac.com/2026/04/30/apple-shares-june-quarter-guidance-with-14-to-17-revenue-growth-outlook/#more-1050475" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-shares-june-quarter-guidance-with-14-to-17-revenue-growth-outlook/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050475</post-id>	</item>
+		<item>
+		<title>Apple says supply constraints for Mac mini and Mac Studio to persist for several months</title>
+		<link>https://9to5mac.com/2026/04/30/apple-mac-mini-studio-supply-constraints/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-mac-mini-studio-supply-constraints/#comments</comments>
+		
+		<dc:creator><![CDATA[Benjamin Mayo]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 21:48:15 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050468</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/04/apple-mac-mini-out-of-stock.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>On its quarterly earnings call today, Apple CEO Tim Cook <a href="https://9to5mac.com/2026/04/22/more-mac-mini-out-of-stock/">addressed the ongoing supply shortages</a> for Apple’s pro desktop Macs. Many configurations of Mac mini and Mac Studio are <a href="https://9to5mac.com/2026/04/11/mac-mini-mac-studio-configs-completely-out-of-stock/">completely out of stock</a> at Apple Stores online.</p>
+
+
+
+<p>Cook said customer interest in agentic AI use cases (like OpenClaw) is driving Mac mini and Mac Studio demand beyond what Apple predicted. Due to the ongoing industry constraints for advanced nodes and memory components, the company expects the supply shortages for these Macs to continue for the next several months. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="mac" data-layer-viewtype="unknown" data-post-id="1050468" href="https://9to5mac.com/2026/04/30/apple-mac-mini-studio-supply-constraints/#more-1050468" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-mac-mini-studio-supply-constraints/feed/</wfw:commentRss>
+			<slash:comments>8</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050468</post-id>	</item>
+		<item>
+		<title>OpenAI may be teasing its next iPhone app launch with these clues</title>
+		<link>https://9to5mac.com/2026/04/30/openai-may-be-teasing-its-next-iphone-app-launch-with-these-clues/</link>
+					<comments>https://9to5mac.com/2026/04/30/openai-may-be-teasing-its-next-iphone-app-launch-with-these-clues/#comments</comments>
+		
+		<dc:creator><![CDATA[Zac Hall]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 21:27:26 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050447</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/02/codex-app-icon-openai.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>ChatGPT remains the top downloaded app on the App Store, and it sounds like OpenAI will launch a new iPhone app soon. </p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="ai,chatgpt,codex,openai" data-layer-viewtype="unknown" data-post-id="1050447" href="https://9to5mac.com/2026/04/30/openai-may-be-teasing-its-next-iphone-app-launch-with-these-clues/#more-1050447" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/openai-may-be-teasing-its-next-iphone-app-launch-with-these-clues/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050447</post-id>	</item>
+		<item>
+		<title>John Ternus joins Apple’s Q2 2026 earnings call, touts ‘incredible roadmap ahead’</title>
+		<link>https://9to5mac.com/2026/04/30/john-ternus-joins-apples-q2-2026-earnings-call-touts-incredible-roadmap-ahead/</link>
+					<comments>https://9to5mac.com/2026/04/30/john-ternus-joins-apples-q2-2026-earnings-call-touts-incredible-roadmap-ahead/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 21:20:49 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050458</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/10/john-ternus-apple-park.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple’s Q2 2026 earnings call included a notable addition this time around, as incoming CEO John Ternus joined the discussion alongside current CEO Tim Cook and CFO Kevan Parekh. Here are the details.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl,john-ternus" data-layer-viewtype="unknown" data-post-id="1050458" href="https://9to5mac.com/2026/04/30/john-ternus-joins-apples-q2-2026-earnings-call-touts-incredible-roadmap-ahead/#more-1050458" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/john-ternus-joins-apples-q2-2026-earnings-call-touts-incredible-roadmap-ahead/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050458</post-id>	</item>
+		<item>
+		<title>Apple says iPhone 17 lineup is officially the ‘most popular’ in its history</title>
+		<link>https://9to5mac.com/2026/04/30/apple-says-iphone-17-lineup-is-officially-the-most-popular-in-its-history/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-says-iphone-17-lineup-is-officially-the-most-popular-in-its-history/#comments</comments>
+		
+		<dc:creator><![CDATA[Ryan Christoffel]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 20:59:38 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050444</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/09/iPhone-Diary-–-For-the-first-time-in-many-years-Im-not-upgrading-my-iPhone.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple <a href="https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/">reported</a> another record-breaking quarter of earnings today, and it came with a big announcement about the iPhone 17 lineup: it’s now the company’s most popular model family ever.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="iphone,iphone-17" data-layer-viewtype="unknown" data-post-id="1050444" href="https://9to5mac.com/2026/04/30/apple-says-iphone-17-lineup-is-officially-the-most-popular-in-its-history/#more-1050444" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-says-iphone-17-lineup-is-officially-the-most-popular-in-its-history/feed/</wfw:commentRss>
+			<slash:comments>9</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050444</post-id>	</item>
+		<item>
+		<title>Tim Cook says iPhone 17 demand is &#8216;off the charts&#8217;, but supply constraints impacted sales</title>
+		<link>https://9to5mac.com/2026/04/30/tim-cook-iphone-demand-off-the-charts/</link>
+					<comments>https://9to5mac.com/2026/04/30/tim-cook-iphone-demand-off-the-charts/#comments</comments>
+		
+		<dc:creator><![CDATA[Benjamin Mayo]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 20:46:03 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050424</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2026/01/iphone-17-pro-dark.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple <a href="https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/">just announced</a> its quarterly results, including $56.99 billion in iPhone revenue. This number is slightly below the average of analyst expectations heading into the earnings, but <a href="https://www.reuters.com/business/apple-sales-beat-expectations-powered-by-mac-iphone-hits-supply-constraints-2026-04-30/">Tim Cook tells Reuters</a> that Apple would have sold more if it had the supply.</p>
+
+
+
+<p>Cook said iPhone 17 demand “was off the charts”. He said supply of advanced processor nodes is constrained and “there’s just a little less flexibility in the supply chain at the moment” in terms of getting more parts available.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="" data-layer-viewtype="unknown" data-post-id="1050424" href="https://9to5mac.com/2026/04/30/tim-cook-iphone-demand-off-the-charts/#more-1050424" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/tim-cook-iphone-demand-off-the-charts/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050424</post-id>	</item>
+		<item>
+		<title>Apple reports Q2 2026 earnings: $111.2 billion in revenue, up 17% [Charts]</title>
+		<link>https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/</link>
+					<comments>https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/#comments</comments>
+		
+		<dc:creator><![CDATA[Marcus Mendes]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 20:34:45 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050421</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2025/07/apple-logo-liquid-glass-ios-26-pink.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Apple just released its earnings report for the second fiscal quarter of 2026. The company reported $111.2 billion in revenue, $29.58 billion in net profit, and $2.01 in earnings per share. Here’s the full breakdown.</p>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="aapl" data-layer-viewtype="unknown" data-post-id="1050421" href="https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/#more-1050421" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/apple-reports-q2-2026-earnings-111-2-billion-in-revenue-up-17/feed/</wfw:commentRss>
+			<slash:comments>6</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050421</post-id>	</item>
+		<item>
+		<title>iOS 27 to bring AI inside the Camera app, Tim Cook’s biggest mistake, iPhone shutdown problem </title>
+		<link>https://9to5mac.com/2026/04/30/happy-hour-588/</link>
+					<comments>https://9to5mac.com/2026/04/30/happy-hour-588/#respond</comments>
+		
+		<dc:creator><![CDATA[Chance Miller]]></dc:creator>
+		<pubDate>Thu, 30 Apr 2026 20:26:07 +0000</pubDate>
+				<category><![CDATA[News]]></category>
+		<guid isPermaLink="false">https://9to5mac.com/?p=1050405</guid>
+
+					<description><![CDATA[<div class="feat-image"><img src="https://9to5mac.com/wp-content/uploads/sites/6/2024/02/9to5mac-happy-hour-lead1.jpg?quality=82&#038;strip=all&#038;w=1600" /></div><p>Benjamin and Chance discuss whether bringing visual intelligence inside the Camera app is a good idea, as rumored for iOS 27 by Bloomberg. Also, Tim Cook shares his personal highs and lows across his career, Mayo’s iPhone refuses to turn on after running out of battery, and the App Store launches a new monthly payments subscription option.</p>
+
+
+
+<p><a href="https://9to5mac.com/join/">And in Happy Hour Plus</a>, Chance kits out his whole house with HomeKit lights … so now here’s what we want next from Apple Home. Subscribe at <a href="http://9to5mac.com/join">9to5mac.com/join</a>.</p>
+
+
+
+<ul class="wp-block-list">
+<li><a href="https://square.com/go/HAPPYHOUR">Sponsored by Square</a>: Get up to $200 off Square hardware when you sign up at <a href="https://square.com/go/HAPPYHOUR">square.com/go/happyhour</a>.</li>
+
+
+
+<li><a href="https://shopify.com/happyhour">Sponsored by Shopify</a>: See less carts go abandoned and more sales. Sign up for a $1 per month trial at <a href="https://shopify.com/happyhour" target="_blank" rel="noreferrer noopener">shopify.com/happyhour</a>.</li>
+
+
+
+<li><a href="https://click.cash.app/ui6m/i4d1b1x2">Sponsored by Cash App</a>: Download Cash App Today: <a href="https://click.cash.app/ui6m/i4d1b1x2">https://click.cash.app/ui6m/i4d1b1x2</a> #CashAppPod</li>
+</ul>
+
+
+
+<figure class="wp-block-audio"><audio controls src="https://dts.podtrac.com/redirect.mp3/pfx.vpixl.com/sla7w/pscrb.fm/rss/p/9to5mac.com/wp-content/uploads/sites/6/2026/04/HH-588.mp3"></audio></figure>
+
+
+
+ <a data-layer-pagetype="post" data-layer-postcategory="9to5mac-happy-hour,podcast" data-layer-viewtype="unknown" data-post-id="1050405" href="https://9to5mac.com/2026/04/30/happy-hour-588/#more-1050405" class="more-link">more…</a>]]></description>
+		
+					<wfw:commentRss>https://9to5mac.com/2026/04/30/happy-hour-588/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">1050405</post-id>	</item>
+	</channel>
+</rss>

@@ -617,3 +617,178 @@ struct CrossFeedPipelineTests {
         }
     }
 }
+
+
+// =============================================================================
+// MARK: - 6. IMAGE EXTRACTION TESTS
+// =============================================================================
+//
+// What this tests:
+//   Image URL extraction across different feed embedding patterns. Real feeds
+//   embed images in wildly different ways:
+//     - media:content (NYT, BBC)
+//     - media:thumbnail (BBC)
+//     - <img> inside content:encoded (some WordPress blogs)
+//     - <img> inside <description> (9to5Mac, The Verge)
+//     - No images at all (TechCrunch — requires og:image fallback)
+//
+// Why it matters:
+//   When image extraction fails, users see a generic placeholder icon instead
+//   of article thumbnails. This makes the app look broken and unprofessional.
+//   This test suite ensures that every common image embedding pattern is
+//   handled by the parser.
+//
+
+struct ImageExtractionTests {
+
+    private let rssService = RSSService()
+
+    // -------------------------------------------------------------------------
+    // TEST: NYT feed — images via media:content
+    //
+    // NYT embeds images using <media:content medium="image" url="...">.
+    // Expected output: Most articles have imageURL populated.
+    // -------------------------------------------------------------------------
+    @Test func nytImagesViaMediaContent() async throws {
+        let data = loadFixture("nytimes.xml")
+        let articles = try await rssService.parseFeed(from: data)
+
+        let withImages = articles.filter { $0.imageURL != nil && !$0.imageURL!.isEmpty }
+        let ratio = Double(withImages.count) / Double(articles.count)
+        #expect(ratio > 0.7,
+                "NYT (media:content) should have >70% images, got \(Int(ratio * 100))% (\(withImages.count)/\(articles.count))")
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: BBC feed — images via media:thumbnail
+    //
+    // BBC embeds images using <media:thumbnail url="...">.
+    // Expected output: Most articles have imageURL populated.
+    // -------------------------------------------------------------------------
+    @Test func bbcImagesViaMediaThumbnail() async throws {
+        let data = loadFixture("bbc.xml")
+        let articles = try await rssService.parseFeed(from: data)
+
+        let withImages = articles.filter { $0.imageURL != nil && !$0.imageURL!.isEmpty }
+        let ratio = Double(withImages.count) / Double(articles.count)
+        #expect(ratio > 0.7,
+                "BBC (media:thumbnail) should have >70% images, got \(Int(ratio * 100))% (\(withImages.count)/\(articles.count))")
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: 9to5Mac feed — images via <img> in <description>
+    //
+    // 9to5Mac has NO media:content, NO content:encoded. Images are only
+    // inside <description> as <img src="https://...">.
+    // This was previously broken — the parser only searched content:encoded.
+    //
+    // Expected output: Most articles have imageURL populated.
+    // -------------------------------------------------------------------------
+    @Test func nineTo5MacImagesViaDescriptionHTML() async throws {
+        let data = loadFixture("9to5mac.xml")
+        let articles = try await rssService.parseFeed(from: data)
+
+        #expect(!articles.isEmpty, "9to5Mac feed should have articles")
+
+        let withImages = articles.filter { $0.imageURL != nil && !$0.imageURL!.isEmpty }
+        let ratio = Double(withImages.count) / Double(articles.count)
+        #expect(ratio > 0.5,
+                "9to5Mac (img in description) should have >50% images, got \(Int(ratio * 100))% (\(withImages.count)/\(articles.count))")
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: The Verge feed — images via <img> in HTML content
+    //
+    // The Verge uses Atom with images embedded as <img> in the entry content.
+    // Expected output: At least some articles have imageURL populated.
+    // -------------------------------------------------------------------------
+    @Test func theVergeImagesViaHTMLContent() async throws {
+        let data = loadFixture("theverge.xml")
+        let articles = try await rssService.parseFeed(from: data)
+
+        #expect(!articles.isEmpty, "The Verge feed should have articles")
+
+        let withImages = articles.filter { $0.imageURL != nil && !$0.imageURL!.isEmpty }
+        #expect(!withImages.isEmpty,
+                "The Verge should have at least some articles with images")
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: 9to5Mac image URLs have HTML entities decoded
+    //
+    // 9to5Mac URLs contain &#038; (HTML entity for &) in query parameters.
+    // If not decoded, the URL breaks: the server only sees "quality=82&"
+    // and drops strip=all&w=1600, returning a broken or wrong image.
+    //
+    // Expected output: No imageURL contains &#038; or &amp; — all decoded to &.
+    // -------------------------------------------------------------------------
+    @Test func nineTo5MacHTMLEntitiesDecoded() async throws {
+        let data = loadFixture("9to5mac.xml")
+        let articles = try await rssService.parseFeed(from: data)
+
+        for article in articles {
+            if let imageURL = article.imageURL {
+                #expect(!imageURL.contains("&#038;"),
+                        "imageURL should not contain &#038;: \(imageURL.prefix(60))...")
+                #expect(!imageURL.contains("&amp;"),
+                        "imageURL should not contain &amp;: \(imageURL.prefix(60))...")
+                #expect(!imageURL.contains("&#38;"),
+                        "imageURL should not contain &#38;: \(imageURL.prefix(60))...")
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: Image URLs are valid HTTPS URLs
+    //
+    // Scenario: Across all feeds, any extracted imageURL should be a valid
+    //   URL with https scheme (http should be upgraded to https).
+    // Expected output: No http:// URLs, no relative paths, no data: URIs.
+    // -------------------------------------------------------------------------
+    @Test func imageURLsAreValidHTTPS() async throws {
+        let feeds = ["nytimes.xml", "bbc.xml", "9to5mac.xml"]
+        for feedName in feeds {
+            let data = loadFixture(feedName)
+            let articles = try await rssService.parseFeed(from: data)
+
+            for article in articles {
+                if let imageURL = article.imageURL, !imageURL.isEmpty {
+                    #expect(imageURL.hasPrefix("https://"),
+                            "\(feedName): imageURL should be HTTPS, got: \(imageURL.prefix(30))...")
+                    #expect(URL(string: imageURL) != nil,
+                            "\(feedName): imageURL should be a valid URL: \(imageURL.prefix(50))...")
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // TEST: Image extraction rate across all fixture feeds
+    //
+    // Scenario: Parse every fixture feed and measure overall image extraction
+    //   rate. This catches regressions where a parser change breaks image
+    //   extraction across the board.
+    //
+    // Expected output: At least 50% of all articles across all feeds have
+    //   an image URL. (Some feeds like TechCrunch have none, but NYT/BBC/
+    //   9to5Mac should compensate.)
+    // -------------------------------------------------------------------------
+    @Test func overallImageExtractionRate() async throws {
+        let feeds = ["nytimes.xml", "bbc.xml", "9to5mac.xml", "youtube_veritasium.xml",
+                     "daringfireball.xml", "podcast_cortex.xml", "theverge.xml"]
+
+        var totalArticles = 0
+        var withImages = 0
+
+        for feedName in feeds {
+            let data = loadFixture(feedName)
+            let articles = try await rssService.parseFeed(from: data)
+            totalArticles += articles.count
+            withImages += articles.filter { $0.imageURL != nil && !$0.imageURL!.isEmpty }.count
+        }
+
+        let ratio = Double(withImages) / Double(totalArticles)
+        #expect(ratio > 0.4,
+                "Overall image extraction rate should be >40%, got \(Int(ratio * 100))% (\(withImages)/\(totalArticles))")
+    }
+}
