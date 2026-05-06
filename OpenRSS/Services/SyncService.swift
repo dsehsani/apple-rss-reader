@@ -167,7 +167,7 @@ final class SyncService {
                 let sorted = group.sorted { $0.addedAt < $1.addedAt }
                 let duplicates = Array(sorted.dropFirst())
                 for dup in duplicates {
-                    try? service.deleteFeed(id: dup.id)
+                    try? await service.deleteFeed(id: dup.id)
                 }
             }
 

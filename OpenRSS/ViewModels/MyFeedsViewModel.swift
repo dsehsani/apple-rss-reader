@@ -101,17 +101,25 @@ final class MyFeedsViewModel {
     // MARK: - CRUD
 
     func deleteFolder(_ folder: Category) {
-        try? dataService.deleteFolder(id: folder.id)
-        refreshFolders()
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.dataService.deleteFolder(id: folder.id)
+            self.refreshFolders()
+        }
     }
 
     func updateFolder(_ folder: Category, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) {
-        try? dataService.updateFolder(id: folder.id, name: name, iconName: iconName, colorHex: colorHex)
-        refreshFolders()
+        Task { [weak self] in
+            guard let self else { return }
+            try? await self.dataService.updateFolder(id: folder.id, name: name, iconName: iconName, colorHex: colorHex)
+            self.refreshFolders()
+        }
     }
 
     func deleteFeed(_ source: Source) {
-        try? dataService.deleteFeed(id: source.id)
+        Task { [weak self] in
+            try? await self?.dataService.deleteFeed(id: source.id)
+        }
     }
 
     func toggleFeedEnabled(_ source: Source) {

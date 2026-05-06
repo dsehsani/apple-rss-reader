@@ -43,6 +43,7 @@ final class SwiftDataService: FeedDataService {
     // MARK: - Internal
 
     private var modelContext: ModelContext?
+    private var container: ModelContainer?
 
     // MARK: - Constants
 
@@ -63,6 +64,7 @@ final class SwiftDataService: FeedDataService {
     /// pre-populated before the first network refresh completes.
     @MainActor
     func configure(container: ModelContainer) {
+        self.container = container
         self.modelContext = container.mainContext
         loadFromSwiftData()
 
@@ -224,44 +226,60 @@ final class SwiftDataService: FeedDataService {
 
     // MARK: - CRUD: Folders
 
-    /// Creates a new folder and persists it.
+    /// Creates a new folder and persists it on a background context.
+    /// Returns the new folder's UUID so callers don't need to read back from `categories`.
     @MainActor
-    func addFolder(name: String, iconName: String = "folder.fill", colorHex: String = "007AFF") throws {
-        guard let context = modelContext else { return }
-        let folder = FolderModel(name: name, sortOrder: categories.count, iconName: iconName, colorHex: colorHex)
-        context.insert(folder)
-        try context.save()
+    func addFolder(name: String, iconName: String = "folder.fill", colorHex: String = "007AFF") async throws -> UUID {
+        guard let container else { return UUID() }
+        let sortOrder = categories.count
+        let newID = try await Task.detached {
+            let bg = ModelContext(container)
+            let folder = FolderModel(name: name, sortOrder: sortOrder, iconName: iconName, colorHex: colorHex)
+            bg.insert(folder)
+            try bg.save()
+            return folder.id
+        }.value
+        loadFromSwiftData()
+        return newID
+    }
+
+    /// Permanently deletes a folder (cascade-deletes all its feeds) on a background context.
+    @MainActor
+    func deleteFolder(id: UUID) async throws {
+        guard let container else { return }
+        try await Task.detached {
+            let bg = ModelContext(container)
+            let descriptor = FetchDescriptor<FolderModel>(
+                predicate: #Predicate { $0.id == id }
+            )
+            if let folder = try bg.fetch(descriptor).first {
+                bg.delete(folder)
+                try bg.save()
+            }
+        }.value
         loadFromSwiftData()
     }
 
-    /// Permanently deletes a folder (cascade-deletes all its feeds).
+    /// Updates an existing folder's name, icon, or color on a background context.
     @MainActor
-    func deleteFolder(id: UUID) throws {
-        guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<FolderModel>(
-            predicate: #Predicate { $0.id == id }
-        )
-        if let folder = try context.fetch(descriptor).first {
-            context.delete(folder)
-            try context.save()
-            loadFromSwiftData()
-        }
-    }
-
-    /// Updates an existing folder's name, icon, or color.
-    @MainActor
-    func updateFolder(id: UUID, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) throws {
-        guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<FolderModel>(
-            predicate: #Predicate { $0.id == id }
-        )
-        if let folder = try context.fetch(descriptor).first {
-            if let name   { folder.name     = name }
-            if let iconName { folder.iconName = iconName }
-            if let colorHex { folder.colorHex = colorHex }
-            try context.save()
-            loadFromSwiftData()
-        }
+    func updateFolder(id: UUID, name: String? = nil, iconName: String? = nil, colorHex: String? = nil) async throws {
+        guard let container else { return }
+        let newName = name
+        let newIconName = iconName
+        let newColorHex = colorHex
+        try await Task.detached {
+            let bg = ModelContext(container)
+            let descriptor = FetchDescriptor<FolderModel>(
+                predicate: #Predicate { $0.id == id }
+            )
+            if let folder = try bg.fetch(descriptor).first {
+                if let newName { folder.name = newName }
+                if let newIconName { folder.iconName = newIconName }
+                if let newColorHex { folder.colorHex = newColorHex }
+                try bg.save()
+            }
+        }.value
+        loadFromSwiftData()
     }
 
     /// Returns the live FolderModel for a given UUID (used when assigning a feed to a folder).
@@ -276,32 +294,41 @@ final class SwiftDataService: FeedDataService {
 
     // MARK: - CRUD: Feeds
 
-    /// Creates a new feed subscription and optionally assigns it to a folder.
+    /// Creates a new feed subscription and optionally assigns it to a folder, on a background context.
     @MainActor
-    func addFeed(feedURL: String, title: String, websiteURL: String, folderID: UUID?) throws {
-        guard let context = modelContext else { return }
-        let feed = FeedModel(feedURL: feedURL, title: title, websiteURL: websiteURL)
-        if let folderID {
-            feed.folder = folderModel(for: folderID)
-        }
-        context.insert(feed)
-        try context.save()
+    func addFeed(feedURL: String, title: String, websiteURL: String, folderID: UUID?) async throws {
+        guard let container else { return }
+        try await Task.detached {
+            let bg = ModelContext(container)
+            let feed = FeedModel(feedURL: feedURL, title: title, websiteURL: websiteURL)
+            if let folderID {
+                let descriptor = FetchDescriptor<FolderModel>(
+                    predicate: #Predicate { $0.id == folderID }
+                )
+                feed.folder = try? bg.fetch(descriptor).first
+            }
+            bg.insert(feed)
+            try bg.save()
+        }.value
         loadFromSwiftData()
         NotificationCenter.default.post(name: .feedAdded, object: nil)
     }
 
-    /// Permanently deletes a feed subscription.
+    /// Permanently deletes a feed subscription on a background context.
     @MainActor
-    func deleteFeed(id: UUID) throws {
-        guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<FeedModel>(
-            predicate: #Predicate { $0.id == id }
-        )
-        if let feed = try context.fetch(descriptor).first {
-            context.delete(feed)
-            try context.save()
-            loadFromSwiftData()
-        }
+    func deleteFeed(id: UUID) async throws {
+        guard let container else { return }
+        try await Task.detached {
+            let bg = ModelContext(container)
+            let descriptor = FetchDescriptor<FeedModel>(
+                predicate: #Predicate { $0.id == id }
+            )
+            if let feed = try bg.fetch(descriptor).first {
+                bg.delete(feed)
+                try bg.save()
+            }
+        }.value
+        loadFromSwiftData()
     }
 
     /// Toggles whether a feed is included in refresh.
