@@ -81,6 +81,14 @@ final class FeedIngestService: Sendable {
                 // Update velocity tier in affinity table
                 updateSourceAffinity(source: source, tier: tier)
 
+                // Pre-warm the OG image cache for items that came in without a
+                // feed-provided image (e.g. Hacker News). Detached + bounded so
+                // the pipeline isn't blocked and we don't hammer external hosts.
+                let needsOGImage = newItems.filter { $0.imageURL == nil }
+                if !needsOGImage.isEmpty {
+                    Self.prewarmOGImages(for: needsOGImage)
+                }
+
             } catch {
                 // Failed to fetch or parse this source — continue with others.
                 print("❌ Failed to ingest \(source.name): \(error)")
@@ -237,6 +245,40 @@ final class FeedIngestService: Sendable {
                 slotLimit: tier.defaultSlotLimit
             )
             store.upsertAffinity(record)
+        }
+    }
+
+    // MARK: - OG Image Pre-Warm
+
+    /// Maximum concurrent og:image lookups per ingest cycle. Higher than 4 risks
+    /// noisy network bursts; lower delays first-open hero images for big feeds.
+    private static let ogImagePrewarmConcurrency = 4
+
+    /// Fire-and-forget OG image resolution for the given items. Runs detached
+    /// at utility priority so it doesn't compete with user-initiated work.
+    /// OGImageService dedups and negative-caches internally, so repeat calls
+    /// are cheap.
+    private static func prewarmOGImages(for items: [FeedItem]) {
+        let urls = items.map(\.link.absoluteString)
+        Task.detached(priority: .utility) {
+            await withTaskGroup(of: Void.self) { group in
+                var iterator = urls.makeIterator()
+
+                for _ in 0..<ogImagePrewarmConcurrency {
+                    guard let url = iterator.next() else { break }
+                    group.addTask {
+                        await OGImageService.shared.prefetch(articleURL: url)
+                    }
+                }
+
+                while await group.next() != nil {
+                    if let url = iterator.next() {
+                        group.addTask {
+                            await OGImageService.shared.prefetch(articleURL: url)
+                        }
+                    }
+                }
+            }
         }
     }
 
