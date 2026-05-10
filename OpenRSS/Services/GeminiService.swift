@@ -9,8 +9,7 @@ import Foundation
 
 enum GeminiService {
 
-    // Replace with your OpenAI API key before running (do not commit real keys).
-    static let apiKey = "ENTER_API_KEY_HERE"
+    static let apiKey = APIKeys.openAI
 
     private static let endpoint = "https://api.openai.com/v1/chat/completions"
 
