@@ -70,8 +70,8 @@ actor OGImageService {
 
     // MARK: - Fetch (static — accesses no actor state)
 
-    /// Streams the article page up to 32 KB, stopping early once `</head>` is
-    /// seen, then extracts the og:image content value.
+    /// Streams the article page up to 64 KB, stopping early once `</head>` is
+    /// seen, then extracts the highest-resolution og:image URL.
     private static func fetchOGImage(from url: URL) async -> String? {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.setValue("OpenRSS/1.0 (iOS; SwiftUI)", forHTTPHeaderField: "User-Agent")
@@ -82,11 +82,11 @@ actor OGImageService {
                   (200...299).contains(http.statusCode) else { return nil }
 
             var buffer = Data()
-            buffer.reserveCapacity(32_768)
+            buffer.reserveCapacity(65_536)
 
             for try await byte in asyncBytes {
                 buffer.append(byte)
-                if buffer.count >= 32_768 { break }
+                if buffer.count >= 65_536 { break }
                 // Check for end of <head> every 512 bytes to avoid scanning every byte.
                 if buffer.count % 512 == 0,
                    let partial = String(data: buffer, encoding: .utf8),
@@ -106,31 +106,63 @@ actor OGImageService {
 
     // MARK: - Extraction
 
-    /// Extracts the og:image URL from a partial HTML string.
-    /// Handles both attribute orderings (property before content, and vice versa).
+    /// Extracts the highest-resolution og:image URL from a partial HTML string.
+    ///
+    /// Parses ALL og:image meta tags in document order and associates each with its
+    /// following og:image:width tag (if any). Returns the URL with the highest width,
+    /// or the last URL found when no width metadata is present (many sites list the
+    /// largest variant last).
     private static func extractOGImage(from html: String) -> String? {
-        // Pattern A: <meta property="og:image" content="URL">
-        // Pattern B: <meta content="URL" property="og:image">
-        let patterns = [
-            #"<meta[^>]+?(?:property|name)=["']og:image["'][^>]+?content=["']([^"']+)["']"#,
-            #"<meta[^>]+?content=["']([^"']+)["'][^>]+?(?:property|name)=["']og:image["']"#
-        ]
+        // Match every <meta> tag in the <head> section
+        guard let metaRegex = try? NSRegularExpression(
+            pattern: #"<meta\b[^>]*?>"#, options: .caseInsensitive
+        ) else { return nil }
 
-        for pattern in patterns {
-            guard let regex = try? NSRegularExpression(
-                pattern: pattern, options: .caseInsensitive
-            ) else { continue }
+        struct Candidate { var url: String; var width: Int = 0 }
+        var candidates: [Candidate] = []
 
-            let nsRange = NSRange(html.startIndex..., in: html)
-            guard let match = regex.firstMatch(in: html, range: nsRange),
-                  let srcRange = Range(match.range(at: 1), in: html)
-            else { continue }
+        // Patterns to pull content= and property= values out of a single meta tag
+        let contentRegex = try? NSRegularExpression(
+            pattern: #"content=["']([^"']+)["']"#, options: .caseInsensitive)
+        let propertyRegex = try? NSRegularExpression(
+            pattern: #"(?:property|name)=["'](og:[^"']+)["']"#, options: .caseInsensitive)
 
-            var candidate = String(html[srcRange])
-            // Decode the one entity that commonly appears in URLs inside HTML attributes.
-            candidate = candidate.replacingOccurrences(of: "&amp;", with: "&")
-            if candidate.hasPrefix("http") { return candidate }
+        func attr(_ regex: NSRegularExpression?, in tag: String) -> String? {
+            let ns = NSRange(tag.startIndex..., in: tag)
+            guard let m = regex?.firstMatch(in: tag, range: ns),
+                  let r = Range(m.range(at: 1), in: tag) else { return nil }
+            return String(tag[r])
         }
-        return nil
+
+        let nsRange = NSRange(html.startIndex..., in: html)
+        for match in metaRegex.matches(in: html, range: nsRange) {
+            guard let range = Range(match.range, in: html) else { continue }
+            let tag = String(html[range])
+
+            guard let property = attr(propertyRegex, in: tag) else { continue }
+
+            if property.caseInsensitiveCompare("og:image") == .orderedSame {
+                guard var url = attr(contentRegex, in: tag) else { continue }
+                url = url.replacingOccurrences(of: "&amp;", with: "&")
+                if url.hasPrefix("http") {
+                    candidates.append(Candidate(url: url))
+                }
+            } else if property.caseInsensitiveCompare("og:image:width") == .orderedSame,
+                      let widthStr = attr(contentRegex, in: tag),
+                      let width = Int(widthStr),
+                      !candidates.isEmpty {
+                // Associate this width with the most recently seen og:image candidate
+                candidates[candidates.count - 1].width = width
+            }
+        }
+
+        guard !candidates.isEmpty else { return nil }
+
+        // Prefer the candidate with the largest known width; fall back to last (sites often
+        // list low-res first and high-res last when no width metadata is provided).
+        if candidates.contains(where: { $0.width > 0 }) {
+            return candidates.max(by: { $0.width < $1.width })?.url
+        }
+        return candidates.last?.url
     }
 }

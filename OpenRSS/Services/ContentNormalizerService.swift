@@ -65,8 +65,8 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
     ///   "lead", "upload", etc. and nukes legitimate content.
     private func stripNoise(from doc: Document) {
         let selectors: [String] = [
-            // Structural noise
-            "script", "style", "noscript", "iframe",
+            // Structural noise — iframes are kept for video embed detection in mapElement
+            "script", "style", "noscript",
             // Ad slots by role / aria label (exact, not substring)
             "[aria-label='advertisement']",
             "[aria-label='Advertisement']",
@@ -191,8 +191,17 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
             let caption = alt.isEmpty ? nil : alt
             return .image(url: url, caption: caption)
 
-        // MARK: Figures (may wrap an img + figcaption)
+        // MARK: Figures (may wrap an img + figcaption, or a video iframe)
         case "figure":
+            // Video embed inside a figure (common pattern: YouTube wrapped in <figure>)
+            if let iframe = try? el.select("iframe").first(),
+               let src = try? iframe.attr("src"), !src.isEmpty,
+               let url = URL(string: src),
+               url.scheme == "https" || url.scheme == "http",
+               Self.isVideoHost(url) {
+                return .videoEmbed(url: Self.normalizeVideoURL(url), thumbnailURL: Self.videoThumbnail(for: url))
+            }
+            // Standard image figure
             if let img = try? el.select("img").first(),
                let src = try? img.attr("src"), !src.isEmpty,
                let url = URL(string: src),
@@ -202,6 +211,30 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
                 guard !isLogoAlt(alt) else { return nil }
                 let caption = (try? el.select("figcaption").first()?.text()) ?? ""
                 return .image(url: url, caption: caption.isEmpty ? nil : caption)
+            }
+            return nil
+
+        // MARK: Video embeds — iframes from known video hosts
+        case "iframe":
+            guard let src = try? el.attr("src"), !src.isEmpty,
+                  let url = URL(string: src),
+                  url.scheme == "https" || url.scheme == "http",
+                  Self.isVideoHost(url) else { return nil }
+            return .videoEmbed(url: Self.normalizeVideoURL(url), thumbnailURL: Self.videoThumbnail(for: url))
+
+        // MARK: HTML5 video elements
+        case "video":
+            // Try direct src attribute first, then first <source> child
+            let srcStr = (try? el.attr("src")) ?? ""
+            if !srcStr.isEmpty, let url = URL(string: srcStr),
+               url.scheme == "https" || url.scheme == "http" {
+                return .videoEmbed(url: url, thumbnailURL: nil)
+            }
+            if let source = try? el.select("source").first(),
+               let src = try? source.attr("src"), !src.isEmpty,
+               let url = URL(string: src),
+               url.scheme == "https" || url.scheme == "http" {
+                return .videoEmbed(url: url, thumbnailURL: nil)
             }
             return nil
 
@@ -239,16 +272,55 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         case "table":
             return try parseTable(el)
 
-        // MARK: Containers — recurse
+        // MARK: Containers — recurse (non-video iframes are treated as opaque containers)
         case "div", "section", "article", "main", "span",
              "details", "summary", "dl", "dt", "dd",
-             "tbody", "thead", "tfoot":
+             "tbody", "thead", "tfoot", "iframe":
             return nil  // caller will recurse
 
         // MARK: Everything else — skip
         default:
             return nil
         }
+    }
+
+    // MARK: - Video Helpers
+
+    private static let videoHosts = [
+        "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com",
+        "bbc.co.uk", "player.bbc.com", "twitch.tv", "rumble.com", "odysee.com"
+    ]
+
+    static func isVideoHost(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        return videoHosts.contains(where: { host.contains($0) })
+    }
+
+    /// Converts a YouTube embed URL (youtube.com/embed/ID) to a watchable URL.
+    static func normalizeVideoURL(_ url: URL) -> URL {
+        guard let host = url.host?.lowercased(), host.contains("youtube.com") else { return url }
+        let path = url.path
+        guard path.contains("/embed/") else { return url }
+        let videoID = path
+            .components(separatedBy: "/embed/").last?
+            .components(separatedBy: "/").first?
+            .components(separatedBy: "?").first ?? ""
+        guard !videoID.isEmpty,
+              let watchURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)") else { return url }
+        return watchURL
+    }
+
+    /// Returns a YouTube thumbnail URL for a YouTube embed URL, nil for other hosts.
+    static func videoThumbnail(for url: URL) -> URL? {
+        guard let host = url.host?.lowercased(), host.contains("youtube.com") else { return nil }
+        let path = url.path
+        guard path.contains("/embed/") else { return nil }
+        let videoID = path
+            .components(separatedBy: "/embed/").last?
+            .components(separatedBy: "/").first?
+            .components(separatedBy: "?").first ?? ""
+        guard !videoID.isEmpty else { return nil }
+        return URL(string: "https://img.youtube.com/vi/\(videoID)/hqdefault.jpg")
     }
 
     // MARK: - Table Parsing

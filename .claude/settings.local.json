@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/aweezy/Documents/apple-rss-reader/OpenRSS.xcodeproj -scheme OpenRSS -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(curl *)",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}

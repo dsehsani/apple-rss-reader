@@ -58,9 +58,12 @@ final class RateGateService: Sendable {
         var hiddenItemIDs = Set<UUID>()
 
         for (sourceID, items) in itemsBySource {
-            // Filter to items from the current calendar day
+            // Filter to items from the current calendar day, sorted newest-first so that
+            // when a slot limit is enforced the most recent items remain visible (not oldest).
+            // This is especially important on first subscribe to a podcast feed where many
+            // episodes are fetched at once — users should see the latest content, not old archives.
             let todayItems = items.filter { $0.fetchedAt >= startOfDay }
-                .sorted { $0.publishedAt < $1.publishedAt }
+                .sorted { $0.publishedAt > $1.publishedAt }
 
             guard !todayItems.isEmpty else { continue }
 
@@ -156,8 +159,9 @@ final class RateGateService: Sendable {
             )
             return boosted
         } else if affinityScore < -0.15 {
-            // Reduce: max(1, defaultLimit - 2)
-            return max(1, defaultLimit - 2)
+            // Reduce, but keep a minimum of 2 so high-velocity sources (e.g. .breaking
+            // with defaultLimit=3) never collapse to a single article from mild negative affinity.
+            return max(2, defaultLimit - 2)
         }
 
         return defaultLimit

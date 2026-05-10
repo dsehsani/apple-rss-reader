@@ -21,6 +21,8 @@ struct TodayView: View {
     @State private var selectedArticle: Article? = nil
     @State private var selectedSourceID: UUID? = nil
     @State private var nudgeForLimitAdjust: NudgeCard? = nil
+    @State private var showChatSheet = false
+    @State private var chatViewModel = ChatViewModel()
 
     // MARK: - Environment
 
@@ -171,6 +173,17 @@ struct TodayView: View {
             }
             } // close else (hasSources)
         }
+        .overlay(alignment: .bottomTrailing) {
+            chatBubbleButton
+                .padding(.trailing, 20)
+                .padding(.bottom, 30)
+        }
+        .sheet(isPresented: $showChatSheet) {
+            ChatSheetView(viewModel: chatViewModel)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(20)
+        }
         .navigationDestination(item: $selectedArticle) { article in
             ArticleReaderHostView(
                 article: article,
@@ -216,6 +229,25 @@ struct TodayView: View {
             }
         }
         } // NavigationStack
+    }
+
+    // MARK: - Chat Bubble
+
+    private var chatBubbleButton: some View {
+        Button {
+            showChatSheet = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(Design.Colors.primary)
+                        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Header (scrolls with content)

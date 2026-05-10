@@ -120,7 +120,18 @@ struct ArticleCardView: View {
             }
         }
         .task(id: article.id) {
-            guard article.imageURL == nil else { return }
+            // Skip OGImageService when the article already has a high-quality image URL,
+            // EXCEPT for two cases that need a better source:
+            //   • GIF URLs are channel-level logos (e.g. ESPN), not real article images.
+            //   • Guardian CDN images (i.guim.co.uk) are capped at 700px in the RSS feed;
+            //     the og:image on the article page is 1200px — let OGImageService fetch it.
+            //     The signed URL format means we cannot simply raise the width parameter.
+            let isGuardianCDN = article.imageURL?.contains("i.guim.co.uk") == true
+            if let imgURL = article.imageURL,
+               !imgURL.lowercased().hasSuffix(".gif"),
+               !isGuardianCDN {
+                return
+            }
             if let cached = await OGImageService.shared.cachedImageURL(for: article.articleURL) {
                 ogImageURL = cached
                 return
@@ -150,7 +161,12 @@ struct ArticleCardView: View {
                         placeholderHero
                     }
 
-                    let displayURL = article.imageURL ?? ogImageURL
+                    // Prefer og:image when available. Treat GIF image URLs as absent —
+                    // they are channel-level logos (e.g. ESPN .gif), not article images.
+                    let rssImage = article.imageURL.flatMap { url in
+                        url.lowercased().hasSuffix(".gif") ? nil : url
+                    }
+                    let displayURL = ogImageURL ?? rssImage
                     if let urlString = displayURL, let url = URL(string: urlString) {
                         AsyncImage(url: url) { phase in
                             switch phase {
@@ -169,6 +185,24 @@ struct ArticleCardView: View {
                             }
                         }
                     }
+
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                // Subtle "Video" pill badge — bottom-left, like YouTube's duration label.
+                if article.isVideo {
+                    HStack(spacing: 3) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 7, weight: .bold))
+                        Text("Video")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background(.black.opacity(0.60), in: Capsule())
+                    .padding(.leading, 8)
+                    .padding(.bottom, 8)
                 }
             }
             .clipped()

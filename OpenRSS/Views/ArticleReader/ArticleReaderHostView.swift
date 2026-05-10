@@ -35,6 +35,8 @@ struct ArticleReaderHostView: View {
 
     @State private var loadState: LoadState = .loading
     @State private var showPaywallSafari = false
+    @State private var showChatSheet = false
+    @State private var chatViewModel = ChatViewModel()
     @State private var isDescriptionExpanded = false
     @State private var appearedAt: Date?
 
@@ -55,6 +57,7 @@ struct ArticleReaderHostView: View {
                 ArticleReaderView(
                     extracted: extracted,
                     audioURL: article.audioURL.flatMap { URL(string: $0) },
+                    videoURL: article.isVideo ? URL(string: article.articleURL) : nil,
                     onSignIn: { showPaywallSafari = true }
                 )
 
@@ -68,8 +71,23 @@ struct ArticleReaderHostView: View {
                 errorView(message: message)
             }
         }
-        // Sheet anchored here (on the stable outer Group) so it reliably presents
-        // regardless of which LoadState case is currently active.
+        .overlay(alignment: .bottomTrailing) {
+            if case .loaded = loadState {
+                chatBubbleButton
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 30)
+            }
+        }
+        // Chat sheet — anchored on the Group so it presents regardless of LoadState.
+        .sheet(isPresented: $showChatSheet, onDismiss: {
+            appState.isReadingArticle = true
+        }) {
+            ChatSheetView(viewModel: chatViewModel)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(20)
+        }
+        // Paywall sheet — anchored here so it reliably presents regardless of LoadState.
         // onDismiss re-asserts isReadingArticle so presenting the sheet doesn't
         // accidentally trigger a navigation pop in the parent view.
         .sheet(isPresented: $showPaywallSafari, onDismiss: {
@@ -95,9 +113,9 @@ struct ArticleReaderHostView: View {
             }
         }
         // Only clear the flag when we're truly leaving the reader, not when
-        // the paywall sheet slides in on top of us.
+        // a sheet slides in on top of us.
         .onDisappear {
-            if !showPaywallSafari {
+            if !showPaywallSafari && !showChatSheet {
                 appState.isReadingArticle = false
 
                 // Phase 2d — Dwell time tracking
@@ -174,10 +192,34 @@ struct ArticleReaderHostView: View {
             }
 
             loadState = .loaded(extracted)
+            chatViewModel.setArticleContext(
+                title: extracted.title,
+                feedName: extracted.feedName,
+                nodes: extracted.nodes
+            )
         } catch {
             guard !Task.isCancelled else { return }
             loadState = .failed(error.localizedDescription)
         }
+    }
+
+    // MARK: - Chat Bubble
+
+    private var chatBubbleButton: some View {
+        Button {
+            showChatSheet = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(Design.Colors.primary)
+                        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Loading View
@@ -457,3 +499,4 @@ struct ArticleReaderHostView: View {
         .background(Color(.systemBackground))
     }
 }
+
