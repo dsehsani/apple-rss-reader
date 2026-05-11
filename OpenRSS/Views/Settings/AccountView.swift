@@ -233,6 +233,18 @@ struct AccountView: View {
                 .frame(height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
                 .padding(.horizontal, Design.Spacing.edge)
+
+            Link(destination: AppLinks.privacyPolicy) {
+                (Text("By signing in you agree to our ")
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                 + Text("Privacy Policy")
+                    .foregroundStyle(Design.Colors.primary)
+                    .underline()
+                )
+                .font(.system(size: 12))
+                .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, Design.Spacing.edge)
         }
     }
 
