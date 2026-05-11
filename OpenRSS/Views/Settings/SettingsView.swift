@@ -57,6 +57,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
             }
@@ -84,6 +85,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
             }
@@ -136,7 +138,7 @@ struct SettingsView: View {
                     Image(systemName: authManager.isSignedIn
                         ? "person.crop.circle.fill"
                         : "person.crop.circle.badge.plus")
-                        .font(.system(size: 32))
+                        .font(.system(.title))
                         .foregroundStyle(authManager.isSignedIn
                             ? Design.Colors.primary
                             : Design.Colors.secondaryText(for: colorScheme))
@@ -144,17 +146,17 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         if authManager.isSignedIn {
                             Text(authManager.currentUser?.displayName ?? "Apple ID User")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(.callout, weight: .semibold))
                                 .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
                             Text("iCloud sync available")
-                                .font(.system(size: 13))
+                                .font(.system(.footnote))
                                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                         } else {
                             Text("Sign In")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(.callout, weight: .semibold))
                                 .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
                             Text("Sync feeds across your devices")
-                                .font(.system(size: 13))
+                                .font(.system(.footnote))
                                 .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                         }
                     }
@@ -162,7 +164,7 @@ struct SettingsView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(.footnote, weight: .semibold))
                         .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
                 }
                 .padding(.horizontal, Design.Spacing.edge)
@@ -299,6 +301,28 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - About Section
+
+    private var aboutSection: some View {
+        settingsSection(title: "About", icon: "info.circle.fill") {
+            Link(destination: AppLinks.privacyPolicy) {
+                HStack {
+                    Text("Privacy Policy")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: - Helper Views
 
     private func settingsSection<Content: View>(
@@ -312,11 +336,13 @@ struct SettingsView: View {
                 Image(systemName: icon)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Design.Colors.primary)
+                    .accessibilityHidden(true)
 
                 Text(title.uppercased())
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                     .tracking(0.5)
+                    .accessibilityAddTraits(.isHeader)
             }
             .padding(.horizontal, Design.Spacing.edge)
 
