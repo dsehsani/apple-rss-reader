@@ -120,6 +120,24 @@ final class RiverSnapshotService: @unchecked Sendable {
             print("Snapshot diff: +\(added) -\(removed) items (total: \(sorted.count))")
         }
 
+        // #region agent log
+        // Per-source breakdown of what survives into the final river snapshot.
+        let standaloneBySource = Dictionary(grouping: standaloneItems, by: \.sourceID)
+            .mapValues(\.count)
+        let perSource: [[String: Any]] = standaloneBySource.map { sid, count in
+            return ["sourceID": sid.uuidString.prefix(8), "standaloneCount": count]
+        }
+        DebugLog.log("H5", "RiverSnapshotService.swift:121", "snapshot.assembled", [
+            "totalRiverItemsFromDB": riverItems.count,
+            "standaloneItems": standaloneItems.count,
+            "clusterBuckets": clusterBuckets.count,
+            "finalSortedCount": sorted.count,
+            "newIDs": newIDs.count,
+            "removedIDs": removedIDs.count,
+            "perSourceStandalone": perSource
+        ])
+        // #endregion
+
         return RiverSnapshot(items: sorted)
     }
 }

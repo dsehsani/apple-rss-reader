@@ -207,6 +207,7 @@ final class FeedIngestService: Sendable {
             excerpt: excerpt,
             imageURL: imageURL,
             audioURL: parsed.audioURL,
+            videoURL: parsed.videoURL,
             author: parsed.author,
             velocityTier: velocityTier,
             simhashValue: SimHash.compute(title)

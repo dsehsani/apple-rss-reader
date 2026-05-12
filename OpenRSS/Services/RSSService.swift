@@ -18,6 +18,8 @@ struct ParsedArticle {
     let author: String?
     /// Audio enclosure URL if the feed item carries an audio attachment (e.g. podcast).
     let audioURL: String?
+    /// Video enclosure URL if the feed item carries a video attachment (media:content, enclosure video/*).
+    let videoURL: String?
 }
 
 // MARK: - RSSServiceError
@@ -117,24 +119,27 @@ final class RSSService {
             // Get description with fallback to content:encoded
             let description = item.description ?? item.content?.contentEncoded
 
-            // Determine whether the enclosure carries audio so we can exclude it
-            // from the image URL slot (an mp3 URL should never feed into AsyncImage).
+            // Determine whether the enclosure carries audio or video so we can exclude it
+            // from the image URL slot (an mp3/mp4 URL should never feed into AsyncImage).
             let enclosureType = item.enclosure?.attributes?.type ?? ""
             let isAudioEnclosure = Self.isAudioMIMEType(enclosureType)
+            let isVideoEnclosure = Self.isVideoMIMEType(enclosureType)
 
             // Image priority for each item:
             //   1. itunes:image href  — per-episode artwork (podcasts, some NPR episodes)
             //   2. media:thumbnail    — per-episode wide/square image (e.g. NPR special episodes)
-            //   3. media:content      — per-episode media embed (non-audio only)
-            //   4. enclosure URL      — only if enclosure is not audio
+            //   3. media:content      — per-episode media embed (non-audio, non-video only)
+            //   4. enclosure URL      — only if enclosure is not audio or video
             var imageURL: String? =
                 item.iTunes?.iTunesImage?.attributes?.href ??
                 item.media?.mediaThumbnails?.first?.attributes?.url ??
                 item.media?.mediaContents?.first(where: {
                     !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
-                    ($0.attributes?.medium ?? "") != "audio"
+                    !Self.isVideoMIMEType($0.attributes?.type ?? "") &&
+                    ($0.attributes?.medium ?? "") != "audio" &&
+                    ($0.attributes?.medium ?? "") != "video"
                 })?.attributes?.url
-            if imageURL == nil && !isAudioEnclosure {
+            if imageURL == nil && !isAudioEnclosure && !isVideoEnclosure {
                 imageURL = item.enclosure?.attributes?.url
             }
 
@@ -155,8 +160,41 @@ final class RSSService {
 
             // Final fallback: use the channel-level image (essential for podcast feeds
             // where most episodes carry no per-episode artwork of their own).
+            //
+            // Exception: hosted video pages (Vimeo watch URLs, YouTube videos). Vimeo RSS
+            // often lacks per-entry thumbnails — falling back to the channel banner makes
+            // every card reuse the same hero image and prevents ArticleCardView from ever
+            // fetching per-video og:image (it only runs OG lookup when imageURL is nil).
             if imageURL == nil {
-                imageURL = channelFallbackImage
+                let linkStr = item.link ?? ""
+                let linkURL = URL(string: linkStr)
+                let skipChannelBanner =
+                    (linkURL.flatMap { VideoDetector.detect($0) != nil } ?? false)
+                    || YouTubeService.isYouTubeVideoOrShortURL(linkStr)
+
+                if !skipChannelBanner {
+                    imageURL = channelFallbackImage
+                }
+            }
+
+            // Vimeo watch URLs: drop channel-wide artwork even when it was injected earlier
+            // via `<img>` in `<description>` / `<content:encoded>` (Staff Picks repeats the same
+            // banner URL on every entry). Leaving `imageURL` non-nil blocks OG hero resolution.
+            if let linkURL = URL(string: item.link ?? ""),
+               VideoDetector.detect(linkURL) != nil,
+               let img = imageURL {
+                var banners = Set<String>()
+                for raw in [
+                    channelFallbackImage,
+                    rss.image?.url,
+                    rss.iTunes?.iTunesImage?.attributes?.href
+                ].compactMap({ $0 }) {
+                    banners.insert(Self.upgradeToHTTPS(raw))
+                }
+                let normalizedImg = Self.upgradeToHTTPS(img)
+                if banners.contains(normalizedImg) {
+                    imageURL = nil
+                }
             }
 
             // Detect audio enclosure (podcast episodes, audio articles, etc.)
@@ -171,6 +209,18 @@ final class RSSService {
                 })?.attributes?.url
             }
 
+            // Detect video enclosure (media:content video/*, enclosure video/*).
+            var videoURL: String? = nil
+            if isVideoEnclosure, let url = item.enclosure?.attributes?.url {
+                videoURL = url
+            }
+            if videoURL == nil {
+                videoURL = item.media?.mediaContents?.first(where: {
+                    Self.isVideoMIMEType($0.attributes?.type ?? "") ||
+                    ($0.attributes?.medium ?? "") == "video"
+                })?.attributes?.url
+            }
+
             // Get author
             let author = item.author ?? item.dublinCore?.dcCreator
 
@@ -181,7 +231,8 @@ final class RSSService {
                 description: description,
                 imageURL: imageURL,
                 author: author,
-                audioURL: audioURL
+                audioURL: audioURL,
+                videoURL: videoURL
             )
         }
     }
@@ -189,6 +240,11 @@ final class RSSService {
     /// Returns true for any audio/* MIME type commonly found in RSS enclosures.
     private static func isAudioMIMEType(_ type: String) -> Bool {
         type.hasPrefix("audio/")
+    }
+
+    /// Returns true for any video/* MIME type commonly found in RSS enclosures.
+    private static func isVideoMIMEType(_ type: String) -> Bool {
+        type.hasPrefix("video/")
     }
 
     /// Finds the first absolute image URL from an `<img src>` attribute in raw HTML.
@@ -264,16 +320,31 @@ final class RSSService {
                 })?.attributes?.url
             }
 
-            // Get image: prefer media:content (non-audio), then media:thumbnail,
-            // then a non-audio enclosure link, then <img> in content/summary HTML.
+            // Detect video from enclosure links or media:content with video type/medium.
+            var videoURL: String? = entry.links?.first(where: {
+                $0.attributes?.rel == "enclosure" &&
+                Self.isVideoMIMEType($0.attributes?.type ?? "")
+            })?.attributes?.href
+            if videoURL == nil {
+                videoURL = entry.media?.mediaContents?.first(where: {
+                    Self.isVideoMIMEType($0.attributes?.type ?? "") ||
+                    ($0.attributes?.medium ?? "") == "video"
+                })?.attributes?.url
+            }
+
+            // Get image: prefer media:content (non-audio, non-video), then media:thumbnail,
+            // then a non-audio/non-video enclosure link, then <img> in content/summary HTML.
             var imageURL = entry.media?.mediaContents?.first(where: {
                 !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
-                ($0.attributes?.medium ?? "") != "audio"
+                !Self.isVideoMIMEType($0.attributes?.type ?? "") &&
+                ($0.attributes?.medium ?? "") != "audio" &&
+                ($0.attributes?.medium ?? "") != "video"
             })?.attributes?.url
                 ?? entry.media?.mediaThumbnails?.first?.attributes?.url
                 ?? entry.links?.first(where: {
                     $0.attributes?.rel == "enclosure" &&
-                    !Self.isAudioMIMEType($0.attributes?.type ?? "")
+                    !Self.isAudioMIMEType($0.attributes?.type ?? "") &&
+                    !Self.isVideoMIMEType($0.attributes?.type ?? "")
                 })?.attributes?.href
 
             // Fallback: search content or summary HTML for <img src>.
@@ -290,7 +361,8 @@ final class RSSService {
                 description: description,
                 imageURL: imageURL,
                 author: author,
-                audioURL: audioURL
+                audioURL: audioURL,
+                videoURL: videoURL
             )
         }
     }
@@ -314,6 +386,11 @@ final class RSSService {
                 Self.isAudioMIMEType($0.mimeType ?? "")
             })?.url
 
+            // JSON Feed attachments may also carry video files.
+            let videoURL = item.attachments?.first(where: {
+                Self.isVideoMIMEType($0.mimeType ?? "")
+            })?.url
+
             return ParsedArticle(
                 title: item.title,
                 link: item.url,
@@ -321,7 +398,8 @@ final class RSSService {
                 description: description,
                 imageURL: imageURL,
                 author: author,
-                audioURL: audioURL
+                audioURL: audioURL,
+                videoURL: videoURL
             )
         }
     }

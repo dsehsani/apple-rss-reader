@@ -86,9 +86,26 @@ final class RiverPipeline: @unchecked Sendable {
         )
 
         // Stage 1 — Ingest
-        let (_, _) = await timer.time("Stage1-Ingest") {
+        let (ingestResult, _) = await timer.time("Stage1-Ingest") {
             await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
         }
+
+        // #region agent log
+        let ingestBySource: [[String: Any]] = Dictionary(grouping: ingestResult, by: \.sourceID)
+            .map { sid, items in
+                let name = sources.first { $0.id == sid }?.name ?? sid.uuidString
+                return [
+                    "source": name,
+                    "newCount": items.count,
+                    "tier": items.first?.velocityTier.rawValue ?? "n/a"
+                ]
+            }
+        DebugLog.log("H4", "RiverPipeline.swift:91", "pipeline.stage1.ingest", [
+            "newItemsTotal": ingestResult.count,
+            "sourcesAttempted": sources.filter(\.isEnabled).count,
+            "perSource": ingestBySource
+        ])
+        // #endregion
 
         // Stage 2 — Semantic Clustering
         let (_, _) = timer.time("Stage2-Clustering") {

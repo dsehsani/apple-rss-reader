@@ -308,5 +308,22 @@ final class ArticleClusteringService {
         let totalCount = articles.count
         let method = self.clusteringMethod
         logger.info("Clustering complete: \(clusterCount, privacy: .public) clustered articles from \(totalCount, privacy: .public) total using \(method, privacy: .public)")
+
+        // #region agent log
+        let nonCanonical = articles.filter { $0.clusterID != nil && !$0.isCanonical }
+        let clusterSizes = Dictionary(grouping: articles.filter { $0.clusterID != nil },
+                                      by: { $0.clusterID! })
+            .mapValues(\.count)
+            .values
+            .sorted(by: >)
+            .prefix(5)
+        DebugLog.log("H2", "ArticleClusteringService.swift:310", "clusterArticles.done", [
+            "totalArticles": totalCount,
+            "clusteredCount": clusterCount,
+            "nonCanonicalCount": nonCanonical.count,
+            "top5ClusterSizes": Array(clusterSizes),
+            "sampleNonCanonicalTitles": nonCanonical.prefix(5).map(\.title)
+        ])
+        // #endregion
     }
 }

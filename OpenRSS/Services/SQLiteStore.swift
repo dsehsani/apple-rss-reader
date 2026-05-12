@@ -74,13 +74,15 @@ final class SQLiteStore: Sendable {
                 river_visible    INTEGER DEFAULT 1,
                 simhash_value    INTEGER DEFAULT 0,
                 embedding_vector BLOB,
-                audio_url        TEXT
+                audio_url        TEXT,
+                video_url        TEXT
             )
         """)
 
-        // Lightweight migration: add audio_url to pre-existing tables.
-        // SQLite returns "duplicate column name" if it already exists; ignore.
+        // Lightweight migrations: add columns to pre-existing tables.
+        // SQLite returns "duplicate column name" if a column already exists; ignore.
         execute("ALTER TABLE feed_items ADD COLUMN audio_url TEXT")
+        execute("ALTER TABLE feed_items ADD COLUMN video_url TEXT")
 
         execute("""
             CREATE TABLE IF NOT EXISTS source_affinity (
@@ -120,8 +122,8 @@ final class SQLiteStore: Sendable {
                 INSERT OR REPLACE INTO feed_items
                 (id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                  cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                 simhash_value, embedding_vector, audio_url)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                 simhash_value, embedding_vector, audio_url, video_url)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
@@ -153,6 +155,7 @@ final class SQLiteStore: Sendable {
                 // embedding_vector: nil for Phase 2a
                 sqlite3_bind_null(stmt, 17)
                 bindOptionalText(stmt, 18, item.audioURL)
+                bindOptionalText(stmt, 19, item.videoURL)
 
                 sqlite3_step(stmt)
             }
@@ -191,7 +194,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE river_visible = 1 AND aged_out = 0
             ORDER BY relevance_score DESC
@@ -217,10 +220,37 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE river_visible = 1 AND published_at >= ?
             ORDER BY relevance_score DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, cutoff)
+
+        var items: [FeedItem] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let item = feedItem(from: stmt) {
+                items.append(item)
+            }
+        }
+        return items
+    }
+
+    /// Fetches all non-aged-out items within the retention window regardless of river_visible.
+    /// Used by RateGateService.applyRateGate so visibility can be fully re-evaluated each
+    /// cycle — previously hidden items are reconsidered when slot limits change.
+    func fetchItemsForRateGate(days: Int = CachePolicy.cacheRetentionDays) -> [FeedItem] {
+        let cutoff = Int64(Date().addingTimeInterval(-Double(days) * 86400).timeIntervalSince1970)
+        let sql = """
+            SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
+                   cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
+                   simhash_value, audio_url, video_url
+            FROM feed_items
+            WHERE aged_out = 0 AND fetched_at >= ?
+            ORDER BY fetched_at DESC
         """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
@@ -243,7 +273,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE published_at >= ?
             ORDER BY published_at DESC
@@ -267,7 +297,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE source_id = ?
             ORDER BY published_at DESC
@@ -322,7 +352,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE aged_out = 0
             ORDER BY published_at DESC
@@ -347,7 +377,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE aged_out = 0 AND published_at >= ?
             ORDER BY published_at DESC
@@ -425,7 +455,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE cluster_id = ?
             ORDER BY published_at ASC
@@ -718,6 +748,7 @@ final class SQLiteStore: Sendable {
         let riverVisible = sqlite3_column_int(stmt, 14) != 0
         let simhash = UInt64(bitPattern: sqlite3_column_int64(stmt, 15))
         let audioURL = columnText(stmt, 16)
+        let videoURL = columnText(stmt, 17)
 
         return FeedItem(
             id: id,
@@ -729,6 +760,7 @@ final class SQLiteStore: Sendable {
             excerpt: excerpt,
             imageURL: imageURL,
             audioURL: audioURL,
+            videoURL: videoURL,
             author: author,
             clusterID: clusterID,
             isCanonical: isCanonical,

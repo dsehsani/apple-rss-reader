@@ -28,6 +28,9 @@ struct FeedItem: Identifiable, Equatable, Sendable {
     // Audio enclosure URL (e.g. podcast episodes). Nil for most items.
     var audioURL: String?
 
+    // Video enclosure URL (e.g. video podcasts, video news segments). Nil for most items.
+    var videoURL: String?
+
     // Author from the feed
     var author: String?
 
@@ -59,6 +62,7 @@ struct FeedItem: Identifiable, Equatable, Sendable {
         excerpt: String = "",
         imageURL: String? = nil,
         audioURL: String? = nil,
+        videoURL: String? = nil,
         author: String? = nil,
         clusterID: UUID? = nil,
         isCanonical: Bool = false,
@@ -78,6 +82,7 @@ struct FeedItem: Identifiable, Equatable, Sendable {
         self.excerpt = excerpt
         self.imageURL = imageURL
         self.audioURL = audioURL
+        self.videoURL = videoURL
         self.author = author
         self.clusterID = clusterID
         self.isCanonical = isCanonical
@@ -112,20 +117,41 @@ extension FeedItem: Hashable {
 
 extension FeedItem {
 
+    /// Vimeo article pages almost always need **per-video** `og:image`; RSS-derived URLs are
+    /// often channel branding reused across entries. Those stale URLs survive forever in SQLite
+    /// because ingest only inserts **new** item IDs — existing rows are never refreshed.
+    ///
+    /// For Vimeo hosts we intentionally pass `nil` here so `ArticleCardView` runs OG resolution.
+    /// Blog/help/settings URLs keep feed-provided artwork when present.
+    private static func shouldResolveVimeoHeroViaOG(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        guard host == "vimeo.com" || host == "www.vimeo.com" || host == "player.vimeo.com" else {
+            return false
+        }
+        let path = url.path
+        if path.hasPrefix("/blog") || path.hasPrefix("/help") || path.hasPrefix("/settings") {
+            return false
+        }
+        return true
+    }
+
     /// Converts a FeedItem to the legacy Article type so existing views keep working.
     ///
     /// - Parameters:
     ///   - categoryID: The category the source belongs to (looked up externally).
     /// - Returns: An Article suitable for ArticleCardView and related UI.
     func toArticle(categoryID: UUID) -> Article {
-        Article(
+        let heroURL: String? = Self.shouldResolveVimeoHeroViaOG(link) ? nil : imageURL
+
+        return Article(
             id: id,
             title: title,
             excerpt: excerpt,
             sourceID: sourceID,
             categoryID: categoryID,
-            imageURL: imageURL,
+            imageURL: heroURL,
             audioURL: audioURL,
+            videoURL: videoURL,
             articleURL: link.absoluteString,
             publishedAt: publishedAt,
             isRead: false,

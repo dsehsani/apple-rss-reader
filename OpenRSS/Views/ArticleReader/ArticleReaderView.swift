@@ -18,6 +18,9 @@ struct ArticleReaderView: View {
     /// Audio enclosure URL from the RSS feed. When non-nil an inline player is
     /// shown below the hero image. Nil for articles without audio.
     var audioURL: URL? = nil
+    /// Video enclosure URL from the RSS feed. When non-nil an inline video player is
+    /// shown below the hero image (and below any audio player). Nil for most articles.
+    var videoURL: URL? = nil
     var onSignIn: (() -> Void)? = nil
 
     // MARK: - Body
@@ -31,6 +34,13 @@ struct ArticleReaderView: View {
                 // Audio player — only shown when the RSS item carried an audio enclosure.
                 if let audioURL {
                     AudioPlayerView(audioURL: audioURL)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                }
+
+                // Video player — only shown when the RSS item carried a video enclosure.
+                if let videoURL {
+                    VideoPlayerView(videoURL: videoURL)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
                 }
