@@ -40,14 +40,21 @@ final class DecayScoringService: Sendable {
         let now = Date()
         var agedOutCount = 0
 
+        // Pre-fetch all affinities once instead of querying per-item.
+        let allAffinities = store.fetchAllAffinities()
+        let affinityCache = Dictionary(
+            allAffinities.map { ($0.sourceID, min(max($0.affinityScore, 0), 0.5)) },
+            uniquingKeysWith: { _, last in last }
+        )
+
         var updates: [(id: UUID, relevanceScore: Double, agedOut: Bool)] = []
 
         for item in items {
             let hoursSince = now.timeIntervalSince(item.publishedAt) / 3600
             let rawRelevance = Self.relevance(hoursSincePublished: hoursSince, tier: item.velocityTier)
 
-            // Apply affinity boost (if available)
-            let boost = affinityBoost(for: item.sourceID)
+            // Apply affinity boost from pre-fetched cache
+            let boost = affinityCache[item.sourceID] ?? 0
             let adjustedRelevance = rawRelevance * (1.0 + boost)
 
             let shouldAge = adjustedRelevance < Self.agedOutThreshold

@@ -351,21 +351,34 @@ final class SQLiteStore: Sendable {
     }
 
     /// Returns the set of existing item IDs from a given candidate set.
+    /// Uses a single SELECT … IN (…) query for batch efficiency.
     func existingItemIDs(from candidates: Set<UUID>) -> Set<UUID> {
         guard !candidates.isEmpty else { return [] }
-        // For small sets, query individually. For large sets, use IN clause.
-        var existing = Set<UUID>()
-        let sql = "SELECT 1 FROM feed_items WHERE id = ? LIMIT 1"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
-        defer { sqlite3_finalize(stmt) }
 
-        for candidate in candidates {
-            sqlite3_reset(stmt)
-            sqlite3_clear_bindings(stmt)
-            bindText(stmt, 1, candidate.uuidString)
-            if sqlite3_step(stmt) == SQLITE_ROW {
-                existing.insert(candidate)
+        let candidateArray = Array(candidates)
+        var existing = Set<UUID>()
+
+        // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
+        // Process in chunks to stay under that limit.
+        let chunkSize = 500
+        for chunkStart in stride(from: 0, to: candidateArray.count, by: chunkSize) {
+            let chunkEnd = min(chunkStart + chunkSize, candidateArray.count)
+            let chunk = candidateArray[chunkStart..<chunkEnd]
+            let placeholders = chunk.map { _ in "?" }.joined(separator: ",")
+            let sql = "SELECT id FROM feed_items WHERE id IN (\(placeholders))"
+
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { continue }
+            defer { sqlite3_finalize(stmt) }
+
+            for (i, candidate) in chunk.enumerated() {
+                bindText(stmt, Int32(i + 1), candidate.uuidString)
+            }
+
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                if let idStr = columnText(stmt, 0), let uuid = UUID(uuidString: idStr) {
+                    existing.insert(uuid)
+                }
             }
         }
         return existing
@@ -695,25 +708,27 @@ final class SQLiteStore: Sendable {
         return Array(nonCurrentWindows)
     }
 
-    /// Sets river_visible for a batch of item IDs.
+    /// Sets river_visible for a batch of item IDs using batched IN clauses.
     func setRiverVisible(_ visible: Bool, forItemIDs ids: [UUID]) {
         guard !ids.isEmpty else { return }
+        let visibleInt = visible ? 1 : 0
         queue.sync {
             execute("BEGIN TRANSACTION")
-            let sql = "UPDATE feed_items SET river_visible = ? WHERE id = ?"
-            var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
-                execute("ROLLBACK")
-                return
-            }
-            defer { sqlite3_finalize(stmt) }
+            // Process in chunks to stay under SQLITE_MAX_VARIABLE_NUMBER (999).
+            let chunkSize = 500
+            for chunkStart in stride(from: 0, to: ids.count, by: chunkSize) {
+                let chunkEnd = min(chunkStart + chunkSize, ids.count)
+                let chunk = ids[chunkStart..<chunkEnd]
+                let placeholders = chunk.map { _ in "?" }.joined(separator: ",")
+                let sql = "UPDATE feed_items SET river_visible = \(visibleInt) WHERE id IN (\(placeholders))"
 
-            let visibleInt: Int32 = visible ? 1 : 0
-            for id in ids {
-                sqlite3_reset(stmt)
-                sqlite3_clear_bindings(stmt)
-                sqlite3_bind_int(stmt, 1, visibleInt)
-                bindText(stmt, 2, id.uuidString)
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { continue }
+                defer { sqlite3_finalize(stmt) }
+
+                for (i, id) in chunk.enumerated() {
+                    bindText(stmt, Int32(i + 1), id.uuidString)
+                }
                 sqlite3_step(stmt)
             }
             execute("COMMIT")
