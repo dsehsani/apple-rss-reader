@@ -28,8 +28,8 @@ struct ArticleReaderView: View {
     /// Audio enclosure URL from the RSS feed. When non-nil an inline player is
     /// shown below the hero image. Nil for articles without audio.
     var audioURL: URL? = nil
-    /// Video URL for the article. When non-nil the hero image shows a tappable play overlay.
-    /// Set from a video enclosure URL or, for video-path articles, the article URL itself.
+    /// Non-nil for video articles. The hero image becomes a tappable play button
+    /// that opens this URL in SFSafariViewController.
     var videoURL: URL? = nil
     var onSignIn: (() -> Void)? = nil
 
@@ -44,14 +44,6 @@ struct ArticleReaderView: View {
             VStack(alignment: .leading, spacing: 0) {
                 headerZone
                     .padding(.bottom, 24)
-
-                // Video player — only shown when the RSS item carried a video enclosure.
-                if let videoURL {
-                    VideoPlayerView(videoURL: videoURL)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                }
-
 
                 bodyZone
                     .padding(.horizontal, 20)
@@ -254,10 +246,8 @@ struct ArticleReaderView: View {
 
     // MARK: - Body Zone
 
-    /// Strips query parameters and URL fragments for image-dedup comparison.
-    /// CDNs often serve the same image at multiple sizes via query params
-    /// (e.g. ?width=1200 vs ?width=400) or fragment variants; we want to
-    /// treat those as the same image for de-duplication purposes.
+    /// Strips query parameters and URL fragments so CDN size variants of the
+    /// same image (e.g. ?width=1200 vs ?width=400) compare as equal.
     private func normalizedImageKey(_ url: URL) -> String {
         var c = URLComponents(url: url, resolvingAgainstBaseURL: false)
         c?.queryItems = nil
@@ -266,11 +256,11 @@ struct ArticleReaderView: View {
     }
 
     private var bodyZone: some View {
-        // Remove any body .image node that duplicates the hero already shown in
-        // the header zone. This handles both freshly-extracted articles and
+        // Remove any .image node whose normalized URL matches the hero already
+        // shown in the header zone. Handles both freshly-extracted articles and
         // cached articles stored before the pipeline-level dedup was introduced,
-        // and covers feeds (e.g. The Atlantic, NPR podcasts) where the first
-        // body image and the og:image share the same base URL.
+        // and catches feeds (e.g. The Atlantic, NPR podcasts) where the first
+        // body image is the same as the og:image hero.
         let heroKey = extracted.heroImageURL.map { normalizedImageKey($0) }
         let displayNodes = extracted.nodes.filter { node in
             guard case .image(let url, _) = node else { return true }
