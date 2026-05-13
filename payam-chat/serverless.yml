@@ -1,0 +1,31 @@
+# Prerequisite: create AWS Secrets Manager secret `openrss/gemini-api-key` in us-west-2 (plain key or JSON with GEMINI_API_KEY / apiKey).
+service: openrss-chat
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - arn:aws:secretsmanager:us-west-2:${aws:accountId}:secret:openrss/gemini-api-key-*
+
+functions:
+  payamChat:
+    name: payam-chat
+    handler: handler.main
+    events:
+      - httpApi:
+          path: /v1/chat
+          method: post
+
+package:
+  patterns:
+    - '!.git/**'
