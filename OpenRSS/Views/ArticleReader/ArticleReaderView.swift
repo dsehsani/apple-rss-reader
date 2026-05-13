@@ -10,6 +10,16 @@
 
 import SwiftUI
 
+// MARK: - Summary State
+
+private enum SummaryState {
+    case idle
+    case loading
+    case result(String)
+    case tooShort
+    case error(String)
+}
+
 // MARK: - ArticleReaderView
 
 struct ArticleReaderView: View {
@@ -18,10 +28,14 @@ struct ArticleReaderView: View {
     /// Audio enclosure URL from the RSS feed. When non-nil an inline player is
     /// shown below the hero image. Nil for articles without audio.
     var audioURL: URL? = nil
-    /// Video enclosure URL from the RSS feed. When non-nil an inline video player is
-    /// shown below the hero image (and below any audio player). Nil for most articles.
+    /// Video URL for the article. When non-nil the hero image shows a tappable play overlay.
+    /// Set from a video enclosure URL or, for video-path articles, the article URL itself.
     var videoURL: URL? = nil
     var onSignIn: (() -> Void)? = nil
+
+    @State private var summaryState: SummaryState = .idle
+    @State private var showSummarySheet = false
+    @State private var showVideoSafari = false
 
     // MARK: - Body
 
@@ -31,19 +45,13 @@ struct ArticleReaderView: View {
                 headerZone
                     .padding(.bottom, 24)
 
-                // Audio player — only shown when the RSS item carried an audio enclosure.
-                if let audioURL {
-                    AudioPlayerView(audioURL: audioURL)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                }
-
                 // Video player — only shown when the RSS item carried a video enclosure.
                 if let videoURL {
                     VideoPlayerView(videoURL: videoURL)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
                 }
+
 
                 bodyZone
                     .padding(.horizontal, 20)
@@ -67,13 +75,24 @@ struct ArticleReaderView: View {
         }
         .background(Color(.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showSummarySheet) {
+            SummarySheetView(state: summaryState)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(20)
+        }
+        .sheet(isPresented: $showVideoSafari) {
+            if let url = videoURL {
+                SafariView(url: url).ignoresSafeArea()
+            }
+        }
     }
 
     // MARK: - Header Zone
 
     private var headerZone: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Hero image
+            // Hero image — tappable play button overlay when article is a video
             if let heroURL = extracted.heroImageURL {
                 CachedImageView(
                     url: heroURL,
@@ -85,7 +104,35 @@ struct ArticleReaderView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 220)
                 .clipped()
+                .overlay {
+                    if videoURL != nil {
+                        Button { showVideoSafari = true } label: {
+                            ZStack {
+                                // Full-image tap target
+                                Color.clear
+                                // Centered play circle
+                                ZStack {
+                                    Circle()
+                                        .fill(.black.opacity(0.45))
+                                        .frame(width: 60, height: 60)
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                        .offset(x: 2)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
                 .padding(.bottom, 20)
+            }
+
+            // Audio player — only shown when the RSS item carried an audio enclosure.
+            if let audioURL {
+                AudioPlayerView(audioURL: audioURL)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -118,21 +165,124 @@ struct ArticleReaderView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Summarize pill button
+                summarizeButton
+                    .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
         }
     }
 
+    // MARK: - Summarize Button
+
+    private var isSummarizing: Bool {
+        if case .loading = summaryState { return true }
+        return false
+    }
+
+    private var summarizeButton: some View {
+        Button {
+            Task { await summarize() }
+        } label: {
+            HStack(spacing: 5) {
+                if isSummarizing {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                        .tint(Design.Colors.primary)
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                Text("Summarize")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(Design.Colors.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Design.Colors.primary.opacity(0.10), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isSummarizing)
+    }
+
+    // MARK: - Summarize Action
+
+    @MainActor
+    private func summarize() async {
+        switch summaryState {
+        case .loading:
+            return
+        case .result, .tooShort:
+            showSummarySheet = true
+            return
+        case .idle, .error:
+            break
+        }
+
+        guard articleWordCount >= 50 else {
+            summaryState = .tooShort
+            showSummarySheet = true
+            return
+        }
+
+        summaryState = .loading
+        showSummarySheet = true
+
+        let text = String(articlePlainText().prefix(3000))
+        let prompt = """
+        Summarize the following article in exactly 3 concise sentences. \
+        Focus on the key facts and main takeaway. Plain text only.
+
+        Title: \(extracted.title)
+
+        Content:
+        \(text)
+        """
+
+        do {
+            let result = try await GeminiService.send(
+                history: [ChatMessage(role: .user, content: prompt)],
+                articleContext: nil
+            )
+            summaryState = .result(result.trimmingCharacters(in: .whitespacesAndNewlines))
+        } catch {
+            summaryState = .error(error.localizedDescription)
+        }
+    }
+
     // MARK: - Body Zone
 
+    /// Strips query parameters and URL fragments for image-dedup comparison.
+    /// CDNs often serve the same image at multiple sizes via query params
+    /// (e.g. ?width=1200 vs ?width=400) or fragment variants; we want to
+    /// treat those as the same image for de-duplication purposes.
+    private func normalizedImageKey(_ url: URL) -> String {
+        var c = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        c?.queryItems = nil
+        c?.fragment = nil
+        return c?.url?.absoluteString ?? url.absoluteString
+    }
+
     private var bodyZone: some View {
+        // Remove any body .image node that duplicates the hero already shown in
+        // the header zone. This handles both freshly-extracted articles and
+        // cached articles stored before the pipeline-level dedup was introduced,
+        // and covers feeds (e.g. The Atlantic, NPR podcasts) where the first
+        // body image and the og:image share the same base URL.
+        let heroKey = extracted.heroImageURL.map { normalizedImageKey($0) }
+        let displayNodes = extracted.nodes.filter { node in
+            guard case .image(let url, _) = node else { return true }
+            guard let key = heroKey else { return true }
+            return normalizedImageKey(url) != key
+        }
         // VStack (not LazyVStack) gives consistent width proposals to children.
         // LazyVStack has known layout quirks with fixedSize in scroll views,
         // causing children to report unconstrained widths that push the whole
         // container beyond screen width and shift the header text off the left edge.
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(Array(extracted.nodes.enumerated()), id: \.offset) { _, node in
+        return VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(displayNodes.enumerated()), id: \.offset) { _, node in
                 nodeView(for: node)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -163,6 +313,9 @@ struct ArticleReaderView: View {
 
         case .table(let headers, let rows):
             TableView(headers: headers, rows: rows)
+
+        case .videoEmbed(let url, let thumbnailURL):
+            VideoEmbedView(url: url, thumbnailURL: thumbnailURL)
         }
     }
 
@@ -208,6 +361,38 @@ struct ArticleReaderView: View {
 
     // MARK: - Helpers
 
+    private var articleWordCount: Int {
+        extracted.nodes.reduce(0) { acc, node in
+            switch node {
+            case .paragraph(let t), .blockquote(let t), .codeBlock(let t):
+                return acc + t.split(separator: " ").count
+            case .heading(_, let t):
+                return acc + t.split(separator: " ").count
+            case .list(let items, _):
+                return acc + items.joined(separator: " ").split(separator: " ").count
+            case .image, .videoEmbed:
+                return acc
+            case .table(let headers, let rows):
+                let allText = (headers + rows.flatMap { $0 }).joined(separator: " ")
+                return acc + allText.split(separator: " ").count
+            }
+        }
+    }
+
+    private func articlePlainText() -> String {
+        extracted.nodes.compactMap { node -> String? in
+            switch node {
+            case .heading(_, let t):   return t
+            case .paragraph(let t):    return t
+            case .blockquote(let t):   return t
+            case .codeBlock(let t):    return t
+            case .list(let items, _):  return items.joined(separator: " ")
+            case .table(let h, let r): return (h + r.flatMap { $0 }).joined(separator: " ")
+            case .image, .videoEmbed:  return nil
+            }
+        }.joined(separator: "\n\n")
+    }
+
     private var estimatedReadTime: String {
         let wordCount = extracted.nodes.reduce(0) { acc, node in
             switch node {
@@ -217,7 +402,7 @@ struct ArticleReaderView: View {
                 return acc + t.split(separator: " ").count
             case .list(let items, _):
                 return acc + items.joined(separator: " ").split(separator: " ").count
-            case .image:
+            case .image, .videoEmbed:
                 return acc
             case .table(let headers, let rows):
                 let allText = (headers + rows.flatMap { $0 }).joined(separator: " ")
@@ -226,5 +411,96 @@ struct ArticleReaderView: View {
         }
         let minutes = max(1, wordCount / 200)
         return "\(minutes) min read"
+    }
+}
+
+// MARK: - Summary Sheet View
+
+private struct SummarySheetView: View {
+
+    let state: SummaryState
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header row
+            HStack {
+                Label("Summary", systemImage: "sparkles")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(Color(.secondarySystemFill), in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            Divider()
+
+            contentView
+        }
+        .background(Color(.systemBackground))
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        switch state {
+        case .idle:
+            EmptyView()
+
+        case .loading:
+            VStack(spacing: 12) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Generating summary…")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        case .result(let text):
+            ScrollView {
+                Text(text)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.primary)
+                    .lineSpacing(6)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+        case .tooShort:
+            VStack(spacing: 10) {
+                Image(systemName: "doc.text")
+                    .font(.system(size: 34, weight: .ultraLight))
+                    .foregroundStyle(.secondary)
+                Text("This article is too short to summarize.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 32)
+
+        case .error(let message):
+            VStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 30, weight: .ultraLight))
+                    .foregroundStyle(.orange)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 32)
+        }
     }
 }

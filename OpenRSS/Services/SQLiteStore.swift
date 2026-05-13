@@ -163,6 +163,30 @@ final class SQLiteStore: Sendable {
         }
     }
 
+    /// Backfills audio_url for existing items where it is currently NULL.
+    /// Only updates rows where audio_url IS NULL to avoid overwriting intentional nulls.
+    func updateAudioURLs(_ updates: [(id: UUID, audioURL: String)]) {
+        guard !updates.isEmpty else { return }
+        queue.sync {
+            execute("BEGIN TRANSACTION")
+            let sql = "UPDATE feed_items SET audio_url = ? WHERE id = ? AND audio_url IS NULL"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
+                execute("ROLLBACK")
+                return
+            }
+            defer { sqlite3_finalize(stmt) }
+            for update in updates {
+                sqlite3_reset(stmt)
+                sqlite3_clear_bindings(stmt)
+                bindText(stmt, 1, update.audioURL)
+                bindText(stmt, 2, update.id.uuidString)
+                sqlite3_step(stmt)
+            }
+            execute("COMMIT")
+        }
+    }
+
     /// Updates the relevance score and aged_out flag for a batch of items.
     func updateScores(_ updates: [(id: UUID, relevanceScore: Double, agedOut: Bool)]) {
         queue.sync {

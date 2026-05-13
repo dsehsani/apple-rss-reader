@@ -80,7 +80,7 @@ final class RateGateService: Sendable {
             )
 
             for (day, dayItems) in byDay {
-                let sorted = dayItems.sorted { $0.publishedAt < $1.publishedAt }
+                let sorted = dayItems.sorted { $0.publishedAt > $1.publishedAt }
 
                 if effectiveLimit < Int.max && sorted.count > effectiveLimit {
                     let visibleItems = Array(sorted.prefix(effectiveLimit))
@@ -180,8 +180,9 @@ final class RateGateService: Sendable {
             )
             return boosted
         } else if affinityScore < -0.15 {
-            // Reduce: max(1, defaultLimit - 2)
-            return max(1, defaultLimit - 2)
+            // Reduce, but keep a minimum of 2 so high-velocity sources (e.g. .breaking
+            // with defaultLimit=3) never collapse to a single article from mild negative affinity.
+            return max(2, defaultLimit - 2)
         }
 
         return defaultLimit

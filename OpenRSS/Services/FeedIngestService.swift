@@ -82,6 +82,18 @@ final class FeedIngestService: Sendable {
                     allNewItems.append(contentsOf: newItems)
                 }
 
+                // Backfill audio_url for existing podcast items that pre-date the audio column.
+                // These items were inserted before audio support was added and have audio_url = NULL.
+                let audioBackfill: [(id: UUID, audioURL: String)] = feedItems
+                    .filter { existingIDs.contains($0.id) }
+                    .compactMap { item in
+                        guard let url = item.audioURL else { return nil }
+                        return (id: item.id, audioURL: url)
+                    }
+                if !audioBackfill.isEmpty {
+                    store.updateAudioURLs(audioBackfill)
+                }
+
                 // Update velocity tier in affinity table
                 updateSourceAffinity(source: source, tier: tier)
 
@@ -197,6 +209,12 @@ final class FeedIngestService: Sendable {
                 .flatMap { YouTubeService.thumbnailURL(videoID: $0)?.absoluteString }
         }
 
+        // Podcast episodes (items with audio enclosures) use .essay tier regardless of
+        // posting frequency: 168h half-life and unlimited slot limit. This prevents them from
+        // ageing out in 2 days and avoids rate-gating on first subscribe (when many episodes
+        // are fetched at once). VelocityTier.displayName confirms: .evergreen = "Evergreen / Podcasts".
+        let effectiveTier: VelocityTier = parsed.audioURL != nil ? .essay : velocityTier
+
         return FeedItem(
             id: id,
             sourceID: source.id,
@@ -209,7 +227,7 @@ final class FeedIngestService: Sendable {
             audioURL: parsed.audioURL,
             videoURL: parsed.videoURL,
             author: parsed.author,
-            velocityTier: velocityTier,
+            velocityTier: effectiveTier,
             simhashValue: SimHash.compute(title)
         )
     }

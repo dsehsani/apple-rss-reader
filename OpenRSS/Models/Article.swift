@@ -187,6 +187,18 @@ extension Article {
     }
 }
 
+// MARK: - Video Detection
+
+extension Article {
+    /// True when the article link points to video content, detected from path segments
+    /// used by major publishers: /videos/ (BBC), /video/ (generic), /watch/video/ (Sky Sports).
+    var isVideo: Bool {
+        guard let url = URL(string: articleURL) else { return false }
+        let path = url.path.lowercased()
+        return path.contains("/videos/") || path.contains("/watch/video/") || path.contains("/video/")
+    }
+}
+
 // MARK: - Date Formatting Extension
 
 extension Article {
