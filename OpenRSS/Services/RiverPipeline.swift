@@ -212,11 +212,14 @@ final class RiverPipeline: @unchecked Sendable {
     /// non-canonical member is also visible.
     private func repairClusterVisibility() {
         let cutoff = Date().addingTimeInterval(-12 * 3600) // match cluster window
-        let recentItems = store.fetchRecentItems(since: cutoff)
+        // Must fetch ALL clustered items including hidden ones — fetchRecentItems
+        // filters by river_visible=1 which means we'd never see the hidden
+        // non-canonical members we need to un-hide.
+        let clusteredItems = store.fetchClusteredItems(since: cutoff)
 
         // Group by clusterID
         var clusterBuckets: [UUID: [FeedItem]] = [:]
-        for item in recentItems where item.clusterID != nil {
+        for item in clusteredItems {
             clusterBuckets[item.clusterID!, default: []].append(item)
         }
 

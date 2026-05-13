@@ -99,11 +99,10 @@ struct TodayView: View {
                                         cluster: card,
                                         source: viewModel.source(for: card.canonicalItem),
                                         onArticleTap: { feedItem in
-                                            if let source = viewModel.source(for: feedItem) {
-                                                let article = feedItem.toArticle(categoryID: source.categoryID)
-                                                viewModel.markAsRead(article)
-                                                selectedArticle = article
-                                            }
+                                            let categoryID = viewModel.source(for: feedItem)?.categoryID ?? Category.allUpdates.id
+                                            let article = feedItem.toArticle(categoryID: categoryID)
+                                            viewModel.markAsRead(article)
+                                            selectedArticle = article
                                         },
                                         sourceForItem: { feedItem in
                                             viewModel.source(for: feedItem)

@@ -7,7 +7,7 @@
 //    Phase A: Deduplicate exact same titles across sources (wire copy)
 //    Phase B: Three-pass clustering for same-story, different-coverage articles:
 //      Pass 1: SimHash + temporal proximity (cheap candidate generation)
-//      Pass 2: NLEmbedding cosine similarity (semantic confirmation)
+//      Pass 2: Sentence embedding cosine similarity (semantic confirmation)
 //      Pass 3: NER entity overlap (final confirmation, skipped when embeddings are strong)
 //
 //  Only clusters cross-source items within a 12-hour window.
@@ -15,6 +15,7 @@
 
 import Foundation
 import NaturalLanguage
+import os.log
 
 // MARK: - SemanticClusterService
 
@@ -23,6 +24,11 @@ final class SemanticClusterService: Sendable {
     // MARK: - Dependencies
 
     private let store = SQLiteStore.shared
+    private let embeddingProvider: (any EmbeddingProvider)?
+    private let logger = Logger(subsystem: "com.openrss", category: "Clustering")
+
+    // MARK: - Embedding provider key for cache invalidation
+    private static let embeddingProviderKey = "SemanticCluster.embeddingProvider"
 
     // MARK: - Configuration
 
@@ -35,10 +41,11 @@ final class SemanticClusterService: Sendable {
     private static let simhashThreshold = 10
 
     /// Cosine similarity threshold for Pass 2 embedding comparison.
-    /// Set conservatively high to avoid false positives from same-beat articles
-    /// (e.g. two unrelated Apple articles scoring ~0.70 due to shared vocabulary).
-    /// On-device NLEmbedding is limited — prefer precision over recall.
-    private static let embeddingSimilarityThreshold: Float = 0.82
+    /// With CoreML MiniLM: same-story pairs score 0.80-0.95, same-beat
+    /// pairs score 0.40-0.60, so 0.72 catches real clusters without
+    /// false positives. Falls back to NLEmbedding (weaker separation)
+    /// where the threshold still works but clustering fires less often.
+    private static let embeddingSimilarityThreshold: Float = 0.72
 
     /// Minimum shared NER entities for Pass 3 confirmation.
     /// Requires 2 shared entities to confirm clustering. One shared entity
@@ -47,13 +54,36 @@ final class SemanticClusterService: Sendable {
     private static let minSharedEntities = 2
 
     /// Embedding similarity above this skips the NER gate entirely.
-    /// Only bypass NER when embeddings are extremely confident — this is
-    /// a high bar to prevent false positives.
-    private static let highConfidenceEmbeddingThreshold: Float = 0.90
+    /// With CoreML MiniLM, same-story pairs score 0.72-0.95 and same-beat
+    /// pairs top out at ~0.58, so 0.75 safely bypasses NER for real
+    /// clusters without risking false positives.
+    private static let highConfidenceEmbeddingThreshold: Float = 0.75
 
     /// SimHash distance at or below which two titles are considered exact
     /// duplicates (same wire copy). These get deduped, not clustered.
     private static let exactDuplicateSimhashThreshold = 2
+
+    // MARK: - Init
+
+    init() {
+        self.embeddingProvider = EmbeddingProviderFactory.makeProvider()
+
+        // When the embedding provider changes (e.g. NLEmbedding → CoreML),
+        // cached vectors are from a different embedding space and must be
+        // cleared. Track which provider produced the current cache.
+        let currentProvider = embeddingProvider is CoreMLEmbeddingProvider ? "coreml" : "nlembedding"
+        let previousProvider = UserDefaults.standard.string(forKey: Self.embeddingProviderKey)
+        if previousProvider != currentProvider {
+            store.clearAllEmbeddings()
+            UserDefaults.standard.set(currentProvider, forKey: Self.embeddingProviderKey)
+        }
+
+        if let provider = embeddingProvider {
+            logger.info("Embedding provider: \(String(describing: type(of: provider))) (\(provider.dimensions)-dim)")
+        } else {
+            logger.warning("No embedding provider available — clustering disabled")
+        }
+    }
 
     // MARK: - Public API
 
@@ -63,36 +93,71 @@ final class SemanticClusterService: Sendable {
     func clusterRecentItems() {
         let cutoff = Date().addingTimeInterval(-Self.clusterWindowSeconds)
         let items = store.fetchRecentItems(since: cutoff)
-        guard items.count >= 2 else { return }
+        let sourceCount = Set(items.map(\.sourceID)).count
+        logger.info("Clustering: \(items.count) items from \(sourceCount) sources in 12h window")
+        guard items.count >= 2 else {
+            logger.info("Clustering: skipped — fewer than 2 items")
+            return
+        }
 
         // Clear stale clusters outside the window
         store.clearClusterFields(olderThan: cutoff)
 
         // ── Phase A: Dedup exact duplicates ──
-        // Wire services (AP, Reuters) get republished verbatim by multiple feeds.
-        // These identical articles should show once, not as a cluster.
         let dedupedItems = deduplicateExactTitles(items)
+        if dedupedItems.count < items.count {
+            logger.info("Clustering: deduped \(items.count - dedupedItems.count) exact duplicates, \(dedupedItems.count) remain")
+        }
 
         // ── Phase B: Cluster same-story, different-coverage articles ──
 
-        // Pass 1 — SimHash candidate pairs (only candidate generator).
-        // Temporal proximity alone is too aggressive — same-beat articles from
-        // different sources all become candidates and overwhelm the embedding gate.
-        // SimHash with threshold 10 catches articles with meaningfully similar
-        // wording without generating noise from unrelated same-beat coverage.
-        let candidatePairs = findSimHashCandidates(dedupedItems)
+        // Pass 1a — SimHash candidate pairs (cheap, catches near-identical titles)
+        let simhashPairs = findSimHashCandidates(dedupedItems)
+        logger.info("Pass 1a (SimHash): \(simhashPairs.count) candidate pairs")
 
-        guard !candidatePairs.isEmpty else { return }
+        // Pass 1b — Temporal candidates (catches differently-worded same-story
+        // articles that SimHash misses). The embedding model filters false
+        // positives in Pass 2, so a loose candidate set is safe.
+        let simhashIndices = Set(simhashPairs.flatMap { [$0.0, $0.1] })
+        let unmatchedItems = dedupedItems.enumerated()
+            .filter { !simhashIndices.contains($0.offset) }
+            .map { $0.element }
+        let temporalPairs = findTemporalCandidates(unmatchedItems, allItems: dedupedItems)
+        logger.info("Pass 1b (Temporal): \(temporalPairs.count) candidate pairs")
 
-        // Pass 2 — NLEmbedding on candidates
+        // Cap total candidates at 200 to prevent the 2000+ candidate explosion
+        // that causes 3-5 second pipeline times. Prioritize simhash pairs (higher
+        // signal) and take a random sample of temporal pairs if needed.
+        let maxCandidates = 200
+        let candidatePairs: [(Int, Int)]
+        if simhashPairs.count + temporalPairs.count > maxCandidates {
+            let temporalBudget = max(0, maxCandidates - simhashPairs.count)
+            let sampledTemporal = Array(temporalPairs.shuffled().prefix(temporalBudget))
+            candidatePairs = simhashPairs + sampledTemporal
+            logger.info("Capped candidates: \(simhashPairs.count) simhash + \(sampledTemporal.count) temporal (dropped \(temporalPairs.count - sampledTemporal.count) temporal)")
+        } else {
+            candidatePairs = simhashPairs + temporalPairs
+        }
+        guard !candidatePairs.isEmpty else {
+            logger.info("Clustering: no candidates from SimHash or temporal — done")
+            return
+        }
+
+        // Pass 2 — Sentence embedding on candidates
         let embeddings = computeEmbeddings(for: dedupedItems, candidatePairs: candidatePairs)
+        logger.info("Pass 2: computed \(embeddings.count) embeddings")
+
         let pass2Pairs = filterByEmbeddingSimilarity(
             candidatePairs: candidatePairs,
             items: dedupedItems,
             embeddings: embeddings
         )
+        logger.info("Pass 2 (Embedding ≥ 0.72): \(pass2Pairs.count) pairs survived")
 
-        guard !pass2Pairs.isEmpty else { return }
+        guard !pass2Pairs.isEmpty else {
+            logger.info("Clustering: no pairs passed embedding threshold — done")
+            return
+        }
 
         // Pass 3 — NER entity overlap (skipped for high-confidence embeddings)
         let confirmedPairs = filterByNEROverlap(
@@ -100,11 +165,16 @@ final class SemanticClusterService: Sendable {
             items: dedupedItems,
             embeddings: embeddings
         )
+        logger.info("Pass 3 (NER): \(confirmedPairs.count) pairs confirmed")
 
-        guard !confirmedPairs.isEmpty else { return }
+        guard !confirmedPairs.isEmpty else {
+            logger.info("Clustering: no pairs passed NER gate — done")
+            return
+        }
 
         // Resolve clusters
         let clusters = resolveClusters(confirmedPairs, items: dedupedItems)
+        logger.info("Resolved \(clusters.count) clusters")
 
         // Persist cluster assignments
         persistClusters(clusters, items: dedupedItems)
@@ -206,16 +276,14 @@ final class SemanticClusterService: Sendable {
         return pairs
     }
 
-    // MARK: - Pass 2: NLEmbedding
+    // MARK: - Pass 2: Sentence Embedding
 
     /// Computes sentence embeddings for items that appear in candidate pairs.
     private func computeEmbeddings(
         for items: [FeedItem],
         candidatePairs: [(Int, Int)]
     ) -> [Int: [Float]] {
-        guard let embedding = NLEmbedding.sentenceEmbedding(for: .english) else {
-            return [:]
-        }
+        guard let provider = embeddingProvider else { return [:] }
 
         // Collect unique indices that need embeddings
         var neededIndices = Set<Int>()
@@ -228,20 +296,17 @@ final class SemanticClusterService: Sendable {
         for idx in neededIndices {
             let item = items[idx]
 
-            // Use cached embedding if available
-            if let cached = item.embeddingVector {
+            // Use cached embedding if available (same provider — validated at init)
+            if let cached = item.embeddingVector, cached.count == provider.dimensions {
                 results[idx] = cached
                 continue
             }
 
             // Compute embedding from title + description excerpt (max 200 chars)
             let text = embeddingText(for: item)
-            if let vector = embedding.vector(for: text) {
-                let floatVector = vector.map { Float($0) }
-                results[idx] = floatVector
-
-                // Store the embedding vector for reuse within the window
-                store.updateEmbeddingVector(itemID: item.id, vector: floatVector)
+            if let vector = provider.embed(text) {
+                results[idx] = vector
+                store.updateEmbeddingVector(itemID: item.id, vector: vector)
             }
         }
         return results

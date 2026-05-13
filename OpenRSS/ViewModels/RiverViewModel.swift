@@ -333,6 +333,7 @@ final class RiverViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshot in
                 guard let self else { return }
+
                 withAnimation(.easeInOut(duration: 0.3)) {
                     self.riverItems = snapshot.items
                     self.lastPipelineDurationMs = snapshot.pipelineDurationMs

@@ -14,6 +14,9 @@ DerivedData/
 .build/
 .swiftpm/
 
+# Python venv (model conversion)
+.venv/
+
 # macOS
 .DS_Store
 OpenRSS.xcodeproj/project.xcworkspace/xcuserdata/

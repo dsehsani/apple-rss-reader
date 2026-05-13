@@ -914,9 +914,9 @@ struct ClusteringThresholdTests {
     // -------------------------------------------------------------------------
     // TEST: Cosine similarity threshold accepts same-story articles
     //
-    // Scenario: Two vectors with similarity 0.72 (typical for same-story,
+    // Scenario: Two vectors with high similarity (typical for same-story,
     //   different-wording articles).
-    // Expected: Passes the 0.68 threshold.
+    // Expected: Passes the 0.72 threshold.
     // -------------------------------------------------------------------------
     @Test func cosineSimilarityAcceptsSameStory() {
         // Construct two vectors that are very similar
@@ -924,23 +924,23 @@ struct ClusteringThresholdTests {
         let b: [Float] = [0.98, 0.52, 0.28, 0.79, 0.22]
         let sim = SemanticClusterService.cosineSimilarity(a, b)
 
-        #expect(sim >= 0.82,
-                "Very similar vectors (\(sim)) should pass the 0.82 threshold")
+        #expect(sim >= 0.72,
+                "Very similar vectors (\(sim)) should pass the 0.72 threshold")
     }
 
     // -------------------------------------------------------------------------
     // TEST: Cosine similarity threshold rejects unrelated articles
     //
     // Scenario: Two vectors pointing in different directions (similarity ~0.3).
-    // Expected: Fails the 0.68 threshold.
+    // Expected: Fails the 0.72 threshold.
     // -------------------------------------------------------------------------
     @Test func cosineSimilarityRejectsUnrelated() {
         let a: [Float] = [1.0, 0.0, 0.0, 0.0, 0.0]
         let b: [Float] = [0.0, 0.0, 0.0, 0.0, 1.0]
         let sim = SemanticClusterService.cosineSimilarity(a, b)
 
-        #expect(sim < 0.82,
-                "Unrelated vectors (\(sim)) should fail the 0.82 threshold")
+        #expect(sim < 0.72,
+                "Unrelated vectors (\(sim)) should fail the 0.72 threshold")
     }
 }
 

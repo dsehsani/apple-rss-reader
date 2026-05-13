@@ -437,6 +437,32 @@ final class SQLiteStore: Sendable {
         return items
     }
 
+    /// Fetches all clustered items (including hidden ones) within the time window.
+    /// Used by cluster visibility repair which needs to see hidden non-canonical
+    /// members to un-hide them.
+    func fetchClusteredItems(since cutoff: Date) -> [FeedItem] {
+        let sql = """
+            SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
+                   cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
+                   simhash_value, audio_url, video_url
+            FROM feed_items
+            WHERE cluster_id IS NOT NULL AND fetched_at >= ?
+            ORDER BY fetched_at DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, Int64(cutoff.timeIntervalSince1970))
+
+        var items: [FeedItem] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let item = feedItem(from: stmt) {
+                items.append(item)
+            }
+        }
+        return items
+    }
+
     /// Clears cluster_id and is_canonical for items older than the given cutoff.
     func clearClusterFields(olderThan cutoff: Date) {
         queue.sync {
@@ -513,6 +539,13 @@ final class SQLiteStore: Sendable {
             }
         }
         return items
+    }
+
+    /// Clears all cached embedding vectors (used when the embedding provider changes).
+    func clearAllEmbeddings() {
+        queue.sync {
+            execute("UPDATE feed_items SET embedding_vector = NULL WHERE embedding_vector IS NOT NULL")
+        }
     }
 
     /// Clears stale embedding vectors for items outside the cluster window.
