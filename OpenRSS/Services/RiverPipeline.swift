@@ -57,6 +57,12 @@ final class RiverPipeline: @unchecked Sendable {
     /// hopping back to the main actor.
     private var lastPreferUniqueStories: [UUID: Bool] = [:]
 
+    /// Affinity scores frozen at the first pipeline cycle of this session.
+    /// Used by rate gating so that reading articles mid-session doesn't change
+    /// slot limits and cause DigestCards to flicker or disappear.
+    /// Reset on next app launch (new RiverPipeline instance).
+    private var sessionAffinitySnapshot: [UUID: SourceAffinityRecord]?
+
     private init() {}
 
     // MARK: - Public API
@@ -112,9 +118,19 @@ final class RiverPipeline: @unchecked Sendable {
             clusterService.clusterRecentItems()
         }
 
+        // Freeze affinity scores on the first pipeline cycle of this session.
+        // Subsequent cycles reuse the same snapshot so that reading articles
+        // mid-session doesn't shift slot limits and cause DigestCards to vanish.
+        if sessionAffinitySnapshot == nil {
+            let allAffinities = store.fetchAllAffinities()
+            sessionAffinitySnapshot = Dictionary(
+                uniqueKeysWithValues: allAffinities.map { ($0.sourceID, $0) }
+            )
+        }
+
         // Stage 3 — Rate Gating
         let (rateGateResult, _) = timer.time("Stage3-RateGate") {
-            rateGateService.applyRateGate()
+            rateGateService.applyRateGate(affinitySnapshot: sessionAffinitySnapshot)
         }
         lastRateGateResult = rateGateResult
 

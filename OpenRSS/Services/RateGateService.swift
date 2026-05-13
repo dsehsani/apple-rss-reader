@@ -46,8 +46,12 @@ final class RateGateService: Sendable {
     /// is enforced per day-group. DigestCards and NudgeCards are only emitted for
     /// the current calendar day so retroactive UI clutter is avoided.
     ///
+    /// - Parameter affinitySnapshot: Pre-fetched affinity scores frozen at session start.
+    ///   When provided, rate gating uses these scores instead of reading live from SQLite,
+    ///   which prevents DigestCards from flickering mid-session as the user reads articles.
+    ///   Pass `nil` to read live scores (legacy behaviour).
     /// - Returns: A `RateGateResult` containing digest cards, nudge cards, and hidden item IDs.
-    func applyRateGate() -> RateGateResult {
+    func applyRateGate(affinitySnapshot: [UUID: SourceAffinityRecord]? = nil) -> RateGateResult {
         let now = Date()
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: now)
@@ -76,37 +80,73 @@ final class RateGateService: Sendable {
             let defaultLimit = sampleTier.defaultSlotLimit
             let effectiveLimit = computeEffectiveLimit(
                 defaultLimit: defaultLimit,
-                sourceID: sourceID
+                sourceID: sourceID,
+                affinitySnapshot: affinitySnapshot
             )
 
             for (day, dayItems) in byDay {
                 let sorted = dayItems.sorted { $0.publishedAt > $1.publishedAt }
 
-                if effectiveLimit < Int.max && sorted.count > effectiveLimit {
-                    let visibleItems = Array(sorted.prefix(effectiveLimit))
-                    let overflowItems = Array(sorted.dropFirst(effectiveLimit))
+                // Cluster-aware rate gating: canonical items and their cluster
+                // members count as a single unit toward the slot limit. Non-canonical
+                // clustered items never consume a slot — they're bundled into the
+                // cluster card alongside their canonical item.
+                var slotsUsed = 0
+                var visibleItems: [FeedItem] = []
+                var overflowItems: [FeedItem] = []
 
-                    shouldShow.formUnion(visibleItems.map(\.id))
-                    shouldHide.formUnion(overflowItems.map(\.id))
+                // Collect cluster IDs whose canonical item was already counted.
+                var countedClusterIDs = Set<UUID>()
 
-                    // Digest cards are only emitted for today's overflow to
-                    // avoid retroactive digest spam for previous days.
-                    if day == todayStart {
-                        let sourceName = resolveSourceName(sourceID: sourceID)
-                        let digest = DigestCard(
-                            sourceID: sourceID,
-                            sourceName: sourceName,
-                            itemCount: overflowItems.count,
-                            highlights: Array(overflowItems.prefix(3).map(\.title)),
-                            overflowIDs: overflowItems.map(\.id),
-                            overflowItems: overflowItems,
-                            insertionPosition: overflowItems.first?.publishedAt ?? now
-                        )
-                        digestCards.append(digest)
+                for item in sorted {
+                    if let clusterID = item.clusterID {
+                        if item.isCanonical {
+                            // Canonical item: counts as one slot for the whole cluster.
+                            if effectiveLimit < Int.max && slotsUsed >= effectiveLimit {
+                                overflowItems.append(item)
+                            } else {
+                                slotsUsed += 1
+                                countedClusterIDs.insert(clusterID)
+                                visibleItems.append(item)
+                            }
+                        } else {
+                            // Non-canonical: follows its canonical item's visibility.
+                            // If the cluster's canonical was shown, show this too (free).
+                            // If the canonical was overflowed (or not yet seen), overflow this.
+                            if countedClusterIDs.contains(clusterID) {
+                                visibleItems.append(item)
+                            } else {
+                                overflowItems.append(item)
+                            }
+                        }
+                    } else {
+                        // Standalone (non-clustered) item: each one uses a slot.
+                        if effectiveLimit < Int.max && slotsUsed >= effectiveLimit {
+                            overflowItems.append(item)
+                        } else {
+                            slotsUsed += 1
+                            visibleItems.append(item)
+                        }
                     }
-                } else {
-                    // All items fit within the limit — ensure they are all visible.
-                    shouldShow.formUnion(sorted.map(\.id))
+                }
+
+                shouldShow.formUnion(visibleItems.map(\.id))
+                shouldHide.formUnion(overflowItems.map(\.id))
+
+                // Digest cards are only emitted for today's overflow to
+                // avoid retroactive digest spam for previous days.
+                if !overflowItems.isEmpty && day == todayStart {
+                    let sourceName = resolveSourceName(sourceID: sourceID)
+                    let digest = DigestCard(
+                        sourceID: sourceID,
+                        sourceName: sourceName,
+                        itemCount: overflowItems.count,
+                        highlights: Array(overflowItems.prefix(3).map(\.title)),
+                        overflowIDs: overflowItems.map(\.id),
+                        overflowItems: overflowItems,
+                        insertionPosition: overflowItems.first?.publishedAt ?? now
+                    )
+                    digestCards.append(digest)
                 }
             }
 
@@ -166,11 +206,20 @@ final class RateGateService: Sendable {
     // MARK: - Effective Limit Computation
 
     /// Adjusts the default slot limit based on the source's affinity score.
-    private func computeEffectiveLimit(defaultLimit: Int, sourceID: UUID) -> Int {
+    /// Uses the frozen snapshot when available to keep limits stable within a session.
+    private func computeEffectiveLimit(
+        defaultLimit: Int,
+        sourceID: UUID,
+        affinitySnapshot: [UUID: SourceAffinityRecord]?
+    ) -> Int {
         guard defaultLimit < Int.max else { return Int.max }
 
-        let affinity = store.fetchAffinity(forSource: sourceID)
-        let affinityScore = affinity?.affinityScore ?? 0.0
+        let affinityScore: Double
+        if let snapshot = affinitySnapshot {
+            affinityScore = snapshot[sourceID]?.affinityScore ?? 0.0
+        } else {
+            affinityScore = store.fetchAffinity(forSource: sourceID)?.affinityScore ?? 0.0
+        }
 
         if affinityScore > 0.7 {
             // Boost: min(defaultLimit * 1.5, defaultLimit + 3)
