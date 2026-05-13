@@ -409,15 +409,19 @@ final class SQLiteStore: Sendable {
 
     // MARK: - Clustering (Phase 2b)
 
-    /// Fetches items published within the given time window, not aged out.
+    /// Fetches visible items within the given time window, not aged out.
+    /// Uses `fetched_at` instead of `published_at` so that articles from newly
+    /// subscribed feeds (which may have old publish dates) are still eligible
+    /// for clustering on their first pipeline cycle.
+    /// Filters by `river_visible = 1` so deduped items don't enter clustering.
     func fetchRecentItems(since cutoff: Date) -> [FeedItem] {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
                    simhash_value, audio_url, video_url
             FROM feed_items
-            WHERE aged_out = 0 AND published_at >= ?
-            ORDER BY published_at DESC
+            WHERE aged_out = 0 AND river_visible = 1 AND fetched_at >= ?
+            ORDER BY fetched_at DESC
         """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }

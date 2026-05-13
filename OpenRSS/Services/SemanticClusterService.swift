@@ -3,12 +3,14 @@
 //  OpenRSS
 //
 //  Phase 2b — Stage 2 of the River Pipeline.
-//  Three-pass clustering system that groups related news stories:
-//    Pass 1: SimHash on title tokens (cheap, runs on all items)
-//    Pass 2: NLEmbedding on candidate pairs (expensive, targeted)
-//    Pass 3: NER entity overlap on Pass 2 survivors (confirmation)
+//  Two-phase system: dedup then cluster.
+//    Phase A: Deduplicate exact same titles across sources (wire copy)
+//    Phase B: Three-pass clustering for same-story, different-coverage articles:
+//      Pass 1: SimHash + temporal proximity (cheap candidate generation)
+//      Pass 2: NLEmbedding cosine similarity (semantic confirmation)
+//      Pass 3: NER entity overlap (final confirmation, skipped when embeddings are strong)
 //
-//  Only clusters items within a 6-hour window.
+//  Only clusters cross-source items within a 12-hour window.
 //
 
 import Foundation
@@ -25,21 +27,39 @@ final class SemanticClusterService: Sendable {
     // MARK: - Configuration
 
     /// Maximum age (in seconds) for items to be considered for clustering.
-    private static let clusterWindowSeconds: TimeInterval = 6 * 3600
+    private static let clusterWindowSeconds: TimeInterval = 12 * 3600
 
     /// SimHash hamming distance threshold for Pass 1 candidates.
-    private static let simhashThreshold = 3
+    /// Relaxed from 3 to 10 so differently-worded articles about the same
+    /// story are caught as candidates. Pass 2 embeddings do the real filtering.
+    private static let simhashThreshold = 10
 
     /// Cosine similarity threshold for Pass 2 embedding comparison.
+    /// Set conservatively high to avoid false positives from same-beat articles
+    /// (e.g. two unrelated Apple articles scoring ~0.70 due to shared vocabulary).
+    /// On-device NLEmbedding is limited — prefer precision over recall.
     private static let embeddingSimilarityThreshold: Float = 0.82
 
     /// Minimum shared NER entities for Pass 3 confirmation.
+    /// Requires 2 shared entities to confirm clustering. One shared entity
+    /// (e.g. "Apple") is too common and causes false positives across
+    /// same-beat coverage.
     private static let minSharedEntities = 2
+
+    /// Embedding similarity above this skips the NER gate entirely.
+    /// Only bypass NER when embeddings are extremely confident — this is
+    /// a high bar to prevent false positives.
+    private static let highConfidenceEmbeddingThreshold: Float = 0.90
+
+    /// SimHash distance at or below which two titles are considered exact
+    /// duplicates (same wire copy). These get deduped, not clustered.
+    private static let exactDuplicateSimhashThreshold = 2
 
     // MARK: - Public API
 
-    /// Runs the three-pass clustering pipeline on recent items.
-    /// Updates cluster_id and is_canonical fields in SQLite.
+    /// Runs the dedup + clustering pipeline on recent items.
+    /// Phase A deduplicates exact wire-copy duplicates across sources.
+    /// Phase B clusters remaining articles about the same story.
     func clusterRecentItems() {
         let cutoff = Date().addingTimeInterval(-Self.clusterWindowSeconds)
         let items = store.fetchRecentItems(since: cutoff)
@@ -48,55 +68,100 @@ final class SemanticClusterService: Sendable {
         // Clear stale clusters outside the window
         store.clearClusterFields(olderThan: cutoff)
 
-        // Pass 1 — SimHash candidate pairs
-        let pass1Pairs = findSimHashCandidates(items)
+        // ── Phase A: Dedup exact duplicates ──
+        // Wire services (AP, Reuters) get republished verbatim by multiple feeds.
+        // These identical articles should show once, not as a cluster.
+        let dedupedItems = deduplicateExactTitles(items)
 
-        // Collect unique item IDs that are part of Pass 1 pairs
-        var pass1ItemIDs = Set<UUID>()
-        for (i, j) in pass1Pairs {
-            pass1ItemIDs.insert(items[i].id)
-            pass1ItemIDs.insert(items[j].id)
-        }
+        // ── Phase B: Cluster same-story, different-coverage articles ──
 
-        // Also include temporally proximate items with no Pass 1 match
-        // (items within 6-hour window that didn't get a SimHash candidate)
-        let unmatched = items.filter { !pass1ItemIDs.contains($0.id) }
-        let temporalCandidates = findTemporalCandidates(unmatched, allItems: items)
+        // Pass 1 — SimHash candidate pairs (only candidate generator).
+        // Temporal proximity alone is too aggressive — same-beat articles from
+        // different sources all become candidates and overwhelm the embedding gate.
+        // SimHash with threshold 10 catches articles with meaningfully similar
+        // wording without generating noise from unrelated same-beat coverage.
+        let candidatePairs = findSimHashCandidates(dedupedItems)
 
-        // Merge candidate pairs
-        let allCandidatePairs = pass1Pairs + temporalCandidates
-
-        guard !allCandidatePairs.isEmpty else { return }
+        guard !candidatePairs.isEmpty else { return }
 
         // Pass 2 — NLEmbedding on candidates
-        let embeddings = computeEmbeddings(for: items, candidatePairs: allCandidatePairs)
+        let embeddings = computeEmbeddings(for: dedupedItems, candidatePairs: candidatePairs)
         let pass2Pairs = filterByEmbeddingSimilarity(
-            candidatePairs: allCandidatePairs,
-            items: items,
+            candidatePairs: candidatePairs,
+            items: dedupedItems,
             embeddings: embeddings
         )
 
         guard !pass2Pairs.isEmpty else { return }
 
-        // Pass 3 — NER entity overlap
-        let confirmedPairs = filterByNEROverlap(pass2Pairs, items: items)
+        // Pass 3 — NER entity overlap (skipped for high-confidence embeddings)
+        let confirmedPairs = filterByNEROverlap(
+            pass2Pairs,
+            items: dedupedItems,
+            embeddings: embeddings
+        )
 
         guard !confirmedPairs.isEmpty else { return }
 
         // Resolve clusters
-        let clusters = resolveClusters(confirmedPairs, items: items)
+        let clusters = resolveClusters(confirmedPairs, items: dedupedItems)
 
         // Persist cluster assignments
-        persistClusters(clusters, items: items)
+        persistClusters(clusters, items: dedupedItems)
+    }
+
+    // MARK: - Phase A: Exact Duplicate Dedup
+
+    /// Deduplicates articles with identical (or near-identical) titles from
+    /// different sources. Keeps the article from the highest-affinity source
+    /// and hides the rest by setting `river_visible = 0`.
+    ///
+    /// Returns the filtered item list with duplicates removed.
+    private func deduplicateExactTitles(_ items: [FeedItem]) -> [FeedItem] {
+        // Group by lowercased title
+        var titleGroups: [String: [FeedItem]] = [:]
+        for item in items {
+            let key = item.title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            titleGroups[key, default: []].append(item)
+        }
+
+        var toHide: [UUID] = []
+        var survivorIDs = Set<UUID>()
+
+        for (_, group) in titleGroups {
+            if group.count == 1 {
+                // Only one article with this title — nothing to dedup
+                survivorIDs.insert(group[0].id)
+                continue
+            }
+
+            // Multiple articles share the same title. Keep the one with the
+            // highest relevance score, hide the rest.
+            let sorted = group.sorted { $0.relevanceScore > $1.relevanceScore }
+            survivorIDs.insert(sorted[0].id)
+            for duplicate in sorted.dropFirst() {
+                toHide.append(duplicate.id)
+            }
+        }
+
+        if !toHide.isEmpty {
+            store.setRiverVisible(false, forItemIDs: toHide)
+        }
+
+        return items.filter { survivorIDs.contains($0.id) }
     }
 
     // MARK: - Pass 1: SimHash Candidates
 
-    /// Finds pairs of items with SimHash hamming distance <= threshold.
+    /// Finds cross-source pairs of items with SimHash hamming distance <= threshold.
+    /// Same-source items are never clustered — clustering is for grouping coverage
+    /// of the same story across different news outlets.
     private func findSimHashCandidates(_ items: [FeedItem]) -> [(Int, Int)] {
         var pairs: [(Int, Int)] = []
         for i in 0..<items.count {
             for j in (i + 1)..<items.count {
+                // Skip same-source pairs — clustering is cross-source only
+                guard items[i].sourceID != items[j].sourceID else { continue }
                 let dist = SimHash.hammingDistance(items[i].simhashValue, items[j].simhashValue)
                 if dist <= Self.simhashThreshold {
                     pairs.append((i, j))
@@ -108,7 +173,9 @@ final class SemanticClusterService: Sendable {
 
     // MARK: - Temporal Candidates
 
-    /// Finds pairs of unmatched items that are temporally proximate (within 2 hours).
+    /// Finds cross-source pairs of unmatched items that are temporally proximate (within 6 hours).
+    /// This catches same-story articles that have very different wording (high SimHash distance)
+    /// but were published around the same time by different outlets.
     private func findTemporalCandidates(
         _ unmatched: [FeedItem],
         allItems: [FeedItem]
@@ -122,12 +189,14 @@ final class SemanticClusterService: Sendable {
         }
 
         var pairs: [(Int, Int)] = []
-        let twoHours: TimeInterval = 2 * 3600
+        let sixHours: TimeInterval = 6 * 3600
 
         for i in 0..<unmatched.count {
             for j in (i + 1)..<unmatched.count {
+                // Cross-source only
+                guard unmatched[i].sourceID != unmatched[j].sourceID else { continue }
                 let timeDiff = abs(unmatched[i].publishedAt.timeIntervalSince(unmatched[j].publishedAt))
-                if timeDiff <= twoHours,
+                if timeDiff <= sixHours,
                    let idxI = indexMap[unmatched[i].id],
                    let idxJ = indexMap[unmatched[j].id] {
                     pairs.append((idxI, idxJ))
@@ -211,10 +280,13 @@ final class SemanticClusterService: Sendable {
 
     // MARK: - Pass 3: NER Entity Overlap
 
-    /// Filters pairs by requiring >= 2 shared named entities.
+    /// Filters pairs by shared named entities, with a bypass for high-confidence
+    /// embedding scores. When cosine similarity >= 0.75, the pair is confirmed
+    /// without NER — the semantic signal is strong enough on its own.
     private func filterByNEROverlap(
         _ pairs: [(Int, Int)],
-        items: [FeedItem]
+        items: [FeedItem],
+        embeddings: [Int: [Float]]
     ) -> [(Int, Int)] {
         // Cache entity extraction per item index
         var entityCache: [Int: Set<String>] = [:]
@@ -227,6 +299,15 @@ final class SemanticClusterService: Sendable {
         }
 
         return pairs.filter { (i, j) in
+            // High-confidence embeddings bypass NER entirely
+            if let vecA = embeddings[i], let vecB = embeddings[j] {
+                let similarity = Self.cosineSimilarity(vecA, vecB)
+                if similarity >= Self.highConfidenceEmbeddingThreshold {
+                    return true
+                }
+            }
+
+            // Borderline embedding scores require NER confirmation
             let entitiesA = entities(for: i)
             let entitiesB = entities(for: j)
             let shared = entitiesA.intersection(entitiesB)

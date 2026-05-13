@@ -134,6 +134,15 @@ final class RiverPipeline: @unchecked Sendable {
         }
         lastRateGateResult = rateGateResult
 
+        // Stage 3b — Repair cluster visibility.
+        // Rate gating may have hidden non-canonical cluster members because they
+        // belong to a different source with its own slot limit. Ensure all members
+        // of a cluster share the canonical item's river_visible status so the
+        // snapshot assembler can build a complete ClusterCard.
+        timer.time("Stage3b-ClusterVisibility") {
+            repairClusterVisibility()
+        }
+
         // Stage 4 — Decay Scoring
         let (agedOut, scoringMs) = timer.time("Stage4-DecayScoring") {
             decayService.scoreAllItems()
@@ -188,6 +197,44 @@ final class RiverPipeline: @unchecked Sendable {
             pipelineDurationMs: totalMs
         )
         snapshotPublisher.send(finalSnapshot)
+    }
+
+    // MARK: - Cluster Visibility Repair
+
+    /// Ensures non-canonical cluster members share their canonical item's visibility.
+    ///
+    /// Rate gating sets `river_visible` per-source, but clusters span multiple sources.
+    /// A non-canonical item from source B may be hidden by source B's slot limit even
+    /// though the canonical item from source A is visible. This breaks the cluster in
+    /// the snapshot assembler (needs count >= 2 visible items to build a ClusterCard).
+    ///
+    /// This method finds all clusters where the canonical is visible and ensures every
+    /// non-canonical member is also visible.
+    private func repairClusterVisibility() {
+        let cutoff = Date().addingTimeInterval(-12 * 3600) // match cluster window
+        let recentItems = store.fetchRecentItems(since: cutoff)
+
+        // Group by clusterID
+        var clusterBuckets: [UUID: [FeedItem]] = [:]
+        for item in recentItems where item.clusterID != nil {
+            clusterBuckets[item.clusterID!, default: []].append(item)
+        }
+
+        var toShow: [UUID] = []
+        for (_, members) in clusterBuckets {
+            guard members.count >= 2 else { continue }
+            let canonical = members.first(where: { $0.isCanonical })
+            // If canonical is visible, make all non-canonical members visible too
+            if canonical?.riverVisible == true {
+                for member in members where !member.isCanonical && !member.riverVisible {
+                    toShow.append(member.id)
+                }
+            }
+        }
+
+        if !toShow.isEmpty {
+            store.setRiverVisible(true, forItemIDs: toShow)
+        }
     }
 
     // MARK: - Maintenance
