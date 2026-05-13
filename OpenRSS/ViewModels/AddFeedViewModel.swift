@@ -98,6 +98,15 @@ final class AddFeedViewModel {
         hasFetchedSuccessfully = false
         fetchedTitle = ""
 
+        // Spotify show pages (open.spotify.com/show/…) are not RSS feeds.
+        // Spotify podcasts have separate RSS URLs — guide the user to find them.
+        if let host = rawURL.host, host.contains("open.spotify.com") ||
+            urlString.contains("open.spotify.com/show") {
+            fetchError = "Spotify show pages aren't RSS feeds. Open the show in a podcast app or search for its RSS feed URL (often found on the show's website)."
+            isFetching = false
+            return
+        }
+
         // Resolve YouTube channel URLs to their Atom RSS feed URL first.
         // After resolution, urlText is updated so Subscribe saves the correct RSS URL.
         var feedURL = rawURL

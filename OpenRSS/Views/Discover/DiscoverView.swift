@@ -26,6 +26,11 @@ struct DiscoverView: View {
     @State private var feedToAdd: CatalogFeed?        = nil
     @State private var selectedCategory: CatalogCategory? = nil
 
+    // MARK: - Dynamic Catalog
+
+    private let catalog = FeedCatalogService.shared
+    @State private var searchText = ""
+
     // MARK: - Subscribed URLs (observed via SwiftDataService)
 
     private var subscribedURLs: Set<String> {
@@ -34,6 +39,21 @@ struct DiscoverView: View {
 
     private var recommendedFeeds: [CatalogFeed] {
         RSSCatalog.recommendedFeeds(subscribedURLs: subscribedURLs)
+    }
+
+    // MARK: - Search Results
+
+    private var searchResults: [CatalogFeed] {
+        let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return [] }
+        return catalog.allFeeds.filter {
+            $0.name.lowercased().contains(query) ||
+            $0.description.lowercased().contains(query)
+        }
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     // MARK: - Body
@@ -113,11 +133,151 @@ struct DiscoverView: View {
 
     private var contentStack: some View {
         VStack(spacing: Design.Spacing.section) {
-            featuredSection
-            categoriesSection
-            recommendedSourcesSection
+            searchBar
+            if isSearching {
+                searchResultsSection
+            } else {
+                featuredSection
+                categoriesSection
+                recommendedSourcesSection
+            }
         }
         .padding(.top, Design.Spacing.edge)
+        .task { await catalog.loadIfNeeded() }
+    }
+
+    // MARK: - Search Bar
+
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+
+            TextField("Search \(catalog.allFeeds.count > 0 ? "\(catalog.allFeeds.count) feeds" : "feeds")…", text: $searchText)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                }
+                .buttonStyle(.plain)
+            } else if catalog.isLoading {
+                ProgressView()
+                    .scaleEffect(0.75)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Design.Colors.cardBackground(for: colorScheme))
+        .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+        .overlay(
+            RoundedRectangle(cornerRadius: Design.Radius.standard)
+                .stroke(Design.Colors.glassBorder(for: colorScheme), lineWidth: 1)
+        )
+        .padding(.horizontal, Design.Spacing.edge)
+    }
+
+    // MARK: - Search Results Section
+
+    private var searchResultsSection: some View {
+        VStack(alignment: .leading, spacing: Design.Spacing.edge) {
+            let results = searchResults
+
+            if catalog.isLoading && catalog.allFeeds.isEmpty {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Loading feed catalog…")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+            } else if results.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 28, weight: .light))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    Text("No feeds found for \"\(searchText)\"")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+            } else {
+                sectionHeader(
+                    title: "\(results.count) result\(results.count == 1 ? "" : "s")",
+                    icon: "magnifyingglass"
+                )
+
+                VStack(spacing: 0) {
+                    ForEach(Array(results.prefix(50).enumerated()), id: \.element.id) { index, feed in
+                        if index > 0 {
+                            Divider()
+                                .background(Design.Colors.glassBorder(for: colorScheme))
+                                .padding(.leading, Design.Spacing.edge + 56)
+                        }
+                        searchResultRow(feed)
+                    }
+                }
+                .background(Design.Colors.cardBackground(for: colorScheme).opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Design.Radius.standard)
+                        .stroke(Design.Colors.subtleBorder, lineWidth: 1)
+                )
+                .padding(.horizontal, Design.Spacing.edge)
+            }
+        }
+        .padding(.bottom, Design.Spacing.edge)
+    }
+
+    /// A feed row used inside search results — looks up category from the dynamic catalog.
+    private func searchResultRow(_ feed: CatalogFeed) -> some View {
+        let isSubscribed = subscribedURLs.contains(feed.feedURL.lowercased())
+        let cat = catalog.categories.first { $0.feeds.contains(feed) }
+                  ?? RSSCatalog.category(for: feed)
+
+        return HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill((cat?.color ?? Design.Colors.primary).opacity(0.12))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: cat?.icon ?? "dot.radiowaves.left.and.right")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(cat?.color ?? Design.Colors.primary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(feed.name)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+
+                if !feed.description.isEmpty {
+                    Text(feed.description)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                        .lineLimit(1)
+                } else if let catName = cat?.name {
+                    Text(catName)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                }
+            }
+
+            Spacer()
+
+            addButton(for: feed, isSubscribed: isSubscribed, compact: true)
+        }
+        .padding(.vertical, 11)
+        .padding(.horizontal, Design.Spacing.edge)
+        .contentShape(Rectangle())
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -208,12 +368,14 @@ struct DiscoverView: View {
     // ─────────────────────────────────────────────────────────────────────────
 
     private var categoriesSection: some View {
-        VStack(alignment: .leading, spacing: Design.Spacing.edge) {
+        let cats = catalog.categories.isEmpty ? RSSCatalog.categories : catalog.categories
+
+        return VStack(alignment: .leading, spacing: Design.Spacing.edge) {
             sectionHeader(title: "Categories", icon: "square.grid.2x2.fill")
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Design.Spacing.edge) {
-                    ForEach(RSSCatalog.categories) { cat in
+                    ForEach(cats) { cat in
                         categoryCard(cat)
                     }
                 }

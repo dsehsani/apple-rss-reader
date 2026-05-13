@@ -41,6 +41,7 @@ struct MyFeedsView: View {
     @State private var navigatedFolder: Category? = nil
     @State private var editableFolder: EditableFolderWrapper? = nil
     @State private var folderColorTick    = 0
+    @State private var showReorderSheet   = false
 
     // MARK: - Environment
 
@@ -87,6 +88,15 @@ struct MyFeedsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 14) {
+                        if !viewModel.folders.isEmpty {
+                            Button {
+                                showReorderSheet = true
+                            } label: {
+                                Image(systemName: "line.3.horizontal")
+                                    .font(.system(size: 16, weight: .medium))
+                            }
+                        }
+
                         Button {
                             withAnimation(Design.Animation.standard) {
                                 isSearching.toggle()
@@ -118,6 +128,9 @@ struct MyFeedsView: View {
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
+        }
+        .sheet(isPresented: $showReorderSheet) {
+            ReorderFoldersSheet(folders: viewModel.folders)
         }
         .alert("Delete Folder?", isPresented: $showDeleteAlert, presenting: folderToDelete) { folder in
             Button("Cancel", role: .cancel) { folderToDelete = nil }
@@ -166,6 +179,9 @@ struct MyFeedsView: View {
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
         }
+        .sheet(isPresented: $showReorderSheet) {
+            ReorderFoldersSheet(folders: viewModel.folders)
+        }
         .alert("Delete Folder?", isPresented: $showDeleteAlert, presenting: folderToDelete) { folder in
             Button("Cancel", role: .cancel) { folderToDelete = nil }
             Button("Delete", role: .destructive) {
@@ -193,6 +209,17 @@ struct MyFeedsView: View {
                 Spacer()
 
                 HStack(spacing: 14) {
+                    if !viewModel.folders.isEmpty {
+                        Button {
+                            showReorderSheet = true
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(Design.Colors.primaryText(for: colorScheme).opacity(0.85))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Button {
                         withAnimation(Design.Animation.standard) {
                             isSearching.toggle()

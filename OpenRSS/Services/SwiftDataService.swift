@@ -234,6 +234,39 @@ final class SwiftDataService: FeedDataService {
         loadFromSwiftData()
     }
 
+    /// Reorders folders by applying an `IndexSet` move — mirrors SwiftUI List `.onMove` semantics.
+    /// Updates each folder's `sortOrder` to match the new position, then persists.
+    @MainActor
+    func reorderFolders(from source: IndexSet, to destination: Int) {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FolderModel>(
+            sortBy: [SortDescriptor(\.sortOrder, order: .forward)]
+        )
+        guard var folders = try? context.fetch(descriptor) else { return }
+        folders.move(fromOffsets: source, toOffset: destination)
+        for (index, folder) in folders.enumerated() {
+            folder.sortOrder = index
+        }
+        try? context.save()
+        loadFromSwiftData()
+    }
+
+    /// Applies an explicit ordered list of folder UUIDs as the new sort order.
+    /// Called by ReorderFoldersSheet after the user drags folders into position.
+    @MainActor
+    func applyFolderOrder(_ orderedIDs: [UUID]) {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<FolderModel>()
+        guard let folders = try? context.fetch(descriptor) else { return }
+        for (index, id) in orderedIDs.enumerated() {
+            if let folder = folders.first(where: { $0.id == id }) {
+                folder.sortOrder = index
+            }
+        }
+        try? context.save()
+        loadFromSwiftData()
+    }
+
     /// Permanently deletes a folder (cascade-deletes all its feeds).
     @MainActor
     func deleteFolder(id: UUID) throws {

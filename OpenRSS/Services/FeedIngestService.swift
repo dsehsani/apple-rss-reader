@@ -98,7 +98,10 @@ final class FeedIngestService: Sendable {
     private func fetchWithConditionalGET(url: URL) async throws -> (Data?, Bool) {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("OpenRSS/2.0 (iOS; River)", forHTTPHeaderField: "User-Agent")
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            forHTTPHeaderField: "User-Agent"
+        )
         request.setValue(
             "application/rss+xml, application/atom+xml, application/json, text/xml, */*",
             forHTTPHeaderField: "Accept"
