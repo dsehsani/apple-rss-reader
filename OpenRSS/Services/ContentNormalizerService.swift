@@ -67,6 +67,10 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         let selectors: [String] = [
             // Structural noise — iframes are kept for video embed detection in mapElement
             "script", "style", "noscript",
+            // Embed-code blocks — podcast/media pages show copy-paste embed snippets in
+            // <textarea> elements; their content is raw HTML that SwiftSoup surfaces as
+            // visible text (e.g. "<iframe src=...>"). Strip before normalization.
+            "textarea",
             // Ad slots by role / aria label (exact, not substring)
             "[aria-label='advertisement']",
             "[aria-label='Advertisement']",
@@ -123,24 +127,56 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         return Self.avatarDomains.contains(where: { host.contains($0) || "\(host)\(path)".contains($0) })
     }
 
-    // MARK: - Ad-placeholder text filter
+    // MARK: - Ad-placeholder and media-player artifact text filter
 
-    /// Text strings that are pure ad artifacts — never real article content.
+    /// Text strings that are pure UI artifacts — never real article content.
+    /// All comparisons are exact-match (full text, lowercased + trimmed), so
+    /// "Duration of the summit was…" is NOT filtered — only a paragraph whose
+    /// entire text is exactly "duration" would match.
     private static let adPhrases: Set<String> = [
-        "advertisement",
-        "skip advertisement",
-        "skip ad",
-        "sponsored",
-        "paid content",
-        "continue reading below",
-        "story continues below advertisement",
-        "scroll to continue",
-        "content continues below"
+        // Ad slots
+        "advertisement", "skip advertisement", "skip ad",
+        "sponsored", "paid content",
+        "continue reading below", "story continues below advertisement",
+        "scroll to continue", "content continues below",
+        // Video / media player control labels (JS-rendered players captured by Readability)
+        "video player is loading", "video player is loading.",
+        "current time", "duration", "remaining time", "playback rate",
+        "loaded: 0%", "loaded 0%",
+        "stream type live", "stream type: live",
+        "seek to live", "seek to live, currently behind live",
+        "seek to live, currently playing live",
+        "mute", "unmute", "fullscreen", "quality levels",
+        // Podcast / audio player action labels
+        "transcript", "download", "embed",
     ]
 
-    /// Returns true if the entire text of an element is an ad placeholder.
+    /// Returns true if the entire text of an element is an ad placeholder or
+    /// a known media-player artifact label.
     private func isAdPlaceholder(_ text: String) -> Bool {
         Self.adPhrases.contains(text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    /// Returns true when the text matches a video player label that includes a
+    /// numeric value — e.g. "Current Time 0:00", "Duration 1:23", "Loaded: 5%".
+    /// The trailing-digit requirement prevents "Duration of the summit" from matching.
+    private static let videoPlayerArtifactRegex: NSRegularExpression? = try? NSRegularExpression(
+        pattern: #"^(current time|remaining time|duration|playback rate)\s+\d"#
+               + #"|^loaded[: ]+\d"#,
+        options: .caseInsensitive
+    )
+
+    private func isVideoPlayerArtifact(_ text: String) -> Bool {
+        guard let regex = Self.videoPlayerArtifactRegex else { return false }
+        let range = NSRange(text.startIndex..., in: text)
+        return regex.firstMatch(in: text, range: range) != nil
+    }
+
+    /// Returns true when the element's visible text is entity-decoded raw HTML —
+    /// e.g. a podcast embed snippet "&lt;iframe src=…&gt;" decoded to "<iframe src=…>".
+    /// Legitimate article text never starts with the character '<'.
+    private func isRawHTMLText(_ text: String) -> Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<")
     }
 
     // MARK: - Node Extraction
@@ -172,12 +208,14 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
             let level = Int(tag.dropFirst()) ?? 2
             let text = try plainText(el)
             guard !text.isEmpty, !isAdPlaceholder(text) else { return nil }
+            guard !isRawHTMLText(text) else { return nil }
             return .heading(level: level, text: text)
 
         // MARK: Paragraphs
         case "p":
             let text = try plainText(el)
             guard !text.isEmpty, !isAdPlaceholder(text) else { return nil }
+            guard !isVideoPlayerArtifact(text), !isRawHTMLText(text) else { return nil }
             return .paragraph(text: text)
 
         // MARK: Images

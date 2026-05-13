@@ -246,13 +246,33 @@ struct ArticleReaderView: View {
 
     // MARK: - Body Zone
 
+    /// Strips query parameters and URL fragments so CDN size variants of the
+    /// same image (e.g. ?width=1200 vs ?width=400) compare as equal.
+    private func normalizedImageKey(_ url: URL) -> String {
+        var c = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        c?.queryItems = nil
+        c?.fragment = nil
+        return c?.url?.absoluteString ?? url.absoluteString
+    }
+
     private var bodyZone: some View {
+        // Remove any .image node whose normalized URL matches the hero already
+        // shown in the header zone. Handles both freshly-extracted articles and
+        // cached articles stored before the pipeline-level dedup was introduced,
+        // and catches feeds (e.g. The Atlantic, NPR podcasts) where the first
+        // body image is the same as the og:image hero.
+        let heroKey = extracted.heroImageURL.map { normalizedImageKey($0) }
+        let displayNodes = extracted.nodes.filter { node in
+            guard case .image(let url, _) = node else { return true }
+            guard let key = heroKey else { return true }
+            return normalizedImageKey(url) != key
+        }
         // VStack (not LazyVStack) gives consistent width proposals to children.
         // LazyVStack has known layout quirks with fixedSize in scroll views,
         // causing children to report unconstrained widths that push the whole
         // container beyond screen width and shift the header text off the left edge.
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(Array(extracted.nodes.enumerated()), id: \.offset) { _, node in
+        return VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(displayNodes.enumerated()), id: \.offset) { _, node in
                 nodeView(for: node)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
