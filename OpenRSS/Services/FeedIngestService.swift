@@ -32,76 +32,127 @@ final class FeedIngestService: Sendable {
     ///   - sources: The user's subscribed feed sources.
     ///   - velocityOverrides: Manual velocity tier overrides keyed by source ID.
     /// - Returns: Array of new (deduplicated) FeedItems.
+    /// Maximum number of feeds fetched concurrently.
+    /// Keeps the network layer from overwhelming the device or triggering
+    /// server-side rate limits while still being dramatically faster than serial.
+    private static let maxConcurrentFetches = 6
+
     func ingest(
         sources: [Source],
         velocityOverrides: [UUID: VelocityTier] = [:]
     ) async -> [FeedItem] {
+
+        let enabledSources = sources.filter(\.isEnabled)
+        guard !enabledSources.isEmpty else { return [] }
+
+        // Fetch + parse all feeds concurrently (bounded by maxConcurrentFetches).
+        // Each child task returns (source, feedItems) or nil on failure.
+        let perSourceResults: [(Source, [FeedItem])] = await withTaskGroup(
+            of: (Source, [FeedItem])?.self,
+            returning: [(Source, [FeedItem])].self
+        ) { group in
+            // Semaphore-style throttle: add up to maxConcurrentFetches tasks initially,
+            // then add one more each time a task completes.
+            var sourceIterator = enabledSources.makeIterator()
+            var launched = 0
+
+            // Seed the group with the initial batch.
+            while launched < Self.maxConcurrentFetches, let source = sourceIterator.next() {
+                launched += 1
+                group.addTask { await self.fetchAndParse(source: source, velocityOverrides: velocityOverrides) }
+            }
+
+            var results: [(Source, [FeedItem])] = []
+            for await result in group {
+                if let result { results.append(result) }
+                // Launch next source (if any) to keep concurrency at the cap.
+                if let source = sourceIterator.next() {
+                    group.addTask { await self.fetchAndParse(source: source, velocityOverrides: velocityOverrides) }
+                }
+            }
+            return results
+        }
+
+        // Deduplicate, persist, and backfill — these touch SQLite so we do them
+        // sequentially to avoid contention on the write queue.
         var allNewItems: [FeedItem] = []
 
-        for source in sources where source.isEnabled {
-            // Upgrade http:// to https:// — iOS ATS blocks all http:// requests.
-            let urlString = source.feedURL.hasPrefix("http://")
-                ? "https://" + source.feedURL.dropFirst(7)
-                : source.feedURL
-            guard let feedURL = URL(string: urlString) else { continue }
+        for (source, feedItems) in perSourceResults {
+            let candidateIDs = Set(feedItems.map(\.id))
+            let existingIDs = store.existingItemIDs(from: candidateIDs)
+            let newItems = feedItems.filter { !existingIDs.contains($0.id) }
 
-            do {
-                let (data, changed) = try await fetchWithConditionalGET(url: feedURL)
-                guard changed, let data else { continue }
+            if !newItems.isEmpty {
+                store.upsertFeedItems(newItems)
+                print("✅ Inserted \(newItems.count) items from \(source.name)")
+                allNewItems.append(contentsOf: newItems)
+            }
 
-                let parsed = try await rssService.parseFeed(from: data)
-
-                // For YouTube feeds, use existing YouTube parser for supplemental data
-                var youtubeExtras: [String: YouTubeAtomParser.VideoMeta] = [:]
-                if YouTubeService.isYouTubeURL(feedURL) {
-                    youtubeExtras = YouTubeAtomParser().parse(data: data)
+            // Backfill audio_url for existing podcast items that pre-date the audio column.
+            let audioBackfill: [(id: UUID, audioURL: String)] = feedItems
+                .filter { existingIDs.contains($0.id) }
+                .compactMap { item in
+                    guard let url = item.audioURL else { return nil }
+                    return (id: item.id, audioURL: url)
                 }
+            if !audioBackfill.isEmpty {
+                store.updateAudioURLs(audioBackfill)
+            }
 
-                // Determine velocity tier
-                let tier = velocityOverrides[source.id]
-                    ?? inferVelocityTier(sourceID: source.id)
+            // Update velocity tier in affinity table
+            let tier = feedItems.first?.velocityTier ?? .article
+            updateSourceAffinity(source: source, tier: tier)
 
-                // Convert parsed articles to FeedItems
-                let feedItems = parsed.compactMap { p -> FeedItem? in
-                    convertToFeedItem(
-                        parsed: p,
-                        source: source,
-                        velocityTier: tier,
-                        youtubeExtras: youtubeExtras
-                    )
-                }
-
-                // Deduplicate against existing items in SQLite
-                let candidateIDs = Set(feedItems.map(\.id))
-                let existingIDs = store.existingItemIDs(from: candidateIDs)
-                let newItems = feedItems.filter { !existingIDs.contains($0.id) }
-
-                if !newItems.isEmpty {
-                    store.upsertFeedItems(newItems)
-                    print("✅ Inserted \(newItems.count) items from \(source.name)")
-                    allNewItems.append(contentsOf: newItems)
-                }
-
-                // Update velocity tier in affinity table
-                updateSourceAffinity(source: source, tier: tier)
-
-                // Pre-warm hero thumbnails for newly inserted items so the first
-                // scroll after a refresh paints from disk, not the network.
-                // For items missing a feed-provided imageURL, this also resolves
-                // the og:image first. Detached + bounded so the pipeline isn't
-                // blocked and we don't hammer external hosts.
-                if !newItems.isEmpty {
-                    Self.prewarmHeroes(for: newItems)
-                }
-
-            } catch {
-                // Failed to fetch or parse this source — continue with others.
-                print("❌ Failed to ingest \(source.name): \(error)")
-                continue
+            // Pre-warm hero thumbnails for newly inserted items.
+            if !newItems.isEmpty {
+                Self.prewarmHeroes(for: newItems)
             }
         }
 
         return allNewItems
+    }
+
+    // MARK: - Per-Source Fetch + Parse
+
+    /// Fetches and parses a single source. Returns nil on failure so other
+    /// sources in the TaskGroup are unaffected.
+    private func fetchAndParse(
+        source: Source,
+        velocityOverrides: [UUID: VelocityTier]
+    ) async -> (Source, [FeedItem])? {
+        let urlString = source.feedURL.hasPrefix("http://")
+            ? "https://" + source.feedURL.dropFirst(7)
+            : source.feedURL
+        guard let feedURL = URL(string: urlString) else { return nil }
+
+        do {
+            let (data, changed) = try await fetchWithConditionalGET(url: feedURL)
+            guard changed, let data else { return nil }
+
+            let parsed = try await rssService.parseFeed(from: data)
+
+            var youtubeExtras: [String: YouTubeAtomParser.VideoMeta] = [:]
+            if YouTubeService.isYouTubeURL(feedURL) {
+                youtubeExtras = YouTubeAtomParser().parse(data: data)
+            }
+
+            let tier = velocityOverrides[source.id]
+                ?? inferVelocityTier(sourceID: source.id)
+
+            let feedItems = parsed.compactMap { p -> FeedItem? in
+                convertToFeedItem(
+                    parsed: p,
+                    source: source,
+                    velocityTier: tier,
+                    youtubeExtras: youtubeExtras
+                )
+            }
+
+            return (source, feedItems)
+        } catch {
+            print("❌ Failed to ingest \(source.name): \(error)")
+            return nil
+        }
     }
 
     // MARK: - Conditional GET
@@ -197,6 +248,12 @@ final class FeedIngestService: Sendable {
                 .flatMap { YouTubeService.thumbnailURL(videoID: $0)?.absoluteString }
         }
 
+        // Podcast episodes (items with audio enclosures) use .essay tier regardless of
+        // posting frequency: 168h half-life and unlimited slot limit. This prevents them from
+        // ageing out in 2 days and avoids rate-gating on first subscribe (when many episodes
+        // are fetched at once). VelocityTier.displayName confirms: .evergreen = "Evergreen / Podcasts".
+        let effectiveTier: VelocityTier = parsed.audioURL != nil ? .essay : velocityTier
+
         return FeedItem(
             id: id,
             sourceID: source.id,
@@ -207,8 +264,9 @@ final class FeedIngestService: Sendable {
             excerpt: excerpt,
             imageURL: imageURL,
             audioURL: parsed.audioURL,
+            videoURL: parsed.videoURL,
             author: parsed.author,
-            velocityTier: velocityTier,
+            velocityTier: effectiveTier,
             simhashValue: SimHash.compute(title)
         )
     }

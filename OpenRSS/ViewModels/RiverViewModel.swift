@@ -391,6 +391,13 @@ final class RiverViewModel {
         defer { isRefreshing = false }
 
         let sources = dataService.sources
+
+        // #region agent log
+        DebugLog.log("H7", "RiverViewModel.swift:393", "river.refresh.start", [
+            "enabledSources": sources.filter(\.isEnabled).count
+        ])
+        // #endregion
+
         await pipeline.runCycle(sources: sources)
 
         // Sync the full 30-day cache back to SwiftDataService so source/folder
@@ -401,6 +408,15 @@ final class RiverViewModel {
                 guard let source = sds.source(for: feedItem.sourceID) else { return nil }
                 return feedItem.toArticle(categoryID: source.categoryID)
             }
+            // #region agent log
+            let vimeoArticles = articles.filter { $0.articleURL.lowercased().contains("vimeo.com") }
+            if !vimeoArticles.isEmpty {
+                DebugLog.log("H8", "RiverViewModel.swift:404", "river.sync.vimeoHeroStats", [
+                    "vimeoArticleCount": vimeoArticles.count,
+                    "nilImageURLAfterToArticle": vimeoArticles.filter { $0.imageURL == nil }.count
+                ])
+            }
+            // #endregion
             sds.syncArticles(articles)
         }
 

@@ -13,13 +13,13 @@ import os
 /// Central constants for cache retention and date validation.
 enum CachePolicy {
     /// How long read, non-bookmarked articles stay in the cache (days).
-    nonisolated(unsafe) static let cacheRetentionDays = 30
+    static let cacheRetentionDays = 30
     /// How many days of articles the UI displays by default.
-    nonisolated(unsafe) static let displayWindowDays = 7
+    static let displayWindowDays = 7
     /// Maximum hours into the future a publication date may be before it's rejected.
-    nonisolated(unsafe) static let maxFutureDateHours = 48
+    static let maxFutureDateHours = 48
     /// Earliest plausible publication date for an RSS article.
-    nonisolated(unsafe) static let minimumValidDate: Date = {
+    static let minimumValidDate: Date = {
         var c = DateComponents()
         c.year = 2000; c.month = 1; c.day = 1
         return Calendar.current.date(from: c)!
@@ -36,6 +36,8 @@ struct Article: Identifiable, Hashable, Codable {
     let imageURL: String?
     /// Audio enclosure URL from the RSS feed (e.g. podcast episodes). Nil for most articles.
     let audioURL: String?
+    /// Video enclosure URL from the RSS feed (e.g. video podcasts, video news segments). Nil for most articles.
+    let videoURL: String?
     let articleURL: String
     let publishedAt: Date
     /// Timestamp when this article was first fetched from the network.
@@ -67,6 +69,7 @@ struct Article: Identifiable, Hashable, Codable {
         categoryID: UUID,
         imageURL: String? = nil,
         audioURL: String? = nil,
+        videoURL: String? = nil,
         articleURL: String = "https://example.com",
         publishedAt: Date = Date(),
         fetchedAt: Date = Date(),
@@ -86,6 +89,7 @@ struct Article: Identifiable, Hashable, Codable {
         self.categoryID = categoryID
         self.imageURL = imageURL
         self.audioURL = audioURL
+        self.videoURL = videoURL
         self.articleURL = articleURL
         self.publishedAt = publishedAt
         self.fetchedAt = fetchedAt
@@ -100,7 +104,7 @@ struct Article: Identifiable, Hashable, Codable {
     }
 
     // Custom decoder so that cached JSON written before `isPaywalled`,
-    // `fetchedAt`, or `audioURL` existed still decodes correctly.
+    // `fetchedAt`, `audioURL`, or `videoURL` existed still decodes correctly.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id              = try c.decode(UUID.self,   forKey: .id)
@@ -110,6 +114,7 @@ struct Article: Identifiable, Hashable, Codable {
         categoryID      = try c.decode(UUID.self,   forKey: .categoryID)
         imageURL        = try c.decodeIfPresent(String.self, forKey: .imageURL)
         audioURL        = try c.decodeIfPresent(String.self, forKey: .audioURL)
+        videoURL        = try c.decodeIfPresent(String.self, forKey: .videoURL)
         articleURL      = try c.decode(String.self, forKey: .articleURL)
         publishedAt     = try c.decode(Date.self,   forKey: .publishedAt)
         // Backward compat: older JSON lacks fetchedAt — fall back to publishedAt.
@@ -179,6 +184,18 @@ extension Article {
         let clusterSignal = clusterSize > 1 ? min(Double(clusterSize) / 10.0, 1.0) : 0.0
         let weight = preferUniqueStories ? -0.4 : 0.4
         return decayScore * (1.0 + weight * clusterSignal)
+    }
+}
+
+// MARK: - Video Detection
+
+extension Article {
+    /// True when the article link points to video content, detected from path segments
+    /// used by major publishers: /videos/ (BBC), /video/ (generic), /watch/video/ (Sky Sports).
+    var isVideo: Bool {
+        guard let url = URL(string: articleURL) else { return false }
+        let path = url.path.lowercased()
+        return path.contains("/videos/") || path.contains("/watch/video/") || path.contains("/video/")
     }
 }
 

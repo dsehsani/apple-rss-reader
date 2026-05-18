@@ -57,6 +57,12 @@ final class RiverPipeline: @unchecked Sendable {
     /// hopping back to the main actor.
     private var lastPreferUniqueStories: [UUID: Bool] = [:]
 
+    /// Affinity scores frozen at the first pipeline cycle of this session.
+    /// Used by rate gating so that reading articles mid-session doesn't change
+    /// slot limits and cause DigestCards to flicker or disappear.
+    /// Reset on next app launch (new RiverPipeline instance).
+    private var sessionAffinitySnapshot: [UUID: SourceAffinityRecord]?
+
     private init() {}
 
     // MARK: - Public API
@@ -86,20 +92,56 @@ final class RiverPipeline: @unchecked Sendable {
         )
 
         // Stage 1 — Ingest
-        let (_, _) = await timer.time("Stage1-Ingest") {
+        let (ingestResult, _) = await timer.time("Stage1-Ingest") {
             await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
         }
+
+        // #region agent log
+        let ingestBySource: [[String: Any]] = Dictionary(grouping: ingestResult, by: \.sourceID)
+            .map { sid, items in
+                let name = sources.first { $0.id == sid }?.name ?? sid.uuidString
+                return [
+                    "source": name,
+                    "newCount": items.count,
+                    "tier": items.first?.velocityTier.rawValue ?? "n/a"
+                ]
+            }
+        DebugLog.log("H4", "RiverPipeline.swift:91", "pipeline.stage1.ingest", [
+            "newItemsTotal": ingestResult.count,
+            "sourcesAttempted": sources.filter(\.isEnabled).count,
+            "perSource": ingestBySource
+        ])
+        // #endregion
 
         // Stage 2 — Semantic Clustering
         let (_, _) = timer.time("Stage2-Clustering") {
             clusterService.clusterRecentItems()
         }
 
+        // Freeze affinity scores on the first pipeline cycle of this session.
+        // Subsequent cycles reuse the same snapshot so that reading articles
+        // mid-session doesn't shift slot limits and cause DigestCards to vanish.
+        if sessionAffinitySnapshot == nil {
+            let allAffinities = store.fetchAllAffinities()
+            sessionAffinitySnapshot = Dictionary(
+                uniqueKeysWithValues: allAffinities.map { ($0.sourceID, $0) }
+            )
+        }
+
         // Stage 3 — Rate Gating
         let (rateGateResult, _) = timer.time("Stage3-RateGate") {
-            rateGateService.applyRateGate()
+            rateGateService.applyRateGate(affinitySnapshot: sessionAffinitySnapshot)
         }
         lastRateGateResult = rateGateResult
+
+        // Stage 3b — Repair cluster visibility.
+        // Rate gating may have hidden non-canonical cluster members because they
+        // belong to a different source with its own slot limit. Ensure all members
+        // of a cluster share the canonical item's river_visible status so the
+        // snapshot assembler can build a complete ClusterCard.
+        timer.time("Stage3b-ClusterVisibility") {
+            repairClusterVisibility()
+        }
 
         // Stage 4 — Decay Scoring
         let (agedOut, scoringMs) = timer.time("Stage4-DecayScoring") {
@@ -155,6 +197,44 @@ final class RiverPipeline: @unchecked Sendable {
             pipelineDurationMs: totalMs
         )
         snapshotPublisher.send(finalSnapshot)
+    }
+
+    // MARK: - Cluster Visibility Repair
+
+    /// Ensures non-canonical cluster members share their canonical item's visibility.
+    ///
+    /// Rate gating sets `river_visible` per-source, but clusters span multiple sources.
+    /// A non-canonical item from source B may be hidden by source B's slot limit even
+    /// though the canonical item from source A is visible. This breaks the cluster in
+    /// the snapshot assembler (needs count >= 2 visible items to build a ClusterCard).
+    ///
+    /// This method finds all clusters where the canonical is visible and ensures every
+    /// non-canonical member is also visible.
+    private func repairClusterVisibility() {
+        let cutoff = Date().addingTimeInterval(-12 * 3600) // match cluster window
+        let recentItems = store.fetchRecentItems(since: cutoff)
+
+        // Group by clusterID
+        var clusterBuckets: [UUID: [FeedItem]] = [:]
+        for item in recentItems where item.clusterID != nil {
+            clusterBuckets[item.clusterID!, default: []].append(item)
+        }
+
+        var toShow: [UUID] = []
+        for (_, members) in clusterBuckets {
+            guard members.count >= 2 else { continue }
+            let canonical = members.first(where: { $0.isCanonical })
+            // If canonical is visible, make all non-canonical members visible too
+            if canonical?.riverVisible == true {
+                for member in members where !member.isCanonical && !member.riverVisible {
+                    toShow.append(member.id)
+                }
+            }
+        }
+
+        if !toShow.isEmpty {
+            store.setRiverVisible(true, forItemIDs: toShow)
+        }
     }
 
     // MARK: - Maintenance

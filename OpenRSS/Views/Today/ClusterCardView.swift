@@ -60,20 +60,31 @@ struct ClusterCardView: View {
             onArticleTap?(cluster.canonicalItem)
         }
         .task(id: cluster.canonicalItem.id) {
-            guard cluster.canonicalItem.imageURL == nil else { return }
-            if let cached = await OGImageService.shared.cachedImageURL(for: cluster.canonicalItem.link.absoluteString) {
+            // Skip OGImageService only when the feed provided a real (non-GIF) image URL.
+            // GIF URLs are channel-level logos (e.g. ESPN) — treat them as absent so we
+            // fetch the real per-article og:image from the article page instead.
+            let imageURL = cluster.canonicalItem.imageURL
+            if let imgURL = imageURL,
+               !imgURL.lowercased().hasSuffix(".gif") {
+                return
+            }
+            let pageURL = cluster.canonicalItem.link.absoluteString
+            if let cached = await OGImageService.shared.cachedImageURL(for: pageURL) {
                 ogImageURL = cached
                 return
             }
-            await OGImageService.shared.prefetch(articleURL: cluster.canonicalItem.link.absoluteString)
-            ogImageURL = await OGImageService.shared.cachedImageURL(for: cluster.canonicalItem.link.absoluteString)
+            await OGImageService.shared.prefetch(articleURL: pageURL)
+            ogImageURL = await OGImageService.shared.cachedImageURL(for: pageURL)
         }
     }
 
     // MARK: - Subviews
 
     private var heroImage: some View {
-        let displayURL = cluster.canonicalItem.imageURL ?? ogImageURL
+        // GIF URLs are channel-level logos (e.g. ESPN) — treat as absent so ogImageURL is used.
+        let rssImage = (cluster.canonicalItem.imageURL?.lowercased().hasSuffix(".gif") == true)
+            ? nil : cluster.canonicalItem.imageURL
+        let displayURL = rssImage ?? ogImageURL
         return CachedImageView(
             url: displayURL.flatMap(URL.init(string:)),
             pointSize: CGSize(width: 400, height: 180),

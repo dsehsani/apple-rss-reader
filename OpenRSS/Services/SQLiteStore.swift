@@ -74,13 +74,15 @@ final class SQLiteStore: Sendable {
                 river_visible    INTEGER DEFAULT 1,
                 simhash_value    INTEGER DEFAULT 0,
                 embedding_vector BLOB,
-                audio_url        TEXT
+                audio_url        TEXT,
+                video_url        TEXT
             )
         """)
 
-        // Lightweight migration: add audio_url to pre-existing tables.
-        // SQLite returns "duplicate column name" if it already exists; ignore.
+        // Lightweight migrations: add columns to pre-existing tables.
+        // SQLite returns "duplicate column name" if a column already exists; ignore.
         execute("ALTER TABLE feed_items ADD COLUMN audio_url TEXT")
+        execute("ALTER TABLE feed_items ADD COLUMN video_url TEXT")
 
         execute("""
             CREATE TABLE IF NOT EXISTS source_affinity (
@@ -120,8 +122,8 @@ final class SQLiteStore: Sendable {
                 INSERT OR REPLACE INTO feed_items
                 (id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                  cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                 simhash_value, embedding_vector, audio_url)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                 simhash_value, embedding_vector, audio_url, video_url)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
@@ -153,7 +155,32 @@ final class SQLiteStore: Sendable {
                 // embedding_vector: nil for Phase 2a
                 sqlite3_bind_null(stmt, 17)
                 bindOptionalText(stmt, 18, item.audioURL)
+                bindOptionalText(stmt, 19, item.videoURL)
 
+                sqlite3_step(stmt)
+            }
+            execute("COMMIT")
+        }
+    }
+
+    /// Backfills audio_url for existing items where it is currently NULL.
+    /// Only updates rows where audio_url IS NULL to avoid overwriting intentional nulls.
+    func updateAudioURLs(_ updates: [(id: UUID, audioURL: String)]) {
+        guard !updates.isEmpty else { return }
+        queue.sync {
+            execute("BEGIN TRANSACTION")
+            let sql = "UPDATE feed_items SET audio_url = ? WHERE id = ? AND audio_url IS NULL"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
+                execute("ROLLBACK")
+                return
+            }
+            defer { sqlite3_finalize(stmt) }
+            for update in updates {
+                sqlite3_reset(stmt)
+                sqlite3_clear_bindings(stmt)
+                bindText(stmt, 1, update.audioURL)
+                bindText(stmt, 2, update.id.uuidString)
                 sqlite3_step(stmt)
             }
             execute("COMMIT")
@@ -191,7 +218,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE river_visible = 1 AND aged_out = 0
             ORDER BY relevance_score DESC
@@ -217,10 +244,37 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE river_visible = 1 AND published_at >= ?
             ORDER BY relevance_score DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, cutoff)
+
+        var items: [FeedItem] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let item = feedItem(from: stmt) {
+                items.append(item)
+            }
+        }
+        return items
+    }
+
+    /// Fetches all non-aged-out items within the retention window regardless of river_visible.
+    /// Used by RateGateService.applyRateGate so visibility can be fully re-evaluated each
+    /// cycle — previously hidden items are reconsidered when slot limits change.
+    func fetchItemsForRateGate(days: Int = CachePolicy.cacheRetentionDays) -> [FeedItem] {
+        let cutoff = Int64(Date().addingTimeInterval(-Double(days) * 86400).timeIntervalSince1970)
+        let sql = """
+            SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
+                   cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
+                   simhash_value, audio_url, video_url
+            FROM feed_items
+            WHERE aged_out = 0 AND fetched_at >= ?
+            ORDER BY fetched_at DESC
         """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
@@ -243,7 +297,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE published_at >= ?
             ORDER BY published_at DESC
@@ -267,7 +321,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE source_id = ?
             ORDER BY published_at DESC
@@ -297,21 +351,34 @@ final class SQLiteStore: Sendable {
     }
 
     /// Returns the set of existing item IDs from a given candidate set.
+    /// Uses a single SELECT … IN (…) query for batch efficiency.
     func existingItemIDs(from candidates: Set<UUID>) -> Set<UUID> {
         guard !candidates.isEmpty else { return [] }
-        // For small sets, query individually. For large sets, use IN clause.
-        var existing = Set<UUID>()
-        let sql = "SELECT 1 FROM feed_items WHERE id = ? LIMIT 1"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
-        defer { sqlite3_finalize(stmt) }
 
-        for candidate in candidates {
-            sqlite3_reset(stmt)
-            sqlite3_clear_bindings(stmt)
-            bindText(stmt, 1, candidate.uuidString)
-            if sqlite3_step(stmt) == SQLITE_ROW {
-                existing.insert(candidate)
+        let candidateArray = Array(candidates)
+        var existing = Set<UUID>()
+
+        // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
+        // Process in chunks to stay under that limit.
+        let chunkSize = 500
+        for chunkStart in stride(from: 0, to: candidateArray.count, by: chunkSize) {
+            let chunkEnd = min(chunkStart + chunkSize, candidateArray.count)
+            let chunk = candidateArray[chunkStart..<chunkEnd]
+            let placeholders = chunk.map { _ in "?" }.joined(separator: ",")
+            let sql = "SELECT id FROM feed_items WHERE id IN (\(placeholders))"
+
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { continue }
+            defer { sqlite3_finalize(stmt) }
+
+            for (i, candidate) in chunk.enumerated() {
+                bindText(stmt, Int32(i + 1), candidate.uuidString)
+            }
+
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                if let idStr = columnText(stmt, 0), let uuid = UUID(uuidString: idStr) {
+                    existing.insert(uuid)
+                }
             }
         }
         return existing
@@ -322,7 +389,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE aged_out = 0
             ORDER BY published_at DESC
@@ -342,15 +409,19 @@ final class SQLiteStore: Sendable {
 
     // MARK: - Clustering (Phase 2b)
 
-    /// Fetches items published within the given time window, not aged out.
+    /// Fetches visible items within the given time window, not aged out.
+    /// Uses `fetched_at` instead of `published_at` so that articles from newly
+    /// subscribed feeds (which may have old publish dates) are still eligible
+    /// for clustering on their first pipeline cycle.
+    /// Filters by `river_visible = 1` so deduped items don't enter clustering.
     func fetchRecentItems(since cutoff: Date) -> [FeedItem] {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
-            WHERE aged_out = 0 AND published_at >= ?
-            ORDER BY published_at DESC
+            WHERE aged_out = 0 AND river_visible = 1 AND fetched_at >= ?
+            ORDER BY fetched_at DESC
         """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
@@ -425,7 +496,7 @@ final class SQLiteStore: Sendable {
         let sql = """
             SELECT id, source_id, title, link, published_at, fetched_at, excerpt, image_url, author,
                    cluster_id, is_canonical, velocity_tier, relevance_score, aged_out, river_visible,
-                   simhash_value, audio_url
+                   simhash_value, audio_url, video_url
             FROM feed_items
             WHERE cluster_id = ?
             ORDER BY published_at ASC
@@ -641,25 +712,27 @@ final class SQLiteStore: Sendable {
         return Array(nonCurrentWindows)
     }
 
-    /// Sets river_visible for a batch of item IDs.
+    /// Sets river_visible for a batch of item IDs using batched IN clauses.
     func setRiverVisible(_ visible: Bool, forItemIDs ids: [UUID]) {
         guard !ids.isEmpty else { return }
+        let visibleInt = visible ? 1 : 0
         queue.sync {
             execute("BEGIN TRANSACTION")
-            let sql = "UPDATE feed_items SET river_visible = ? WHERE id = ?"
-            var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else {
-                execute("ROLLBACK")
-                return
-            }
-            defer { sqlite3_finalize(stmt) }
+            // Process in chunks to stay under SQLITE_MAX_VARIABLE_NUMBER (999).
+            let chunkSize = 500
+            for chunkStart in stride(from: 0, to: ids.count, by: chunkSize) {
+                let chunkEnd = min(chunkStart + chunkSize, ids.count)
+                let chunk = ids[chunkStart..<chunkEnd]
+                let placeholders = chunk.map { _ in "?" }.joined(separator: ",")
+                let sql = "UPDATE feed_items SET river_visible = \(visibleInt) WHERE id IN (\(placeholders))"
 
-            let visibleInt: Int32 = visible ? 1 : 0
-            for id in ids {
-                sqlite3_reset(stmt)
-                sqlite3_clear_bindings(stmt)
-                sqlite3_bind_int(stmt, 1, visibleInt)
-                bindText(stmt, 2, id.uuidString)
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { continue }
+                defer { sqlite3_finalize(stmt) }
+
+                for (i, id) in chunk.enumerated() {
+                    bindText(stmt, Int32(i + 1), id.uuidString)
+                }
                 sqlite3_step(stmt)
             }
             execute("COMMIT")
@@ -718,6 +791,7 @@ final class SQLiteStore: Sendable {
         let riverVisible = sqlite3_column_int(stmt, 14) != 0
         let simhash = UInt64(bitPattern: sqlite3_column_int64(stmt, 15))
         let audioURL = columnText(stmt, 16)
+        let videoURL = columnText(stmt, 17)
 
         return FeedItem(
             id: id,
@@ -729,6 +803,7 @@ final class SQLiteStore: Sendable {
             excerpt: excerpt,
             imageURL: imageURL,
             audioURL: audioURL,
+            videoURL: videoURL,
             author: author,
             clusterID: clusterID,
             isCanonical: isCanonical,

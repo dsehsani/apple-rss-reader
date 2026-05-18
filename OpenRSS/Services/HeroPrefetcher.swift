@@ -106,7 +106,12 @@ nonisolated enum HeroPrefetcher {
     /// Silent on every error — this is best-effort prefetch.
     private static func processOne(_ input: HeroInput, pointSize: CGSize) async {
         let resolvedString: String?
-        if let direct = input.imageURL, !direct.isEmpty {
+        // Treat GIF imageURLs as absent — they are channel-level logos (e.g. ESPN),
+        // not per-article images. Fall through to OGImageService to get the real one.
+        let directImage = input.imageURL.flatMap { url in
+            url.lowercased().hasSuffix(".gif") ? nil : url
+        }
+        if let direct = directImage, !direct.isEmpty {
             resolvedString = direct
         } else {
             // Use OGImageService — its negative cache and dedup keep this cheap.

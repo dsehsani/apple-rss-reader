@@ -1,0 +1,19 @@
+# API keys — never commit real credentials
+APIKeys.swift
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+OpenRSS.xcodeproj/project.xcworkspace/xcuserdata/

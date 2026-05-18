@@ -31,7 +31,10 @@ final class SwiftDataService: FeedDataService {
 
     // init() is nonisolated (no @MainActor on the class), so this is fine.
     // Methods that touch ModelContext are individually marked @MainActor.
-    static let shared = SwiftDataService()
+    // `nonisolated` overrides Swift 6's default of inferring static lets as
+    // MainActor-isolated, which would otherwise break default-argument access
+    // from non-isolated callers (e.g. `init(_: = .shared)`).
+    nonisolated static let shared = SwiftDataService()
 
     // MARK: - FeedDataService — Observable Properties
 
@@ -119,6 +122,7 @@ final class SwiftDataService: FeedDataService {
                 excerpt: article.excerpt,
                 imageURL: article.imageURL,
                 audioURL: article.audioURL,
+                videoURL: article.videoURL,
                 author: nil,
                 velocityTier: .article,
                 simhashValue: SimHash.compute(article.title)
@@ -452,6 +456,13 @@ final class SwiftDataService: FeedDataService {
         var newArticles: [Article] = []
         var seen = Set<String>()
 
+        // #region agent log
+        DebugLog.log("H1", "SwiftDataService.swift:454", "refreshAllFeeds.start", [
+            "enabledSources": sources.filter(\.isEnabled).count,
+            "existingArticles": self.articles.count
+        ])
+        // #endregion
+
         for source in sources where source.isEnabled {
             // Upgrade http:// to https:// — iOS ATS blocks http:// requests.
             let feedURLString = source.feedURL.hasPrefix("http://")
@@ -515,6 +526,7 @@ final class SwiftDataService: FeedDataService {
                         categoryID: source.categoryID,
                         imageURL: imageURL,
                         audioURL: p.audioURL,
+                        videoURL: p.videoURL,
                         articleURL: linkKey.isEmpty ? "https://example.com" : linkKey,
                         publishedAt: published,
                         isRead: false,
@@ -523,14 +535,56 @@ final class SwiftDataService: FeedDataService {
                 }
                 newArticles.append(contentsOf: converted)
 
+                // #region agent log
+                let titles = converted.prefix(3).map { "\($0.title) | \($0.publishedAt)" }
+                DebugLog.log("H1", "SwiftDataService.swift:529", "refreshAllFeeds.source", [
+                    "source": source.name,
+                    "feedURL": source.feedURL,
+                    "parsedCount": parsed.count,
+                    "convertedCount": converted.count,
+                    "firstTitles": Array(titles)
+                ])
+                // #endregion
+
+                // #region agent log
+                let vimeoItems = converted.filter { $0.articleURL.lowercased().contains("vimeo.com") }
+                if !vimeoItems.isEmpty {
+                    DebugLog.log("H6", "SwiftDataService.swift:548", "refreshAllFeeds.vimeoImageStats", [
+                        "source": source.name,
+                        "vimeoTotal": vimeoItems.count,
+                        "vimeoNilImageURL": vimeoItems.filter { $0.imageURL == nil }.count
+                    ])
+                }
+                // #endregion
+
             } catch {
                 // Failed to fetch source; continue with remaining feeds
+                // #region agent log
+                DebugLog.log("H1", "SwiftDataService.swift:531", "refreshAllFeeds.source.error", [
+                    "source": source.name,
+                    "error": String(describing: error)
+                ])
+                // #endregion
             }
 
             try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s throttle
         }
 
         newArticles.sort { $0.publishedAt > $1.publishedAt }
+
+        // #region agent log
+        let bySource = Dictionary(grouping: newArticles, by: \.sourceID).mapValues(\.count)
+        let sourceCounts: [[String: Any]] = bySource.map { sid, count in
+            let name = self.sources.first { $0.id == sid }?.name ?? sid.uuidString
+            return ["source": name, "count": count]
+        }
+        DebugLog.log("H2", "SwiftDataService.swift:543", "refreshAllFeeds.totals", [
+            "newArticlesTotal": newArticles.count,
+            "willReplaceArray": !newArticles.isEmpty,
+            "previousArticlesCount": self.articles.count,
+            "perSource": sourceCounts
+        ])
+        // #endregion
 
         if !newArticles.isEmpty {
             // Cluster related articles before displaying
@@ -625,7 +679,9 @@ final class SwiftDataService: FeedDataService {
     }
 
     /// Returns the combined on-disk size of all caches in bytes.
-    func cacheSize() -> Int64 {
+    /// Nonisolated so it can run on a background task — only touches URLCache and
+    /// FileManager, never the MainActor-isolated stored properties on this class.
+    nonisolated func cacheSize() -> Int64 {
         var total = Int64(URLCache.shared.currentDiskUsage)
 
         let cacheDir = FileManager.default

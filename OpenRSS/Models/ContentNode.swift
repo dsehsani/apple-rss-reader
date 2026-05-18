@@ -33,4 +33,8 @@ enum ContentNode: Codable, Sendable {
 
     /// A data table with an optional header row and data rows.
     case table(headers: [String], rows: [[String]])
+
+    /// An embedded video (YouTube, Vimeo, BBC, HTML5 <video>, etc.).
+    /// `url` is the watchable URL to open; `thumbnailURL` is an optional preview image.
+    case videoEmbed(url: URL, thumbnailURL: URL?)
 }

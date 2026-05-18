@@ -36,117 +36,190 @@ final class RateGateService: Sendable {
 
     // MARK: - Public API
 
-    /// Applies rate-gating to all active, river-visible items for the current calendar day.
+    /// Applies rate-gating across the full retention window.
     ///
+    /// This method is idempotent: every run re-evaluates ALL non-aged-out items
+    /// (not just today's) and writes the correct `river_visible` value for each,
+    /// restoring previously hidden items when slot limits have changed.
+    ///
+    /// Items are grouped by `(sourceID, calendarDay of fetchedAt)`. The slot limit
+    /// is enforced per day-group. DigestCards and NudgeCards are only emitted for
+    /// the current calendar day so retroactive UI clutter is avoided.
+    ///
+    /// - Parameter affinitySnapshot: Pre-fetched affinity scores frozen at session start.
+    ///   When provided, rate gating uses these scores instead of reading live from SQLite,
+    ///   which prevents DigestCards from flickering mid-session as the user reads articles.
+    ///   Pass `nil` to read live scores (legacy behaviour).
     /// - Returns: A `RateGateResult` containing digest cards, nudge cards, and hidden item IDs.
-    func applyRateGate() -> RateGateResult {
+    func applyRateGate(affinitySnapshot: [UUID: SourceAffinityRecord]? = nil) -> RateGateResult {
         let now = Date()
         let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: now)
+        let todayStart = calendar.startOfDay(for: now)
 
-        // Fetch all active river-visible items
-        let allItems = store.fetchRiverItems()
+        // Fetch all non-aged-out items regardless of river_visible so previously
+        // hidden items can have their visibility restored when limits change.
+        let allItems = store.fetchItemsForRateGate()
 
-        // Group items by source
-        var itemsBySource: [UUID: [FeedItem]] = [:]
+        // Group: sourceID -> (calendarDayStart -> [item])
+        var grouped: [UUID: [Date: [FeedItem]]] = [:]
         for item in allItems {
-            itemsBySource[item.sourceID, default: []].append(item)
+            let day = calendar.startOfDay(for: item.fetchedAt)
+            grouped[item.sourceID, default: [:]][day, default: []].append(item)
         }
 
+        var shouldShow = Set<UUID>()
+        var shouldHide = Set<UUID>()
         var digestCards: [DigestCard] = []
         var nudgeCards: [NudgeCard] = []
-        var hiddenItemIDs = Set<UUID>()
 
-        for (sourceID, items) in itemsBySource {
-            // Filter to items from the current calendar day
-            let todayItems = items.filter { $0.fetchedAt >= startOfDay }
-                .sorted { $0.publishedAt < $1.publishedAt }
-
-            guard !todayItems.isEmpty else { continue }
-
-            // Determine effective slot limit
-            let velocityTier = todayItems.first?.velocityTier ?? .article
-            let defaultLimit = velocityTier.defaultSlotLimit
+        for (sourceID, byDay) in grouped {
+            // Use the most-recent day's sample item for the velocity tier so
+            // re-classified feeds have their new tier reflected immediately.
+            let mostRecentDay = byDay.keys.max() ?? todayStart
+            let sampleTier = byDay[mostRecentDay]?.first?.velocityTier ?? .article
+            let defaultLimit = sampleTier.defaultSlotLimit
             let effectiveLimit = computeEffectiveLimit(
                 defaultLimit: defaultLimit,
-                sourceID: sourceID
+                sourceID: sourceID,
+                affinitySnapshot: affinitySnapshot
             )
 
-            // Apply slot limit — items beyond the limit become overflow
-            if todayItems.count > effectiveLimit && effectiveLimit < Int.max {
-                let visibleItems = Array(todayItems.prefix(effectiveLimit))
-                let overflowItems = Array(todayItems.dropFirst(effectiveLimit))
+            for (day, dayItems) in byDay {
+                let sorted = dayItems.sorted { $0.publishedAt > $1.publishedAt }
 
-                // Mark overflow items as hidden
-                let overflowIDs = overflowItems.map(\.id)
-                hiddenItemIDs.formUnion(overflowIDs)
+                // Cluster-aware rate gating: canonical items and their cluster
+                // members count as a single unit toward the slot limit. Non-canonical
+                // clustered items never consume a slot — they're bundled into the
+                // cluster card alongside their canonical item.
+                var slotsUsed = 0
+                var visibleItems: [FeedItem] = []
+                var overflowItems: [FeedItem] = []
 
-                // Extract highlights (2-3 title snippets from overflow)
-                let highlights = Array(overflowItems.prefix(3).map(\.title))
+                // Collect cluster IDs whose canonical item was already counted.
+                var countedClusterIDs = Set<UUID>()
 
-                // Resolve source name
-                let sourceName = resolveSourceName(sourceID: sourceID)
+                for item in sorted {
+                    if let clusterID = item.clusterID {
+                        if item.isCanonical {
+                            // Canonical item: counts as one slot for the whole cluster.
+                            if effectiveLimit < Int.max && slotsUsed >= effectiveLimit {
+                                overflowItems.append(item)
+                            } else {
+                                slotsUsed += 1
+                                countedClusterIDs.insert(clusterID)
+                                visibleItems.append(item)
+                            }
+                        } else {
+                            // Non-canonical: follows its canonical item's visibility.
+                            // If the cluster's canonical was shown, show this too (free).
+                            // If the canonical was overflowed (or not yet seen), overflow this.
+                            if countedClusterIDs.contains(clusterID) {
+                                visibleItems.append(item)
+                            } else {
+                                overflowItems.append(item)
+                            }
+                        }
+                    } else {
+                        // Standalone (non-clustered) item: each one uses a slot.
+                        if effectiveLimit < Int.max && slotsUsed >= effectiveLimit {
+                            overflowItems.append(item)
+                        } else {
+                            slotsUsed += 1
+                            visibleItems.append(item)
+                        }
+                    }
+                }
 
-                // insertionPosition = timestamp of first overflow item
-                let insertionPosition = overflowItems.first?.publishedAt ?? now
+                shouldShow.formUnion(visibleItems.map(\.id))
+                shouldHide.formUnion(overflowItems.map(\.id))
 
-                let digest = DigestCard(
-                    sourceID: sourceID,
-                    sourceName: sourceName,
-                    itemCount: overflowItems.count,
-                    highlights: highlights,
-                    overflowIDs: overflowIDs,
-                    overflowItems: overflowItems,
-                    insertionPosition: insertionPosition
-                )
-                digestCards.append(digest)
-
-                _ = visibleItems // kept visible, no action needed
-            }
-
-            // Flood detection: check rolling 2-hour window
-            let twoHoursAgo = now.addingTimeInterval(-2 * 3600)
-            let recentItems = items.filter { $0.publishedAt >= twoHoursAgo }
-            let recentCount = recentItems.count
-
-            if recentCount > 0 {
-                let isFlood = detectFlood(
-                    sourceID: sourceID,
-                    recentCount: recentCount
-                )
-                if isFlood {
+                // Digest cards are only emitted for today's overflow to
+                // avoid retroactive digest spam for previous days.
+                if !overflowItems.isEmpty && day == todayStart {
                     let sourceName = resolveSourceName(sourceID: sourceID)
-                    let nudge = NudgeCard(
+                    let digest = DigestCard(
                         sourceID: sourceID,
                         sourceName: sourceName,
-                        itemCount: recentCount,
-                        message: "\(sourceName) posted \(recentCount) articles in the last 2 hours"
+                        itemCount: overflowItems.count,
+                        highlights: Array(overflowItems.prefix(3).map(\.title)),
+                        overflowIDs: overflowItems.map(\.id),
+                        overflowItems: overflowItems,
+                        insertionPosition: overflowItems.first?.publishedAt ?? now
                     )
-                    nudgeCards.append(nudge)
+                    digestCards.append(digest)
                 }
+            }
+
+            // Flood detection: rolling 2-hour window on today's items only.
+            let twoHoursAgo = now.addingTimeInterval(-2 * 3600)
+            let recentItems = (byDay[todayStart] ?? []).filter { $0.publishedAt >= twoHoursAgo }
+            if !recentItems.isEmpty,
+               detectFlood(sourceID: sourceID, recentCount: recentItems.count) {
+                let sourceName = resolveSourceName(sourceID: sourceID)
+                nudgeCards.append(NudgeCard(
+                    sourceID: sourceID,
+                    sourceName: sourceName,
+                    itemCount: recentItems.count,
+                    message: "\(sourceName) posted \(recentItems.count) articles in the last 2 hours"
+                ))
             }
         }
 
-        // Persist visibility changes to SQLite
-        if !hiddenItemIDs.isEmpty {
-            store.setRiverVisible(false, forItemIDs: Array(hiddenItemIDs))
+        // Persist both directions so this run is fully self-correcting.
+        if !shouldShow.isEmpty { store.setRiverVisible(true,  forItemIDs: Array(shouldShow)) }
+        if !shouldHide.isEmpty { store.setRiverVisible(false, forItemIDs: Array(shouldHide)) }
+
+        // #region agent log
+        let perSource: [[String: Any]] = grouped.map { sourceID, byDay in
+            let totalItems = byDay.values.map(\.count).reduce(0, +)
+            let mostRecentDay = byDay.keys.max() ?? todayStart
+            let tier = byDay[mostRecentDay]?.first?.velocityTier.rawValue ?? "?"
+            let defaultLimit = byDay[mostRecentDay]?.first?.velocityTier.defaultSlotLimit ?? 0
+            let hidden = byDay.values.flatMap { $0 }.filter { shouldHide.contains($0.id) }.count
+            return [
+                "sourceID": sourceID.uuidString.prefix(8),
+                "tier": tier,
+                "defaultLimit": defaultLimit,
+                "totalItemsInGroup": totalItems,
+                "hiddenCount": hidden,
+                "daysInGroup": byDay.keys.count,
+                "mostRecentDayCount": byDay[mostRecentDay]?.count ?? 0
+            ]
         }
+        DebugLog.log("H3", "RateGateService.swift:130", "rateGate.done", [
+            "totalItems": allItems.count,
+            "shownCount": shouldShow.count,
+            "hiddenCount": shouldHide.count,
+            "digestCards": digestCards.count,
+            "nudgeCards": nudgeCards.count,
+            "perSource": perSource
+        ])
+        // #endregion
 
         return RateGateResult(
             digestCards: digestCards,
             nudgeCards: nudgeCards,
-            hiddenItemIDs: hiddenItemIDs
+            hiddenItemIDs: shouldHide
         )
     }
 
     // MARK: - Effective Limit Computation
 
     /// Adjusts the default slot limit based on the source's affinity score.
-    private func computeEffectiveLimit(defaultLimit: Int, sourceID: UUID) -> Int {
+    /// Uses the frozen snapshot when available to keep limits stable within a session.
+    private func computeEffectiveLimit(
+        defaultLimit: Int,
+        sourceID: UUID,
+        affinitySnapshot: [UUID: SourceAffinityRecord]?
+    ) -> Int {
         guard defaultLimit < Int.max else { return Int.max }
 
-        let affinity = store.fetchAffinity(forSource: sourceID)
-        let affinityScore = affinity?.affinityScore ?? 0.0
+        let affinityScore: Double
+        if let snapshot = affinitySnapshot {
+            affinityScore = snapshot[sourceID]?.affinityScore ?? 0.0
+        } else {
+            affinityScore = store.fetchAffinity(forSource: sourceID)?.affinityScore ?? 0.0
+        }
 
         if affinityScore > 0.7 {
             // Boost: min(defaultLimit * 1.5, defaultLimit + 3)
@@ -156,8 +229,9 @@ final class RateGateService: Sendable {
             )
             return boosted
         } else if affinityScore < -0.15 {
-            // Reduce: max(1, defaultLimit - 2)
-            return max(1, defaultLimit - 2)
+            // Reduce, but keep a minimum of 2 so high-velocity sources (e.g. .breaking
+            // with defaultLimit=3) never collapse to a single article from mild negative affinity.
+            return max(2, defaultLimit - 2)
         }
 
         return defaultLimit

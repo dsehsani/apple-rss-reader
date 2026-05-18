@@ -471,7 +471,7 @@ struct SettingsView: View {
         }
     }
 
-    private static func formatBytes(_ bytes: Int64) -> String {
+    nonisolated private static func formatBytes(_ bytes: Int64) -> String {
         let mb = Double(bytes) / 1_048_576
         if mb >= 1 {
             return String(format: "%.0f MB", mb)

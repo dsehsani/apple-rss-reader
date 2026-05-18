@@ -125,13 +125,19 @@ struct ArticleCardView: View {
             }
         }
         .task(id: article.id) {
-            // Hero URL resolution. Most callers (river snapshot post-step,
-            // ingest pre-warm, BG refresh) have already populated the
-            // OGImageService cache, so resolveOGImage is a sync cache read in
-            // the common case. Skip entirely when the feed provided an image.
-            if article.imageURL == nil {
-                await resolveOGImage()
+            // Skip OGImageService when the article already has a high-quality image URL,
+            // EXCEPT for two cases that need a better source:
+            //   • GIF URLs are channel-level logos (e.g. ESPN), not real article images.
+            //   • Guardian CDN images (i.guim.co.uk) are capped at 700px in the RSS feed;
+            //     the og:image on the article page is 1200px — let OGImageService fetch it.
+            //     The signed URL format means we cannot simply raise the width parameter.
+            let isGuardianCDN = article.imageURL?.contains("i.guim.co.uk") == true
+            if let imgURL = article.imageURL,
+               !imgURL.lowercased().hasSuffix(".gif"),
+               !isGuardianCDN {
+                return
             }
+            await resolveOGImage()
         }
         .onChange(of: feedImageFailed) { _, failed in
             // Feed image failed to load — try og:image as fallback.
@@ -164,13 +170,15 @@ struct ArticleCardView: View {
     // MARK: - Subviews
 
     private var heroImage: some View {
-        // When the feed-provided image URL turns out to be dead, swap to the
-        // og:image fallback (which gets resolved in the onChange handler below).
-        let displayURL = feedImageFailed ? ogImageURL : (article.imageURL ?? ogImageURL)
-        // Whether we're showing the feed's URL (so a failure means we should
-        // try the og:image fallback) vs. an already-resolved og:image URL
-        // (failure there is terminal — no further fallback to attempt).
-        let isShowingFeedImage = !feedImageFailed && article.imageURL != nil
+        // GIF URLs are channel-level logos (e.g. ESPN's espn_dotcom_black.gif), not
+        // per-article images. Treat them as absent so ogImageURL is used instead.
+        let rssImage = (article.imageURL?.lowercased().hasSuffix(".gif") == true)
+            ? nil : article.imageURL
+        // When the feed-provided image URL turns out to be dead, swap to og:image.
+        let displayURL = feedImageFailed ? ogImageURL : (rssImage ?? ogImageURL)
+        // Only escalate to og:image when the *feed-provided* URL fails.
+        // Never loop back from an og:image failure.
+        let isShowingFeedImage = !feedImageFailed && rssImage != nil
 
         return Color.clear
             .frame(maxWidth: .infinity)
@@ -190,11 +198,26 @@ struct ArticleCardView: View {
                 ) {
                     ZStack {
                         placeholderHero
-                        // Subtle motion so the empty state doesn't read as broken
-                        // while the bytes (or og:image URL) are still in flight.
                         ShimmerView(cornerRadius: 0)
                             .opacity(displayURL == nil ? 0.0 : 1.0)
                     }
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                // Subtle "Video" pill badge — bottom-left, like YouTube's duration label.
+                if article.isVideo {
+                    HStack(spacing: 3) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 7, weight: .bold))
+                        Text("Video")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background(.black.opacity(0.60), in: Capsule())
+                    .padding(.leading, 8)
+                    .padding(.bottom, 8)
                 }
             }
             .clipped()

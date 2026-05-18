@@ -48,6 +48,11 @@ actor OGImageService {
 
     private static let cacheKey = "openrss.ogImageCache"
     private static let negativeCacheKey = "openrss.ogImageNegativeCache"
+    /// Bump this integer whenever a bug fix means old negative-cache entries are known
+    /// to be invalid (e.g. false-negatives written by task-cancellation before the fix).
+    /// The init() will discard the entire negative cache when the stored version is older.
+    private static let negativeCacheVersion = 2
+    private static let negativeCacheVersionKey = "openrss.ogImageNegativeCacheVersion"
 
     /// How long a negative result is honored before we re-attempt the fetch.
     private static let negativeCacheTTL: TimeInterval = 7 * 24 * 60 * 60  // 7 days
@@ -62,7 +67,14 @@ actor OGImageService {
         if let saved = UserDefaults.standard.dictionary(forKey: Self.cacheKey) as? [String: String] {
             cache = saved
         }
-        if let savedNegative = UserDefaults.standard.dictionary(forKey: Self.negativeCacheKey) as? [String: Double] {
+
+        // If the negative cache was written by an older version of this actor, discard it.
+        // Version 2 fixes false-negative entries created when tasks were cancelled mid-fetch.
+        let storedVersion = UserDefaults.standard.integer(forKey: Self.negativeCacheVersionKey)
+        if storedVersion < Self.negativeCacheVersion {
+            UserDefaults.standard.removeObject(forKey: Self.negativeCacheKey)
+            UserDefaults.standard.set(Self.negativeCacheVersion, forKey: Self.negativeCacheVersionKey)
+        } else if let savedNegative = UserDefaults.standard.dictionary(forKey: Self.negativeCacheKey) as? [String: Double] {
             // Drop expired entries on load so we eventually re-try sites
             // that may have added og:image since we last looked.
             let now = Date().timeIntervalSince1970
@@ -102,6 +114,11 @@ actor OGImageService {
             UserDefaults.standard.set(cache, forKey: Self.cacheKey)
             UserDefaults.standard.set(negativeCache, forKey: Self.negativeCacheKey)
         } else {
+            // Don't record a negative result when the fetch was cancelled (e.g. the
+            // card scrolled off screen). Cancellation means "we don't know yet", not
+            // "this page has no og:image". Writing a 7-day negative entry here would
+            // prevent the card from ever retrying when it becomes visible again.
+            guard !Task.isCancelled else { return }
             negativeCache[articleURL] = Date().timeIntervalSince1970 + Self.negativeCacheTTL
             UserDefaults.standard.set(negativeCache, forKey: Self.negativeCacheKey)
         }
@@ -109,7 +126,7 @@ actor OGImageService {
 
     // MARK: - Fetch (static — accesses no actor state)
 
-    /// Streams the article page up to 32 KB, stopping early once `</head>`
+    /// Streams the article page up to 64 KB, stopping early once `</head>`
     /// is seen, then extracts a usable hero image URL.
     private static func fetchImageURL(from url: URL) async -> String? {
         var request = URLRequest(url: url, timeoutInterval: 10)
@@ -134,11 +151,11 @@ actor OGImageService {
             }
 
             var buffer = Data()
-            buffer.reserveCapacity(32_768)
+            buffer.reserveCapacity(65_536)
 
             for try await byte in asyncBytes {
                 buffer.append(byte)
-                if buffer.count >= 32_768 { break }
+                if buffer.count >= 65_536 { break }
                 // Check for end of <head> every 512 bytes to avoid scanning every byte.
                 if buffer.count % 512 == 0,
                    let partial = String(data: buffer, encoding: .utf8),
@@ -203,10 +220,6 @@ actor OGImageService {
             #"<meta[^>]+?content=["']([^"']+)["'][^>]+?(?:property|name)=["']\#(escaped)["']"#
         ]
         for pattern in patterns {
-            // Use shared firstCapture helper — entity decoding is handled
-            // there. The http -> https upgrade happens in resolveAndUpgrade(...)
-            // called by extractImageURL above, which applies it to ALL entry
-            // points (meta tags, link rel, first img src), not just og:image.
             if let captured = firstCapture(in: html, pattern: pattern) {
                 return captured
             }

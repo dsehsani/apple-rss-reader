@@ -37,9 +37,9 @@ enum VelocityTier: String, Codable, CaseIterable, Sendable {
         switch self {
         case .breaking:  return 3
         case .news:      return 5
-        case .article:   return 8
+        case .article:   return 15     // raised from 8
         case .essay:     return .max   // unlimited
-        case .evergreen: return 2
+        case .evergreen: return .max   // raised from 2 — rare content, never cap
         }
     }
 
