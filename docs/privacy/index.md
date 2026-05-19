@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Privacy Policy — OpenRSS
+title: Privacy Policy — Payam
 ---
 
 # Privacy Policy
 
-**OpenRSS** is a native iOS RSS reader developed by Darius Ehsani as a personal project.
+**Payam** is a native iOS RSS reader developed by Darius Ehsani as a personal project.
 
 **Effective date: May 11, 2026**
 
@@ -13,7 +13,7 @@ title: Privacy Policy — OpenRSS
 
 ## 1. Who We Are
 
-OpenRSS is an independent iOS application. For privacy questions, contact:
+Payam is an independent iOS application. For privacy questions, contact:
 
 **Email:** darius.ehsani@gmail.com
 
@@ -41,7 +41,7 @@ We never see this data ourselves. It is stored exclusively in your device's loca
 
 ### 2b. iCloud / CloudKit Sync
 
-When you enable iCloud sync, OpenRSS stores the following in your **private** iCloud CloudKit database:
+When you enable iCloud sync, Payam stores the following in your **private** iCloud CloudKit database:
 
 - RSS feed subscriptions (URLs, titles, folder assignments)
 - Folders and their names
@@ -60,7 +60,7 @@ When you add an RSS feed or open an article, the app makes HTTP requests to:
 - The RSS feed URLs you have subscribed to
 - The original article web pages (to display the full article text)
 
-These requests are made directly from your device. The servers at those URLs receive standard HTTP request information: your IP address and an app User-Agent string. **OpenRSS does not attach any personal identifiers to these requests.** We do not proxy, log, or store these requests on any developer-owned server.
+These requests are made directly from your device. The servers at those URLs receive standard HTTP request information: your IP address and an app User-Agent string. **Payam does not attach any personal identifiers to these requests.** We do not proxy, log, or store these requests on any developer-owned server.
 
 ---
 
@@ -78,7 +78,7 @@ The push notifications entitlement is present in the app but **not currently act
 
 ## 3. Data We Do NOT Collect
 
-OpenRSS does **not** use or integrate:
+Payam does **not** use or integrate:
 
 - Analytics SDKs (no Amplitude, Mixpanel, Firebase Analytics, etc.)
 - Crash-reporting services (no Crashlytics, Sentry, etc.)
@@ -94,15 +94,15 @@ OpenRSS does **not** use or integrate:
 |---|---|
 | Stop iCloud sync | Account tab → disable "Sync with iCloud" |
 | Sign out | Account tab → Sign Out (local session is cleared; local data remains on device) |
-| Delete all local data | Delete the OpenRSS app from your device |
-| Delete your iCloud data | iOS Settings → \[Your Name\] → iCloud → Manage Account Storage → OpenRSS → Delete Data |
+| Delete all local data | Delete the Payam app from your device |
+| Delete your iCloud data | iOS Settings → \[Your Name\] → iCloud → Manage Account Storage → Payam → Delete Data |
 | Request information | Email darius.ehsani@gmail.com |
 
 ---
 
 ## 5. Children
 
-OpenRSS is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided personal information, contact us and we will delete it.
+Payam is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided personal information, contact us and we will delete it.
 
 ---
 

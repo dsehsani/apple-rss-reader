@@ -1,8 +1,8 @@
 ---
 layout: default
-title: OpenRSS Legal
+title: Payam Legal
 ---
 
-# OpenRSS Legal
+# Payam Legal
 
 - [Privacy Policy](privacy/)

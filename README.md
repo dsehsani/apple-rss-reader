@@ -1,10 +1,10 @@
-# OpenRSS
+# Payam
 
 A native iOS RSS reader built with Swift and SwiftUI, featuring a polished liquid glass UI design with adaptive light/dark mode support.
 
 ## Project Overview
 
-OpenRSS is an RSS feed reader app with a hybrid architecture:
+Payam is an RSS feed reader app with a hybrid architecture:
 
 - **Free tier**: Local RSS fetching, SwiftData persistence, and optional iCloud sync
 - **Premium tier (planned)**: Cloud backend with AWS for advanced web scraping, AI-powered summaries, and real-time updates
@@ -99,8 +99,8 @@ Article tap ──► ArticleReaderHostView
 ## Project Structure
 
 ```
-OpenRSS/
-├── OpenRSSApp.swift                   # App entry point, ModelContainer setup
+Payam/
+├── PayamApp.swift                   # App entry point, ModelContainer setup
 ├── AppState.swift                     # Global app state
 │
 ├── Models/
@@ -188,12 +188,12 @@ OpenRSS/
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd OpenRSS
+   cd Payam
    ```
 
 2. Open the project:
    ```bash
-   open OpenRSS.xcodeproj
+   open Payam.xcodeproj
    ```
 
 3. Xcode will automatically resolve the **FeedKit** Swift Package dependency on first open.

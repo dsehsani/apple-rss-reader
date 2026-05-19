@@ -1,7 +1,7 @@
 //
 //  APIKeys.swift.example
 //
-//  Copy this file to OpenRSS/APIKeys.swift and set `payamChatBaseURL` to your
+//  Copy this file to Payam/APIKeys.swift and set `payamChatBaseURL` to your
 //  deployed payam-chat HTTP API invoke URL (from `serverless deploy`, no path).
 //  APIKeys.swift is gitignored so your URL stays local.
 //

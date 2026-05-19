@@ -14,37 +14,37 @@
 **Model: `claude-3.7-sonnet`**
 
 ```
-You are working in an iOS SwiftUI RSS reader app called OpenRSS, on the branch
+You are working in an iOS SwiftUI RSS reader app called Payam, on the branch
 `feat/heroes-and-async-crud`.
 
 ### Background
 
-The `Article` model (OpenRSS/Models/Article.swift) already has an `isPaywalled: Bool`
-field. `ArticleCardView` (OpenRSS/Views/Components/ArticleCardView.swift) already
+The `Article` model (Payam/Models/Article.swift) already has an `isPaywalled: Bool`
+field. `ArticleCardView` (Payam/Views/Components/ArticleCardView.swift) already
 renders a "Subscription may be required" badge when `article.isPaywalled || source?.isPaywalled == true`.
-`ArticleReaderView` (OpenRSS/Views/ArticleReader/ArticleReaderView.swift) already
+`ArticleReaderView` (Payam/Views/ArticleReader/ArticleReaderView.swift) already
 shows a "Hitting a paywall? Sign in here" footnote.
 
-The stub file `OpenRSS/Utilities/PaywallDetector.swift` currently contains nothing
+The stub file `Payam/Utilities/PaywallDetector.swift` currently contains nothing
 but an empty enum:
 
     enum PaywallDetector {}
 
 ### Your job
 
-1. Run: `git show awaab-dev:OpenRSS/Utilities/PaywallDetector.swift`
+1. Run: `git show awaab-dev:Payam/Utilities/PaywallDetector.swift`
    Read Awaab's full implementation carefully.
 
 2. Port his PaywallDetector logic into the current branch's
-   `OpenRSS/Utilities/PaywallDetector.swift`. Preserve the existing file header
+   `Payam/Utilities/PaywallDetector.swift`. Preserve the existing file header
    comment (lines 1–7) and replace the empty `enum PaywallDetector {}` body with
    his implementation.
 
 3. Find where in the pipeline `isPaywalled` should be set. The most likely
    integration points are:
-   - `OpenRSS/Services/ArticlePipelineService.swift` — after content extraction
-   - `OpenRSS/Services/ContentNormalizerService.swift` — after HTML parsing
-   - `OpenRSS/Services/FeedIngestService.swift` — at ingest time
+   - `Payam/Services/ArticlePipelineService.swift` — after content extraction
+   - `Payam/Services/ContentNormalizerService.swift` — after HTML parsing
+   - `Payam/Services/FeedIngestService.swift` — at ingest time
    
    Check `git show awaab-dev:<file>` for each of those files to see if Awaab wired
    detection there, then mirror that wiring on the current branch.
@@ -67,32 +67,32 @@ but an empty enum:
 **Model: `claude-3.5-sonnet`**
 
 ```
-You are working in an iOS SwiftUI RSS reader app called OpenRSS, on the branch
+You are working in an iOS SwiftUI RSS reader app called Payam, on the branch
 `feat/heroes-and-async-crud`.
 
 ### Background
 
 The current branch already has a full hero-image stack:
-- `OpenRSS/Services/OGImageService.swift` — actor that fetches og:image from
+- `Payam/Services/OGImageService.swift` — actor that fetches og:image from
   article pages, with UserDefaults caching and negative-cache TTL.
-- `OpenRSS/Services/HeroPrefetcher.swift` — bounded, time-budgeted batch prefetch
+- `Payam/Services/HeroPrefetcher.swift` — bounded, time-budgeted batch prefetch
   used by the river pipeline and background refresh tasks.
-- `OpenRSS/Services/ThumbnailService.swift` — on-disk JPEG downsampling cache.
-- `OpenRSS/Views/Components/CachedImageView.swift` — image component used by cards.
-- `OpenRSS/Views/Components/ArticleCardView.swift` — displays hero at 180pt height
+- `Payam/Services/ThumbnailService.swift` — on-disk JPEG downsampling cache.
+- `Payam/Views/Components/CachedImageView.swift` — image component used by cards.
+- `Payam/Views/Components/ArticleCardView.swift` — displays hero at 180pt height
   with feed-URL → og:image fallback on failure.
-- `OpenRSS/Views/ArticleReader/ArticleReaderView.swift` — displays hero at 220pt
+- `Payam/Views/ArticleReader/ArticleReaderView.swift` — displays hero at 220pt
   in the reader header zone.
 
 ### Your job
 
 1. Run each of the following and read the output carefully:
    ```
-   git show awaab-dev:OpenRSS/Services/OGImageService.swift
-   git show awaab-dev:OpenRSS/Services/HeroPrefetcher.swift
-   git show awaab-dev:OpenRSS/Services/ThumbnailService.swift
-   git show awaab-dev:OpenRSS/Views/Components/CachedImageView.swift
-   git show awaab-dev:OpenRSS/Views/Components/ArticleCardView.swift
+   git show awaab-dev:Payam/Services/OGImageService.swift
+   git show awaab-dev:Payam/Services/HeroPrefetcher.swift
+   git show awaab-dev:Payam/Services/ThumbnailService.swift
+   git show awaab-dev:Payam/Views/Components/CachedImageView.swift
+   git show awaab-dev:Payam/Views/Components/ArticleCardView.swift
    ```
 
 2. Diff each file against the current branch version. Identify any improvements,
@@ -120,19 +120,19 @@ The current branch already has a full hero-image stack:
 **Model: `claude-3.5-sonnet`**
 
 ```
-You are working in an iOS SwiftUI RSS reader app called OpenRSS, on the branch
+You are working in an iOS SwiftUI RSS reader app called Payam, on the branch
 `feat/heroes-and-async-crud`.
 
 ### Background
 
 Audio support is partially in place on the current branch:
-- `OpenRSS/Views/ArticleReader/AudioPlayerView.swift` — AVFoundation-backed inline
+- `Payam/Views/ArticleReader/AudioPlayerView.swift` — AVFoundation-backed inline
   player (play/pause, scrubber, time labels). Already complete.
-- `OpenRSS/Models/Article.swift` — has `audioURL: String?` field with backward-
+- `Payam/Models/Article.swift` — has `audioURL: String?` field with backward-
   compatible custom decoder.
-- `OpenRSS/Views/ArticleReader/ArticleReaderHostView.swift` — passes
+- `Payam/Views/ArticleReader/ArticleReaderHostView.swift` — passes
   `article.audioURL.flatMap { URL(string: $0) }` into `ArticleReaderView`.
-- `OpenRSS/Views/ArticleReader/ArticleReaderView.swift` — shows `AudioPlayerView`
+- `Payam/Views/ArticleReader/ArticleReaderView.swift` — shows `AudioPlayerView`
   below the hero when `audioURL != nil`.
 
 The possible gap is at the **RSS parsing layer**: `audioURL` on `Article` only
@@ -142,20 +142,20 @@ has value if the RSS parser extracts `<enclosure>` tags and maps them through.
 
 1. Read Awaab's versions of the following files:
    ```
-   git show awaab-dev:OpenRSS/Services/RSSParserService.swift
-   git show awaab-dev:OpenRSS/Models/RSSItem.swift
-   git show awaab-dev:OpenRSS/Views/ArticleReader/AudioPlayerView.swift
+   git show awaab-dev:Payam/Services/RSSParserService.swift
+   git show awaab-dev:Payam/Models/RSSItem.swift
+   git show awaab-dev:Payam/Views/ArticleReader/AudioPlayerView.swift
    ```
 
-2. In `OpenRSS/Models/RSSItem.swift`, check whether the current branch's `RSSItem`
+2. In `Payam/Models/RSSItem.swift`, check whether the current branch's `RSSItem`
    has an `audioURL` field. If Awaab added it, add it to the current branch too.
 
-3. In `OpenRSS/Services/RSSParserService.swift`, check the RSS 2.0 and Atom mapping
+3. In `Payam/Services/RSSParserService.swift`, check the RSS 2.0 and Atom mapping
    code. Confirm that `<enclosure url="..." type="audio/...">` tags are captured
    and stored in `RSSItem.audioURL`. If Awaab added that mapping and it's missing
    on the current branch, add it.
 
-4. Check `OpenRSS/Services/ArticlePipelineService.swift` or `FeedIngestService.swift`
+4. Check `Payam/Services/ArticlePipelineService.swift` or `FeedIngestService.swift`
    to ensure `RSSItem.audioURL` flows through to `Article.audioURL`. Add the
    mapping if it's missing.
 
@@ -178,16 +178,16 @@ has value if the RSS parser extracts `<enclosure>` tags and maps them through.
 **Model: `claude-3.5-sonnet`**
 
 ```
-You are working in an iOS SwiftUI RSS reader app called OpenRSS, on the branch
+You are working in an iOS SwiftUI RSS reader app called Payam, on the branch
 `feat/heroes-and-async-crud`.
 
 ### Background
 
 YouTube video detection is fully implemented on the current branch:
-- `OpenRSS/Services/YouTubeService.swift` — routes YouTube URLs into .video,
+- `Payam/Services/YouTubeService.swift` — routes YouTube URLs into .video,
   .short, .playlist resources; provides thumbnail URLs and RSS-feed resolution.
-- `OpenRSS/Services/YouTubeAtomParser.swift` — parses YouTube Atom feeds.
-- `OpenRSS/Views/ArticleReader/ArticleReaderHostView.swift` — detects YouTube URLs
+- `Payam/Services/YouTubeAtomParser.swift` — parses YouTube Atom feeds.
+- `Payam/Views/ArticleReader/ArticleReaderHostView.swift` — detects YouTube URLs
   in `runPipeline()` and switches to `.youtube(URL)` or `.playlist(URL)` load
   states, each with a full card UI.
 
@@ -198,21 +198,21 @@ What is NOT handled: **non-YouTube embedded video** (Vimeo, direct .mp4 links,
 
 1. Read Awaab's versions of the relevant files:
    ```
-   git show awaab-dev:OpenRSS/Services/YouTubeService.swift
-   git show awaab-dev:OpenRSS/Services/YouTubeAtomParser.swift
-   git show awaab-dev:OpenRSS/Views/ArticleReader/ArticleReaderHostView.swift
-   git show awaab-dev:OpenRSS/Models/ContentNode.swift
-   git show awaab-dev:OpenRSS/Models/RSSItem.swift
+   git show awaab-dev:Payam/Services/YouTubeService.swift
+   git show awaab-dev:Payam/Services/YouTubeAtomParser.swift
+   git show awaab-dev:Payam/Views/ArticleReader/ArticleReaderHostView.swift
+   git show awaab-dev:Payam/Models/ContentNode.swift
+   git show awaab-dev:Payam/Models/RSSItem.swift
    ```
    Also check if awaab-dev has any new file like `VideoDetector.swift`,
    `VideoPlayerView.swift`, or similar:
    ```
-   git show awaab-dev:OpenRSS/Utilities/ 2>/dev/null || true
-   git show awaab-dev:OpenRSS/Services/ 2>/dev/null | grep -i video || true
+   git show awaab-dev:Payam/Utilities/ 2>/dev/null || true
+   git show awaab-dev:Payam/Services/ 2>/dev/null | grep -i video || true
    ```
 
 2. If Awaab added a `.video` case to `ContentNode`, add it to the current branch's
-   `OpenRSS/Models/ContentNode.swift` and add a matching `case .video` handler in
+   `Payam/Models/ContentNode.swift` and add a matching `case .video` handler in
    `ArticleReaderView.nodeView(for:)`.
 
 3. If Awaab added non-YouTube video detection (Vimeo, direct video links,
