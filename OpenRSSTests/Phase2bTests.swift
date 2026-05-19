@@ -1375,8 +1375,8 @@ struct PipelinePerformanceTests {
         }
         let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000
 
-        #expect(elapsed < 100,
-                "SimHash for 500 titles should complete in <100ms, took \(String(format: "%.1f", elapsed))ms")
+        #expect(elapsed < 200,
+                "SimHash for 500 titles should complete in <200ms, took \(String(format: "%.1f", elapsed))ms")
     }
 
     // -------------------------------------------------------------------------

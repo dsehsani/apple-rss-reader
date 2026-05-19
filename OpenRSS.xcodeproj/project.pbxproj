@@ -452,7 +452,7 @@
 				CODE_SIGN_ENTITLEMENTS = OpenRSS/OpenRSS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = ZY323LJ6B6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
@@ -490,7 +490,7 @@
 				CODE_SIGN_ENTITLEMENTS = OpenRSS/OpenRSS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = ZY323LJ6B6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";

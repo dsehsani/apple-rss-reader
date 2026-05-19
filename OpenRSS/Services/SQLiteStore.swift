@@ -871,6 +871,17 @@ final class SQLiteStore: Sendable {
         )
     }
 
+    // MARK: - Test Helpers
+
+    #if DEBUG
+    /// Removes all feed items. Only available in debug builds for test isolation.
+    func deleteAllFeedItems() {
+        queue.sync {
+            execute("DELETE FROM feed_items")
+        }
+    }
+    #endif
+
     // MARK: - SQLite Helpers
 
     private func execute(_ sql: String) {

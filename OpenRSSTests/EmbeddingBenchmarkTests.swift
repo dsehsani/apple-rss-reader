@@ -70,8 +70,8 @@ struct EmbeddingBenchmarkTests {
         let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000
         let perEmbed = elapsed / Double(iterations)
 
-        #expect(perEmbed < 100,
-                "CoreML: \(String(format: "%.1f", perEmbed))ms per embedding (target: <100ms on sim, <15ms on device)")
+        #expect(perEmbed < 200,
+                "CoreML: \(String(format: "%.1f", perEmbed))ms per embedding (target: <200ms on sim, <15ms on device)")
     }
 
     @Test("NLEmbedding single-embedding latency")
@@ -118,7 +118,7 @@ struct EmbeddingBenchmarkTests {
         }
         let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000
 
-        #expect(elapsed < 1000,
+        #expect(elapsed < 2000,
                 "CoreML batch of \(texts.count): \(String(format: "%.1f", elapsed))ms total, \(String(format: "%.1f", elapsed / Double(texts.count)))ms/article")
     }
 

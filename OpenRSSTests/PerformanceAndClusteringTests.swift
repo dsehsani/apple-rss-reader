@@ -960,6 +960,7 @@ struct ClusteringThresholdTests {
 //   the test that would have caught the Foxconn bug.
 //
 
+@Suite(.serialized)
 struct ClusteringPipelineIntegrationTests {
 
     /// Helper: create a FeedItem with a specific title, source, and recent publish time.
@@ -1171,6 +1172,11 @@ struct ClusteringPipelineIntegrationTests {
     // -------------------------------------------------------------------------
     @Test func threeSourcesSameStoryAllCluster() {
         let store = SQLiteStore.shared
+        // Clear stale cluster state and embeddings so this test gets a clean
+        // clustering pass. We don't delete items (which would break concurrent
+        // tests) — just reset the fields that affect clustering decisions.
+        store.clearClusterFields(olderThan: Date.distantFuture)
+        store.clearAllEmbeddings()
         let service = SemanticClusterService()
         let sourceCNN = UUID()
         let sourceBBC = UUID()
@@ -1178,20 +1184,20 @@ struct ClusteringPipelineIntegrationTests {
 
         let article1 = makeArticle(
             sourceID: sourceCNN,
-            title: "President signs landmark climate bill into law today",
-            excerpt: "The president signed a landmark climate bill setting ambitious emissions targets into law.",
+            title: "SpaceX successfully lands Starship booster for the first time",
+            excerpt: "SpaceX achieved a historic milestone today by landing the Super Heavy booster at its Boca Chica facility in Texas.",
             hoursAgo: 3.0
         )
         let article2 = makeArticle(
             sourceID: sourceBBC,
-            title: "President signs landmark climate bill into law",
-            excerpt: "The president has signed the landmark climate bill into law with new emissions targets.",
+            title: "SpaceX catches Starship rocket booster in historic first landing",
+            excerpt: "SpaceX has caught the Super Heavy booster using the launch tower arms at its Texas facility.",
             hoursAgo: 2.0
         )
         let article3 = makeArticle(
             sourceID: sourceNYT,
-            title: "President signs landmark climate bill setting emissions targets",
-            excerpt: "A landmark climate bill was signed into law by the president, setting emissions targets.",
+            title: "SpaceX lands Starship booster in breakthrough for reusable rockets",
+            excerpt: "Elon Musk's SpaceX landed the Super Heavy Starship booster for the first time at Boca Chica, Texas.",
             hoursAgo: 1.0
         )
 

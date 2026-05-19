@@ -113,16 +113,16 @@ struct VelocityTierTests {
     // Expected output:
     //   breaking  = 3/day
     //   news      = 5/day
-    //   article   = 8/day
+    //   article   = 15/day
     //   essay     = unlimited (Int.max)
-    //   evergreen = 2/day
+    //   evergreen = unlimited (Int.max)
     // -------------------------------------------------------------------------
     @Test func defaultSlotLimits() {
         #expect(VelocityTier.breaking.defaultSlotLimit  == 3)
         #expect(VelocityTier.news.defaultSlotLimit      == 5)
-        #expect(VelocityTier.article.defaultSlotLimit   == 8)
+        #expect(VelocityTier.article.defaultSlotLimit   == 15)
         #expect(VelocityTier.essay.defaultSlotLimit     == .max)
-        #expect(VelocityTier.evergreen.defaultSlotLimit == 2)
+        #expect(VelocityTier.evergreen.defaultSlotLimit == .max)
     }
 }
 
