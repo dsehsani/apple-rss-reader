@@ -1,4 +1,6 @@
-# Prerequisite: create AWS Secrets Manager secret `openrss/gemini-api-key` in us-west-2 (plain key or JSON with GEMINI_API_KEY / apiKey).
+# Prerequisites (us-west-2):
+#   1. Secret `openrss/gemini-api-key` — legacy /v1/chat (Gemini). Will be removed once cutover lands.
+#   2. Secret `openrss/anthropic-api-key` — new /v1/agent (Claude Haiku 4.5 + Sonnet 4.6).
 service: openrss-chat
 
 frameworkVersion: '3'
@@ -16,6 +18,7 @@ provider:
             - secretsmanager:GetSecretValue
           Resource:
             - arn:aws:secretsmanager:us-west-2:${aws:accountId}:secret:openrss/gemini-api-key-*
+            - arn:aws:secretsmanager:us-west-2:${aws:accountId}:secret:openrss/anthropic-api-key-*
 
 functions:
   payamChat:
@@ -24,6 +27,15 @@ functions:
     events:
       - httpApi:
           path: /v1/chat
+          method: post
+
+  payamAgent:
+    name: payam-agent
+    handler: src/agent.main
+    timeout: 30
+    events:
+      - httpApi:
+          path: /v1/agent
           method: post
 
 package:
