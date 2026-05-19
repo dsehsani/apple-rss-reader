@@ -20,6 +20,7 @@ enum KeychainService {
 
     private static let service = "com.openrss.auth"
     private static let appleUserIDKey = "appleUserID"
+    private static let deviceIDKey = "deviceID"
 
     // MARK: - Save
 
@@ -76,6 +77,58 @@ enum KeychainService {
             kSecClass as String:       kSecClassGenericPassword,
             kSecAttrService as String:  service,
             kSecAttrAccount as String:  appleUserIDKey,
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        return status == errSecSuccess || status == errSecItemNotFound
+    }
+
+    // MARK: - Device ID
+
+    /// Persistent per-install identifier used as `x-payam-user` on cloud calls
+    /// while JWT auth is not yet wired up. Survives reinstalls because Keychain
+    /// persists across app deletion.
+    @discardableResult
+    static func saveDeviceID(_ id: String) -> Bool {
+        guard let data = id.data(using: .utf8) else { return false }
+        deleteDeviceID()
+
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String:  service,
+            kSecAttrAccount as String:  deviceIDKey,
+            kSecValueData as String:    data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+        ]
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
+    }
+
+    static func loadDeviceID() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String:  service,
+            kSecAttrAccount as String:  deviceIDKey,
+            kSecReturnData as String:   true,
+            kSecMatchLimit as String:   kSecMatchLimitOne,
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let id = String(data: data, encoding: .utf8)
+        else { return nil }
+        return id
+    }
+
+    @discardableResult
+    static func deleteDeviceID() -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String:  service,
+            kSecAttrAccount as String:  deviceIDKey,
         ]
 
         let status = SecItemDelete(query as CFDictionary)

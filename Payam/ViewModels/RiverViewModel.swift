@@ -29,6 +29,12 @@ final class RiverViewModel {
     var selectedCategory: Category?
     var isRefreshing: Bool = false
 
+    /// Set to `true` when the most recent refresh couldn't reach the cloud
+    /// `/v1/river` endpoint (network error or non-2xx). Drives an inline banner
+    /// at the top of the river list. Cleared automatically on the next
+    /// successful refresh.
+    var syncFailed: Bool = false
+
     /// Dedicated search ViewModel — owns the query string and filter strategy.
     var searchViewModel = SearchViewModel(mode: .titleOnly)
 
@@ -413,11 +419,12 @@ final class RiverViewModel {
         ])
         // #endregion
 
-        await pipeline.runCycle(
+        let outcome = await pipeline.runCycle(
             sources: sources,
             filterRules: filterRules,
             sourceFilterMeta: sourceFilterMeta
         )
+        syncFailed = (outcome == .syncFailed)
 
         // Sync the full 30-day cache back to SwiftDataService so source/folder
         // views show all retained content, not just river-visible items.

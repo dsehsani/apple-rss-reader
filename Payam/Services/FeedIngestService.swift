@@ -2,9 +2,10 @@
 //  FeedIngestService.swift
 //  Payam
 //
-//  Phase 2a — Stage 1 of the River Pipeline.
-//  Fetches RSS feeds, parses them into FeedItem structs,
-//  deduplicates against the SQLite store, and assigns velocity tiers.
+//  Phase 2 — Stage 1 of the River Pipeline, now backed by the deployed
+//  /v1/river endpoint instead of direct RSS polling. Cloud sync is the
+//  single source of items; on a sync failure we propagate the throw so
+//  `RiverViewModel` can surface a "couldn't reach server" banner.
 //
 
 import Foundation
@@ -15,273 +16,50 @@ final class FeedIngestService: Sendable {
 
     // MARK: - Dependencies
 
-    private let rssService = RSSService()
     private let store = SQLiteStore.shared
-
-    // MARK: - ETag / Last-Modified Cache
-
-    /// In-memory conditional GET cache keyed by feed URL string.
-    /// Stores (ETag, Last-Modified, Data) from the previous successful fetch.
-    private let conditionalCache = ConditionalCache()
+    private let cloudSync = CloudFeedSyncService()
 
     // MARK: - Public API
 
-    /// Ingests all enabled sources and returns newly inserted FeedItems.
+    /// Pulls new items from the cloud `/v1/river` endpoint, dedup-inserts them
+    /// into SQLite, and refreshes each source's velocity-affinity record.
     ///
-    /// - Parameters:
-    ///   - sources: The user's subscribed feed sources.
-    ///   - velocityOverrides: Manual velocity tier overrides keyed by source ID.
-    /// - Returns: Array of new (deduplicated) FeedItems.
-    /// Maximum number of feeds fetched concurrently.
-    /// Keeps the network layer from overwhelming the device or triggering
-    /// server-side rate limits while still being dramatically faster than serial.
-    private static let maxConcurrentFetches = 6
-
+    /// Throws on network/server failure so the caller can distinguish
+    /// "sync succeeded with zero new items" from "sync failed".
     func ingest(
         sources: [Source],
         velocityOverrides: [UUID: VelocityTier] = [:]
-    ) async -> [FeedItem] {
-
+    ) async throws -> [FeedItem] {
         let enabledSources = sources.filter(\.isEnabled)
         guard !enabledSources.isEmpty else { return [] }
 
-        // Fetch + parse all feeds concurrently (bounded by maxConcurrentFetches).
-        // Each child task returns (source, feedItems) or nil on failure.
-        let perSourceResults: [(Source, [FeedItem])] = await withTaskGroup(
-            of: (Source, [FeedItem])?.self,
-            returning: [(Source, [FeedItem])].self
-        ) { group in
-            // Semaphore-style throttle: add up to maxConcurrentFetches tasks initially,
-            // then add one more each time a task completes.
-            var sourceIterator = enabledSources.makeIterator()
-            var launched = 0
+        let newItems = try await cloudSync.sync(sources: enabledSources)
 
-            // Seed the group with the initial batch.
-            while launched < Self.maxConcurrentFetches, let source = sourceIterator.next() {
-                launched += 1
-                group.addTask { await self.fetchAndParse(source: source, velocityOverrides: velocityOverrides) }
-            }
-
-            var results: [(Source, [FeedItem])] = []
-            for await result in group {
-                if let result { results.append(result) }
-                // Launch next source (if any) to keep concurrency at the cap.
-                if let source = sourceIterator.next() {
-                    group.addTask { await self.fetchAndParse(source: source, velocityOverrides: velocityOverrides) }
-                }
-            }
-            return results
-        }
-
-        // Deduplicate, persist, and backfill — these touch SQLite so we do them
-        // sequentially to avoid contention on the write queue.
-        var allNewItems: [FeedItem] = []
-
-        for (source, feedItems) in perSourceResults {
-            let candidateIDs = Set(feedItems.map(\.id))
-            let existingIDs = store.existingItemIDs(from: candidateIDs)
-            let newItems = feedItems.filter { !existingIDs.contains($0.id) }
-
-            if !newItems.isEmpty {
-                store.upsertFeedItems(newItems)
-                print("✅ Inserted \(newItems.count) items from \(source.name)")
-                allNewItems.append(contentsOf: newItems)
-            }
-
-            // Backfill audio_url for existing podcast items that pre-date the audio column.
-            let audioBackfill: [(id: UUID, audioURL: String)] = feedItems
-                .filter { existingIDs.contains($0.id) }
-                .compactMap { item in
-                    guard let url = item.audioURL else { return nil }
-                    return (id: item.id, audioURL: url)
-                }
-            if !audioBackfill.isEmpty {
-                store.updateAudioURLs(audioBackfill)
-            }
-
-            // Update velocity tier in affinity table
-            let tier = feedItems.first?.velocityTier ?? .article
-            updateSourceAffinity(source: source, tier: tier)
-
-            // Pre-warm hero thumbnails for newly inserted items.
-            if !newItems.isEmpty {
-                Self.prewarmHeroes(for: newItems)
-            }
-        }
-
-        return allNewItems
-    }
-
-    // MARK: - Per-Source Fetch + Parse
-
-    /// Fetches and parses a single source. Returns nil on failure so other
-    /// sources in the TaskGroup are unaffected.
-    private func fetchAndParse(
-        source: Source,
-        velocityOverrides: [UUID: VelocityTier]
-    ) async -> (Source, [FeedItem])? {
-        let urlString = source.feedURL.hasPrefix("http://")
-            ? "https://" + source.feedURL.dropFirst(7)
-            : source.feedURL
-        guard let feedURL = URL(string: urlString) else { return nil }
-
-        do {
-            let (data, changed) = try await fetchWithConditionalGET(url: feedURL)
-            guard changed, let data else { return nil }
-
-            let parsed = try await rssService.parseFeed(from: data)
-
-            var youtubeExtras: [String: YouTubeAtomParser.VideoMeta] = [:]
-            if YouTubeService.isYouTubeURL(feedURL) {
-                youtubeExtras = YouTubeAtomParser().parse(data: data)
-            }
-
+        // Refresh affinity rows so the rest of the pipeline (rate-gating, scoring)
+        // sees up-to-date velocity tiers. Use the override if present; otherwise
+        // fall back to the tier the cloud row was tagged with, then to whatever
+        // we can infer from history.
+        let bySource = Dictionary(grouping: newItems, by: \.sourceID)
+        for source in enabledSources {
+            let items = bySource[source.id] ?? []
             let tier = velocityOverrides[source.id]
+                ?? items.first?.velocityTier
                 ?? inferVelocityTier(sourceID: source.id)
-
-            let feedItems = parsed.compactMap { p -> FeedItem? in
-                convertToFeedItem(
-                    parsed: p,
-                    source: source,
-                    velocityTier: tier,
-                    youtubeExtras: youtubeExtras
-                )
-            }
-
-            return (source, feedItems)
-        } catch {
-            print("❌ Failed to ingest \(source.name): \(error)")
-            return nil
-        }
-    }
-
-    // MARK: - Conditional GET
-
-    /// Fetches feed data using ETag/Last-Modified headers when available.
-    /// Returns (data, changed). If the server returns 304 Not Modified, returns (nil, false).
-    private func fetchWithConditionalGET(url: URL) async throws -> (Data?, Bool) {
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Payam/2.0 (iOS; River)", forHTTPHeaderField: "User-Agent")
-        request.setValue(
-            "application/rss+xml, application/atom+xml, application/json, text/xml, */*",
-            forHTTPHeaderField: "Accept"
-        )
-
-        // Apply cached conditional headers
-        let key = url.absoluteString
-        if let cached = conditionalCache.get(key) {
-            if let etag = cached.etag {
-                request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-            }
-            if let lastModified = cached.lastModified {
-                request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
-            }
+            updateSourceAffinity(source: source, tier: tier)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let http = response as? HTTPURLResponse else {
-            throw RSSServiceError.invalidResponse
-        }
-
-        if http.statusCode == 304 {
-            return (nil, false)
-        }
-
-        guard (200...299).contains(http.statusCode) else {
-            throw RSSServiceError.invalidResponse
-        }
-
-        // Cache the conditional headers for next time
-        let etag = http.value(forHTTPHeaderField: "ETag")
-        let lastModified = http.value(forHTTPHeaderField: "Last-Modified")
-        conditionalCache.set(key, etag: etag, lastModified: lastModified)
-
-        return (data, true)
-    }
-
-    // MARK: - Conversion
-
-    /// Converts a ParsedArticle to a FeedItem, generating a stable ID from the link.
-    /// Handles items with missing links gracefully (falls back to source website URL).
-    private func convertToFeedItem(
-        parsed: ParsedArticle,
-        source: Source,
-        velocityTier: VelocityTier,
-        youtubeExtras: [String: YouTubeAtomParser.VideoMeta]
-    ) -> FeedItem? {
-        guard let title = parsed.title?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !title.isEmpty else { return nil }
-
-        let linkStr = (parsed.link ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Resolve the link URL: prefer the item's own link, fall back to source website.
-        let link: URL
-        if !linkStr.isEmpty, let parsedURL = URL(string: linkStr) {
-            link = parsedURL
-        } else if let sourceURL = URL(string: source.websiteURL) {
-            link = sourceURL
-        } else {
-            link = URL(string: "https://example.com")!
-        }
-
-        // Stable ID: deterministic UUID from source + link (or title when link is absent).
-        // Matches the dedup key format used by SwiftDataService.refreshAllFeeds().
-        let stableKey: String
-        if !linkStr.isEmpty {
-            stableKey = "\(source.id.uuidString)|\(linkStr)"
-        } else {
-            stableKey = "\(source.id.uuidString)|\(title)"
-        }
-        let id = UUID(name: stableKey)
-
-        // YouTube supplemental data
-        let ytMeta = youtubeExtras[linkStr]
-        let rawExcerpt = parsed.description ?? ytMeta?.description ?? ""
-        let excerpt = Self.plainText(rawExcerpt)
-
-        // Image priority: FeedKit > YouTube parser > first <img> in description
-        var imageURL = parsed.imageURL ?? ytMeta?.thumbnailURL
-        if imageURL == nil, YouTubeService.isYouTubeVideoOrShortURL(linkStr) {
-            imageURL = YouTubeService.videoID(from: linkStr)
-                .flatMap { YouTubeService.thumbnailURL(videoID: $0)?.absoluteString }
-        }
-
-        // Podcast episodes (items with audio enclosures) use .essay tier regardless of
-        // posting frequency: 168h half-life and unlimited slot limit. This prevents them from
-        // ageing out in 2 days and avoids rate-gating on first subscribe (when many episodes
-        // are fetched at once). VelocityTier.displayName confirms: .evergreen = "Evergreen / Podcasts".
-        let effectiveTier: VelocityTier = parsed.audioURL != nil ? .essay : velocityTier
-
-        return FeedItem(
-            id: id,
-            sourceID: source.id,
-            title: title,
-            link: link,
-            publishedAt: parsed.publicationDate ?? Date(),
-            fetchedAt: Date(),
-            excerpt: excerpt,
-            imageURL: imageURL,
-            audioURL: parsed.audioURL,
-            videoURL: parsed.videoURL,
-            author: parsed.author,
-            velocityTier: effectiveTier,
-            simhashValue: SimHash.compute(title)
-        )
+        return newItems
     }
 
     // MARK: - Velocity Tier Inference
 
     /// Infers velocity tier from historical publish frequency in SQLite.
     private func inferVelocityTier(sourceID: UUID) -> VelocityTier {
-        // Check if we already have an affinity record with a tier
         if let record = store.fetchAffinity(forSource: sourceID),
            record.velocityTier != .article || record.eventCount > 0 {
             return record.velocityTier
         }
 
-        // Compute from historical items
         let items = store.fetchItems(forSource: sourceID)
         guard items.count >= 2 else { return .article }
 
@@ -310,57 +88,25 @@ final class FeedIngestService: Sendable {
             store.upsertAffinity(record)
         }
     }
-
-    // MARK: - Hero Pre-Warm
-
-    /// Wall-clock budget for the per-ingest hero warm. Generous because we
-    /// run detached at utility priority and don't block the pipeline; small
-    /// enough that even slow hosts don't pile up tasks across cycles.
-    private static let heroPrewarmBudgetSeconds: TimeInterval = 25
-
-    /// Fire-and-forget hero thumbnail warm for newly inserted items.
-    /// Resolves og:image where missing, then asks ThumbnailService to download
-    /// + downsample + persist. Uses HeroPrefetcher's bounded concurrency.
-    private static func prewarmHeroes(for items: [FeedItem]) {
-        let inputs = items.map { item in
-            HeroInput(pageURL: item.link.absoluteString, imageURL: item.imageURL)
-        }
-        Task.detached(priority: .utility) {
-            await HeroPrefetcher.warm(inputs: inputs, budgetSeconds: heroPrewarmBudgetSeconds)
-        }
-    }
-
-    // MARK: - Helpers
-
-    private static func plainText(_ html: String) -> String {
-        html.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "&nbsp;",  with: " ")
-            .replacingOccurrences(of: "&amp;",   with: "&")
-            .replacingOccurrences(of: "&quot;",  with: "\"")
-            .replacingOccurrences(of: "&#39;",   with: "'")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }
 
 // MARK: - Deterministic UUID
 
 extension UUID {
     /// Creates a deterministic UUID v5-like hash from a name string.
-    /// Uses SHA-256 truncated to 128 bits with version/variant bits set.
+    /// Mirrors `deterministicUUID` in payam-polling/src/lib/keys.mjs (two FNV-1a
+    /// passes — forward then reversed — into the two 64-bit halves of the UUID).
     init(name: String) {
         let data = Data(name.utf8)
-        // Simple FNV-1a based approach for deterministic UUID
         var hash: [UInt8] = Array(repeating: 0, count: 16)
         var h: UInt64 = 14695981039346656037 // FNV offset basis
         for byte in data {
             h ^= UInt64(byte)
             h &*= 1099511628211 // FNV prime
         }
-        // Fill first 8 bytes
         for i in 0..<8 {
             hash[i] = UInt8((h >> (i * 8)) & 0xFF)
         }
-        // Second pass for remaining bytes
         for byte in data.reversed() {
             h ^= UInt64(byte)
             h &*= 1099511628211
@@ -368,7 +114,6 @@ extension UUID {
         for i in 0..<8 {
             hash[8 + i] = UInt8((h >> (i * 8)) & 0xFF)
         }
-        // Set version (4) and variant (RFC 4122)
         hash[6] = (hash[6] & 0x0F) | 0x50  // version 5
         hash[8] = (hash[8] & 0x3F) | 0x80  // variant
 
@@ -416,30 +161,5 @@ enum SimHash {
             hash &*= 1099511628211
         }
         return hash
-    }
-}
-
-// MARK: - ConditionalCache
-
-/// Thread-safe cache for ETag / Last-Modified headers.
-private final class ConditionalCache: @unchecked Sendable {
-    struct Entry {
-        let etag: String?
-        let lastModified: String?
-    }
-
-    private var entries: [String: Entry] = [:]
-    private let lock = NSLock()
-
-    func get(_ key: String) -> Entry? {
-        lock.lock()
-        defer { lock.unlock() }
-        return entries[key]
-    }
-
-    func set(_ key: String, etag: String?, lastModified: String?) {
-        lock.lock()
-        defer { lock.unlock() }
-        entries[key] = Entry(etag: etag, lastModified: lastModified)
     }
 }

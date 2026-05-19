@@ -166,7 +166,7 @@ struct PayamApp: App {
             // Snapshot count before
             let countBefore = SQLiteStore.shared.totalItemCount()
 
-            await RiverPipeline.shared.runCycle(
+            _ = await RiverPipeline.shared.runCycle(
                 sources: sources,
                 filterRules: filterRules,
                 sourceFilterMeta: sourceFilterMeta

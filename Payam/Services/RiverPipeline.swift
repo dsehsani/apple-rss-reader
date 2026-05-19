@@ -17,6 +17,16 @@
 import Foundation
 import Combine
 
+// MARK: - IngestOutcome
+
+/// Outcome of a single pipeline cycle's ingest stage. Lets the UI distinguish
+/// "sync succeeded with zero new items" (still emit a healthy snapshot) from
+/// "couldn't reach server" (show a banner inviting the user to retry).
+enum IngestOutcome: Equatable {
+    case ok
+    case syncFailed
+}
+
 // MARK: - RiverPipeline
 
 final class RiverPipeline: @unchecked Sendable {
@@ -89,14 +99,14 @@ final class RiverPipeline: @unchecked Sendable {
         velocityOverrides: [UUID: VelocityTier] = [:],
         filterRules: [FilterRuleSnapshot] = [],
         sourceFilterMeta: [UUID: (feedURL: String, folderName: String?)] = [:]
-    ) async {
+    ) async -> IngestOutcome {
         // Prevent overlapping runs
         let shouldRun: Bool = pipelineQueue.sync {
             guard !isRunning else { return false }
             isRunning = true
             return true
         }
-        guard shouldRun else { return }
+        guard shouldRun else { return .ok }
 
         defer {
             pipelineQueue.sync { isRunning = false }
@@ -116,9 +126,20 @@ final class RiverPipeline: @unchecked Sendable {
         lastFilterRules = filterRules
         lastSourceFilterMeta = sourceFilterMeta
 
-        // Stage 1 — Ingest
-        let (ingestResult, _) = await timer.time("Stage1-Ingest") {
-            await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
+        // Stage 1 — Ingest. CloudFeedSyncService throws on network/server failure;
+        // we swallow the throw, mark the cycle's outcome, and continue so the rest
+        // of the pipeline (clustering, rate-gating, scoring, snapshot) still runs
+        // against whatever's already in SQLite. The caller surfaces `.syncFailed`
+        // to the UI.
+        var outcome: IngestOutcome = .ok
+        let (ingestResult, _) = await timer.time("Stage1-Ingest") { () -> [FeedItem] in
+            do {
+                return try await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
+            } catch {
+                print("❌ Stage1-Ingest cloud sync failed: \(error)")
+                outcome = .syncFailed
+                return []
+            }
         }
 
         // #region agent log
@@ -196,6 +217,7 @@ final class RiverPipeline: @unchecked Sendable {
             pipelineDurationMs: totalMs
         )
         snapshotPublisher.send(finalSnapshot)
+        return outcome
     }
 
     /// Runs only the scoring + snapshot stages (no network fetch).

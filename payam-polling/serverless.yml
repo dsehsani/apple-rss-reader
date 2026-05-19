@@ -1,0 +1,187 @@
+service: payam-polling
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    REGISTRY_TABLE: ${self:service}-${self:provider.stage}-feed-registry
+    ITEMS_TABLE: ${self:service}-${self:provider.stage}-feed-items
+    USER_FEEDS_TABLE: ${self:service}-${self:provider.stage}-user-feeds
+    USER_ITEM_STATE_TABLE: ${self:service}-${self:provider.stage}-user-item-state
+    POLL_QUEUE_URL: !Ref PollQueue
+    ITEMS_BY_FETCHED_INDEX: feedId-fetchedAt-index
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - !GetAtt FeedRegistryTable.Arn
+            - !GetAtt FeedItemsTable.Arn
+            - !Sub '${FeedItemsTable.Arn}/index/*'
+            - !GetAtt UserFeedsTable.Arn
+            - !GetAtt UserItemStateTable.Arn
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt PollQueue.Arn
+
+functions:
+  orchestrator:
+    name: ${self:service}-${self:provider.stage}-orchestrator
+    handler: src/orchestrator.main
+    timeout: 60
+    memorySize: 512
+    events:
+      - schedule: rate(5 minutes)
+
+  worker:
+    name: ${self:service}-${self:provider.stage}-worker
+    handler: src/worker.main
+    timeout: 30
+    memorySize: 512
+    # No reservedConcurrency — accounts with low concurrency limits (e.g. new
+    # AWS accounts capped at 10) reject reservations that would push
+    # unreserved capacity below the 10-minimum. SQS batchSize: 1 +
+    # queue depth still acts as natural throttling.
+    events:
+      - sqs:
+          arn: !GetAtt PollQueue.Arn
+          batchSize: 1
+
+  river:
+    name: ${self:service}-${self:provider.stage}-river
+    handler: src/river.main
+    timeout: 15
+    memorySize: 512
+    events:
+      - httpApi:
+          path: /v1/river
+          method: get
+
+  feeds:
+    name: ${self:service}-${self:provider.stage}-feeds
+    handler: src/feeds.main
+    timeout: 15
+    memorySize: 256
+    events:
+      - httpApi:
+          path: /v1/feeds
+          method: post
+
+resources:
+  Resources:
+    FeedRegistryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.REGISTRY_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: feedUrl
+            AttributeType: S
+        KeySchema:
+          - AttributeName: feedUrl
+            KeyType: HASH
+
+    FeedItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ITEMS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: feedId
+            AttributeType: S
+          - AttributeName: link
+            AttributeType: S
+          - AttributeName: fetchedAt
+            AttributeType: N
+        KeySchema:
+          - AttributeName: feedId
+            KeyType: HASH
+          - AttributeName: link
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: feedId-fetchedAt-index
+            KeySchema:
+              - AttributeName: feedId
+                KeyType: HASH
+              - AttributeName: fetchedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+    UserFeedsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USER_FEEDS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: feedUrl
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: feedUrl
+            KeyType: RANGE
+
+    UserItemStateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USER_ITEM_STATE_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: itemId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: itemId
+            KeyType: RANGE
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+    PollDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-poll-dlq
+        MessageRetentionPeriod: 1209600
+
+    PollQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-poll-queue
+        VisibilityTimeout: 60
+        MessageRetentionPeriod: 345600
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt PollDeadLetterQueue.Arn
+          maxReceiveCount: 3
+
+package:
+  patterns:
+    - '!.git/**'
+    - '!.serverless/**'
+    - '!node_modules/.cache/**'
