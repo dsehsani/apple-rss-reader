@@ -598,8 +598,6 @@ final class SwiftDataService: FeedDataService {
         // #endregion
 
         if !newArticles.isEmpty {
-            // Cluster related articles before displaying
-            ArticleClusteringService.shared.clusterArticles(&newArticles)
             self.articles = newArticles
             // Persist to the local JSON cache so the next launch is pre-populated.
             ArticleCacheStore.save(newArticles)

@@ -39,7 +39,7 @@ struct ArticleReaderHostView: View {
     @State private var loadState: LoadState = .loading
     @State private var showPaywallSafari = false
     @State private var showChatSheet = false
-    @State private var chatViewModel = ChatViewModel()
+    @State private var agentViewModel = AgentViewModel()
     @State private var isDescriptionExpanded = false
     @State private var appearedAt: Date?
 
@@ -88,7 +88,7 @@ struct ArticleReaderHostView: View {
         .sheet(isPresented: $showChatSheet, onDismiss: {
             appState.isReadingArticle = true
         }) {
-            ChatSheetView(viewModel: chatViewModel)
+            AgentSheetView(viewModel: agentViewModel)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(20)
@@ -212,7 +212,7 @@ struct ArticleReaderHostView: View {
             }
 
             loadState = .loaded(extracted)
-            chatViewModel.setArticleContext(
+            agentViewModel.setArticleContext(
                 title: extracted.title,
                 feedName: extracted.feedName,
                 nodes: extracted.nodes

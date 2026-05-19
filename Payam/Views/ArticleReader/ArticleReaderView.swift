@@ -234,11 +234,21 @@ struct ArticleReaderView: View {
         """
 
         do {
-            let result = try await GeminiService.send(
+            let envelope = try await AgentClient.send(
                 history: [ChatMessage(role: .user, content: prompt)],
-                articleContext: nil
+                articleContext: nil,
+                subscriptions: []
             )
-            summaryState = .result(result.trimmingCharacters(in: .whitespacesAndNewlines))
+            let reply: String
+            switch envelope.view {
+            case .text(let payload):
+                reply = payload.content
+            case .summaryCard(let card):
+                reply = card.bullets.joined(separator: "\n• ")
+            default:
+                reply = "Summary unavailable."
+            }
+            summaryState = .result(reply.trimmingCharacters(in: .whitespacesAndNewlines))
         } catch {
             summaryState = .error(error.localizedDescription)
         }
