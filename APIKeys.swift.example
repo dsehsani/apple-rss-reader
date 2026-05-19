@@ -1,10 +1,12 @@
 //
 //  APIKeys.swift.example
 //
-//  Copy this file to OpenRSS/APIKeys.swift and replace the placeholder with
-//  your real OpenAI API key. APIKeys.swift is gitignored so your key stays local.
+//  Copy this file to Payam/APIKeys.swift and set `payamChatBaseURL` to your
+//  deployed payam-chat HTTP API invoke URL (from `serverless deploy`, no path).
+//  APIKeys.swift is gitignored so your URL stays local.
 //
 
 enum APIKeys {
-    static let openAI = "ENTER_YOUR_API_KEY_HERE"
+    /// e.g. "https://abc123.execute-api.us-west-2.amazonaws.com" (no trailing slash)
+    static let payamChatBaseURL = "https://YOUR_API_ID.execute-api.us-west-2.amazonaws.com"
 }

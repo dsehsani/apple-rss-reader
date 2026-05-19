@@ -1,0 +1,16 @@
+{
+  "name": "payam-chat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@aws-sdk/client-secrets-manager": "^3.787.0"
+  },
+  "devDependencies": {
+    "serverless": "^3.40.0"
+  }
+}

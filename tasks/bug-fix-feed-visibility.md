@@ -6,7 +6,7 @@
 ## Diagnosed Issues (read the code before touching anything)
 
 ### Bug 1 — Rate Gate is killing podcast/YouTube/Vimeo content
-**Root cause:** `VelocityTier.defaultSlotLimit` in `OpenRSS/Models/VelocityTier.swift`:
+**Root cause:** `VelocityTier.defaultSlotLimit` in `Payam/Models/VelocityTier.swift`:
 - `.evergreen` = **2 items/day** — this is the tier assigned to low-frequency feeds
 - `.breaking` = 3, `.news` = 5, `.article` = 8
 
@@ -16,7 +16,7 @@ Result: **only 2 episodes/videos ever surface per day**, the rest are silently
 bundled into DigestCards or hidden. This is why feeds appear to show "nothing"
 or only 6 items.
 
-**Fix:** In `OpenRSS/Models/VelocityTier.swift`, raise `.evergreen` slot limit
+**Fix:** In `Payam/Models/VelocityTier.swift`, raise `.evergreen` slot limit
 from 2 to `.max` (unlimited) — evergreen content is rare by definition, capping
 it at 2 is never the right behavior. While you're there, also raise `.article`
 from 8 to at minimum 15. The user should see all content from a month's window.
@@ -32,7 +32,7 @@ case .evergreen: return .max   // same as .essay — rare content, never cap it
 ---
 
 ### Bug 2 — Clusters vanish after refresh
-**Root cause:** The `RiverSnapshotService` (`OpenRSS/Services/RiverSnapshotService.swift`)
+**Root cause:** The `RiverSnapshotService` (`Payam/Services/RiverSnapshotService.swift`)
 calls `store.fetchRiverItemsAllHistory()` at line 54. A cluster card requires
 `clusterItems.count >= 2` (line 71). On the first load, both items in a cluster
 are present. After refresh:
@@ -48,13 +48,13 @@ are present. After refresh:
 
 **Fix (two-part):**
 
-Part A — In `OpenRSS/Services/RiverSnapshotService.swift`, change the cluster
+Part A — In `Payam/Services/RiverSnapshotService.swift`, change the cluster
 minimum from 2 to 1 OR ensure that single-item "orphaned" clusters still appear
 as standalone articles (the current `items.append(contentsOf: clusterItems.map
 { .article($0) })` branch should handle this, but verify `fetchRiverItemsAllHistory`
 actually returns aged-out items or if it silently drops them).
 
-Part B — Read `OpenRSS/Services/SQLiteStore.swift` and find the
+Part B — Read `Payam/Services/SQLiteStore.swift` and find the
 `fetchRiverItemsAllHistory()` implementation. If it filters on `river_visible = 1`
 or `aged_out = 0`, that's why the items vanish. The fix is to either:
 - Include aged-out items in the history query (let decay opacity handle the visual
@@ -75,7 +75,7 @@ be pulling from a stale pre-rate-gate state.
 of relying on the 30-minute `autoRefreshIfNeeded` window. Check
 `RiverViewModel.refresh()` — it already does this, but confirm the "add feed"
 flow calls `refresh()` and not just `autoRefreshIfNeeded()`. Look at
-`OpenRSS/ViewModels/AddFeedViewModel.swift` for the post-add hook.
+`Payam/ViewModels/AddFeedViewModel.swift` for the post-add hook.
 
 ---
 
@@ -93,12 +93,12 @@ flow calls `refresh()` and not just `autoRefreshIfNeeded()`. Look at
 
 ## Files to touch (in order)
 
-1. `OpenRSS/Models/VelocityTier.swift` — raise slot limits (Bug 1)
-2. `OpenRSS/Services/SQLiteStore.swift` — audit `fetchRiverItemsAllHistory()`
+1. `Payam/Models/VelocityTier.swift` — raise slot limits (Bug 1)
+2. `Payam/Services/SQLiteStore.swift` — audit `fetchRiverItemsAllHistory()`
    for `river_visible` / `aged_out` filtering (Bug 2)
-3. `OpenRSS/Services/RiverSnapshotService.swift` — verify cluster orphan handling
+3. `Payam/Services/RiverSnapshotService.swift` — verify cluster orphan handling
    (Bug 2)
-4. `OpenRSS/ViewModels/AddFeedViewModel.swift` — verify post-add triggers full
+4. `Payam/ViewModels/AddFeedViewModel.swift` — verify post-add triggers full
    `refresh()` not just scoring (Bug 3)
 
 ## Do NOT touch

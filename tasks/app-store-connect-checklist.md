@@ -1,4 +1,4 @@
-# App Store Connect Submission Checklist — OpenRSS
+# App Store Connect Submission Checklist — Payam
 
 ## Step 1: Enable GitHub Pages (one-time)
 
