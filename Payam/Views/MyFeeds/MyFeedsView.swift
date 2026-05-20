@@ -41,6 +41,7 @@ struct MyFeedsView: View {
     @State private var navigatedFolder: Category? = nil
     @State private var editableFolder: EditableFolderWrapper? = nil
     @State private var folderColorTick    = 0
+    @State private var showReorderFolders = false
 
     // MARK: - Environment
 
@@ -98,6 +99,13 @@ struct MyFeedsView: View {
                         }
 
                         Button {
+                            showReorderFolders = true
+                        } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+
+                        Button {
                             viewModel.showingAddFeed = true
                         } label: {
                             Image(systemName: "plus")
@@ -115,6 +123,9 @@ struct MyFeedsView: View {
         }
         .sheet(isPresented: $viewModel.showingAddFeed) {
             AddFeedView()
+        }
+        .sheet(isPresented: $showReorderFolders) {
+            ReorderFoldersSheet(folders: viewModel.folders)
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
@@ -162,6 +173,9 @@ struct MyFeedsView: View {
         }
         .sheet(isPresented: $viewModel.showingAddFeed) {
             AddFeedView()
+        }
+        .sheet(isPresented: $showReorderFolders) {
+            ReorderFoldersSheet(folders: viewModel.folders)
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)

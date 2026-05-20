@@ -327,11 +327,18 @@ final class SwiftDataService: FeedDataService {
         }.value
         loadFromSwiftData()
         NotificationCenter.default.post(name: .feedAdded, object: nil)
+
+        // Sync subscription to cloud (fire-and-forget)
+        Task.detached(priority: .utility) {
+            await CloudFeedService.syncAdded(feedURL: feedURL)
+        }
     }
 
     /// Permanently deletes a feed subscription on a background context.
     @MainActor
     func deleteFeed(id: UUID) async throws {
+        // Capture feed URL before deletion for cloud sync
+        let feedURL = sources.first { $0.id == id }?.feedURL
         guard let container else { return }
         try await Task.detached {
             let bg = ModelContext(container)
@@ -344,6 +351,13 @@ final class SwiftDataService: FeedDataService {
             }
         }.value
         loadFromSwiftData()
+
+        // Sync removal to cloud (fire-and-forget)
+        if let feedURL {
+            Task.detached(priority: .utility) {
+                await CloudFeedService.syncRemoved(feedURL: feedURL)
+            }
+        }
     }
 
     /// Toggles whether a feed is included in refresh.

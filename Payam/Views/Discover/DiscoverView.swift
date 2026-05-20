@@ -26,14 +26,25 @@ struct DiscoverView: View {
     @State private var feedToAdd: CatalogFeed?        = nil
     @State private var selectedCategory: CatalogCategory? = nil
 
+    // MARK: - Dynamic Catalog
+
+    private var catalogService = FeedCatalogService.shared
+
     // MARK: - Subscribed URLs (observed via SwiftDataService)
 
     private var subscribedURLs: Set<String> {
         Set(SwiftDataService.shared.sources.map { $0.feedURL.lowercased() })
     }
 
+    /// Uses dynamic catalog if loaded, falls back to static RSSCatalog.
+    private var activeCategories: [CatalogCategory] {
+        catalogService.categories.isEmpty ? RSSCatalog.categories : catalogService.categories
+    }
+
     private var recommendedFeeds: [CatalogFeed] {
-        RSSCatalog.recommendedFeeds(subscribedURLs: subscribedURLs)
+        let allFeeds = activeCategories.flatMap(\.feeds)
+        return allFeeds.filter { !subscribedURLs.contains($0.feedURL.lowercased()) }
+            .prefix(8).map { $0 }
     }
 
     // MARK: - Body
@@ -118,6 +129,9 @@ struct DiscoverView: View {
             recommendedSourcesSection
         }
         .padding(.top, Design.Spacing.edge)
+        .task {
+            await catalogService.loadIfNeeded()
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -213,7 +227,7 @@ struct DiscoverView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Design.Spacing.edge) {
-                    ForEach(RSSCatalog.categories) { cat in
+                    ForEach(activeCategories) { cat in
                         categoryCard(cat)
                     }
                 }

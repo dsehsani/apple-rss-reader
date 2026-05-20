@@ -34,17 +34,35 @@ enum CloudExtractionService {
         let urlString = articleURL.absoluteString
         let urlHash = sha256(urlString)
         let encodedURL = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? urlString
+        let path = "/v1/extract/\(urlHash)?url=\(encodedURL)"
 
+        // First attempt — may return 200 (cache hit) or 202 (queued for extraction)
+        if let result = await attempt(path: path, itemID: itemID, sourceURL: articleURL, feedName: feedName) {
+            return result
+        }
+
+        // On 202, the server queued extraction. Wait briefly and retry once.
+        try? await Task.sleep(for: .seconds(5))
+
+        return await attempt(path: path, itemID: itemID, sourceURL: articleURL, feedName: feedName)
+    }
+
+    private static func attempt(
+        path: String,
+        itemID: UUID,
+        sourceURL: URL,
+        feedName: String
+    ) async -> ExtractedArticle? {
         do {
             let response = try await PayamAPIClient.send(
                 ExtractionResponse.self,
-                path: "/v1/extract/\(urlHash)?url=\(encodedURL)",
-                timeout: 3 // Fast timeout — don't delay local fallback
+                path: path,
+                timeout: 3
             )
 
             return ExtractedArticle(
                 id: itemID,
-                sourceURL: articleURL,
+                sourceURL: sourceURL,
                 title: response.title,
                 author: response.author,
                 publishDate: nil,
@@ -54,7 +72,6 @@ enum CloudExtractionService {
                 cachedAt: Date()
             )
         } catch {
-            // Cache miss or network error — fall through to local extraction
             return nil
         }
     }
