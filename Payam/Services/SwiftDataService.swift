@@ -457,6 +457,20 @@ final class SwiftDataService: FeedDataService {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Reorders folders to match the given ID sequence. Updates `sortOrder`
+    /// on each `FolderModel` and refreshes the in-memory `categories` array.
+    @MainActor
+    func applyFolderOrder(_ orderedIDs: [UUID]) {
+        guard let context = modelContext else { return }
+        let allFolders = allFolderModels()
+        let lookup = Dictionary(uniqueKeysWithValues: allFolders.map { ($0.id, $0) })
+        for (index, id) in orderedIDs.enumerated() {
+            lookup[id]?.sortOrder = index
+        }
+        try? context.save()
+        loadFromSwiftData()
+    }
+
     // MARK: - RSS Refresh
 
     /// Fetches live articles from every enabled source and updates the in-memory `articles` array.
