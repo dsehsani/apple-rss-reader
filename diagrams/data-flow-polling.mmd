@@ -3,44 +3,58 @@ title: Feed Polling Data Flow
 ---
 sequenceDiagram
     participant EB as EventBridge<br/>(every 5min)
-    participant Orch as Orchestrator<br/>Lambda
+    participant Orch as Orchestrator
     participant PG as PostgreSQL
     participant SQS as SQS Feed Queue
-    participant Worker as Worker Lambda
-    participant Feed as RSS Feed Server
-    participant SNS as SNS
-    participant APNs as APNs
+    participant Worker as Feed Worker
+    participant Feed as RSS/Atom Server
+    participant ExtQ as Extraction<br/>Light Queue
+    participant ExtL as extract-light<br/>(jsdom)
+    participant S3 as S3
+    participant DDB as DynamoDB
+    participant SNS as SNS → APNs
     participant Device as iOS Device
-    participant SQLite as SQLite Store
-    participant Pipeline as River Pipeline<br/>(stages 2-5)
 
-    EB->>Orch: trigger
-    Orch->>PG: SELECT feeds WHERE next_fetch_at <= NOW()
-    PG-->>Orch: due feed URLs
-    loop Each feed URL
-        Orch->>SQS: enqueue feed_url
-    end
+    EB->>Orch: trigger (every 5min)
+    Orch->>PG: SELECT feeds WHERE is_dead=FALSE<br/>+ dead feeds for daily retry
+    PG-->>Orch: candidate feeds (up to 1000)
 
-    SQS->>Worker: dequeue
-    Worker->>Feed: GET feed.xml<br/>(If-None-Match: etag)
+    Note over Orch: Filter by velocity tier intervals:<br/>breaking=5m, news=15m, article=1h,<br/>essay=6h, evergreen=24h
+
+    Orch->>Orch: isDueForPoll() per tier
+    Orch->>SQS: enqueue due feeds (batches of 10)
+
+    SQS->>Worker: dequeue (1 per message)
+    Worker->>Feed: GET feed.xml<br/>(If-None-Match + If-Modified-Since)
+
     alt 304 Not Modified
         Feed-->>Worker: 304
         Worker->>PG: UPDATE last_fetched_at
+        Note over Worker: Reset consecutive_failures<br/>if previously dead
     else 200 New Content
         Feed-->>Worker: 200 + XML
-        Worker->>Worker: parse RSS/Atom
-        Worker->>Worker: compute FNV-1a UUIDs
-        Worker->>PG: diff against existing items
-        Worker->>PG: INSERT new feed_items
-        Worker->>PG: SELECT subscribers
-        PG-->>Worker: subscriber device tokens
-        Worker->>SNS: push to subscribers
-        SNS->>APNs: silent push<br/>(content-available: 1)
-    end
+        Worker->>Worker: rss-parser (RSS/Atom/JSON Feed)
+        Worker->>PG: diff links against feed_items
+        Worker->>PG: INSERT new items<br/>(ON CONFLICT DO NOTHING)
+        Worker->>PG: UPDATE feed title/description/image
 
-    APNs->>Device: wake app
-    Device->>PG: GET /v1/river?since=lastSync
-    PG-->>Device: FeedItem[] delta + read state
-    Device->>SQLite: upsertCloudItems()
-    SQLite->>Pipeline: runCycle()
-    Note over Pipeline: Clustering, rate gating,<br/>decay scoring, snapshot<br/>all run on-device unchanged
+        Note over Worker: Re-infer velocity tier<br/>from last 7 days of items
+
+        Worker->>PG: UPDATE velocity_tier if changed
+
+        alt subscriber_count >= 3 AND tier in (breaking, news, article)
+            Worker->>ExtQ: enqueue top 5 items<br/>for pre-extraction
+            ExtQ->>ExtL: jsdom + Readability
+            ExtL->>S3: store ContentNode JSON
+            ExtL->>DDB: index urlHash (72h TTL)
+            ExtL->>PG: UPDATE feed_items<br/>word_count, topic_tags, extraction_tier
+        end
+
+        Worker->>PG: SELECT subscribers for feed
+        Worker->>SNS: silent push (content-available: 1)
+        SNS->>Device: wake app for background refresh
+    else HTTP Error / Timeout
+        Feed-->>Worker: 4xx/5xx/timeout
+        Worker->>PG: consecutive_failures += 1
+        Note over Worker: If failures >= 3:<br/>SET is_dead = TRUE<br/>Retry once per 24 hours
+    end

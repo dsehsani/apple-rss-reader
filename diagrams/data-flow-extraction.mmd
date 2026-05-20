@@ -1,14 +1,17 @@
 ---
-title: Extraction Cache Data Flow
+title: Two-Tier Extraction Data Flow
 ---
 sequenceDiagram
     participant User as User taps article
     participant APS as ArticlePipelineService
-    participant Cloud as extract-proxy Lambda
+    participant CE as CloudExtractionService
+    participant Proxy as extract-proxy Lambda
     participant DDB as DynamoDB<br/>extraction-index
     participant S3 as S3 Bucket
-    participant SQS as SQS Extraction Queue
-    participant ECS as ECS Fargate<br/>Puppeteer
+    participant LightQ as SQS Light Queue
+    participant Light as extract-light<br/>(jsdom + Readability)
+    participant PuppetQ as SQS Puppeteer Queue
+    participant Fargate as ECS Fargate<br/>(Puppeteer + Chrome)
     participant Web as Article Website
     participant NSC as NSCache (L1)
     participant SD as SwiftData (L2)
@@ -16,42 +19,81 @@ sequenceDiagram
 
     User->>APS: process(item)
 
-    Note over APS: Premium user: check L0 first
-    APS->>Cloud: GET /v1/extract/{sha256(url)}
-    Cloud->>DDB: lookup urlHash
+    Note over APS: Check L1 memory cache first
+    APS->>NSC: lookup by item ID
+    NSC-->>APS: miss
 
-    alt Cache Hit
-        DDB-->>Cloud: s3Key found
-        Cloud->>S3: GET ContentNode JSON
-        S3-->>Cloud: article content
-        Cloud-->>APS: 200 + ExtractedArticle
+    Note over APS: Premium user: check L0 cloud cache
+    APS->>CE: fetch(articleURL, itemID, feedName)
+    CE->>Proxy: GET /v1/extract/{sha256(url)}
+    Proxy->>DDB: GetItem(urlHash)
+
+    alt L0 Cache Hit
+        DDB-->>Proxy: s3Key found
+        Proxy->>S3: GetObject
+        S3-->>Proxy: ContentNode JSON
+        Proxy-->>CE: 200 + ExtractedArticle
+        CE-->>APS: article (title, author, hero, nodes)
         Note over APS: ~80ms total
-        APS-->>User: display article instantly
-    else Cache Miss
-        DDB-->>Cloud: not found
-        Cloud->>SQS: enqueue URL for extraction
-        Cloud-->>APS: 404 (miss)
-
-        Note over APS: Fall through to local cache
-        APS->>NSC: check L1
-        NSC-->>APS: miss
-        APS->>SD: check L2
-        SD-->>APS: miss
-        APS->>WK: extract via Readability.js
-        WK->>Web: load page
-        Web-->>WK: HTML + JS rendered
-        WK-->>APS: ContentNode[]
-        Note over APS: 2-5 seconds
+        APS->>NSC: store in L1
+        APS->>SD: store in L2
         APS-->>User: display article
 
-        par Server-side extraction (async)
-            SQS->>ECS: dequeue URL
-            ECS->>Web: Puppeteer loads page
-            Web-->>ECS: rendered HTML
-            ECS->>ECS: Readability.js extract
-            ECS->>S3: store ContentNode JSON
-            ECS->>DDB: index urlHash → s3Key
-            Note over S3: 72hr TTL
-            Note over ECS: Next user gets cache hit
+    else L0 Cache Miss (202 Queued)
+        DDB-->>Proxy: not found
+        Proxy->>LightQ: enqueue {urlHash, url}
+        Proxy-->>CE: 202 {status: "queued", retryAfterSeconds: 5}
+
+        Note over CE: Wait 5 seconds, retry once
+        CE->>CE: sleep(5s)
+        CE->>Proxy: GET /v1/extract/{hash} (retry)
+
+        alt Retry Hit (extraction completed)
+            Proxy->>DDB: GetItem
+            DDB-->>Proxy: s3Key found
+            Proxy->>S3: GetObject
+            Proxy-->>CE: 200 + ExtractedArticle
+            CE-->>APS: article
+            APS-->>User: display article
+        else Retry Miss
+            Proxy-->>CE: 202 still queued
+            CE-->>APS: nil (fall through)
+        end
+
+        Note over APS: Fall through to local extraction
+        APS->>SD: check L2 (SwiftData disk cache)
+        SD-->>APS: miss
+        APS->>WK: L3: WKWebView + Readability.js
+        WK->>Web: load page + render JS
+        Web-->>WK: HTML
+        WK-->>APS: ContentNode[]
+        Note over APS: 3-8 seconds
+        APS->>NSC: store in L1
+        APS->>SD: store in L2
+        APS-->>User: display article
+    end
+
+    par Server-side extraction (async, in background)
+        LightQ->>Light: dequeue {urlHash, url}
+        Light->>Web: fetch HTML (10s timeout)
+        Light->>Light: jsdom + Readability.parse()
+        Light->>Light: inferTopics(title, content)
+        Light->>Light: extractHeroImage(og:image)
+
+        alt Content >= 100 words
+            Light->>Light: htmlToContentNodes()
+            Light->>S3: PutObject articles/{hash}.json
+            Light->>DDB: PutItem urlHash → s3Key (72h TTL)
+            Light->>DDB: UPDATE feed_items (word_count, topics)
+            Note over Light: jsdom path: ~200ms, $0.0000004
+        else Content < 100 words (SPA site)
+            Note over Light: Thin content — needs JS rendering
+            Light->>PuppetQ: enqueue to Puppeteer
+            PuppetQ->>Fargate: dequeue
+            Fargate->>Web: Puppeteer loads page (2s JS wait)
+            Fargate->>Fargate: Readability.parse()
+            Fargate->>S3: store ContentNode JSON
+            Fargate->>DDB: index urlHash
+            Note over Fargate: Puppeteer path: ~5-10s, ~$0.03
         end
     end

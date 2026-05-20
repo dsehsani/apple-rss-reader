@@ -1,47 +1,76 @@
 ---
-title: Discovery → Polling → Extraction Flywheel
+title: Polling → Extraction → Discovery Flywheel
 ---
 graph LR
-    subgraph Discovery["Discovery Agent"]
-        QUERY[User asks:<br/>'find iOS dev feeds']
-        SEARCH[Search cloud catalog<br/>+ Claude Haiku]
-        CARDS[Return feed cards]
-        SUB[User subscribes]
-    end
-
     subgraph Polling["Feed Polling Engine"]
-        REG[feed_registry<br/>gets new entry]
-        POLL[Server polls<br/>every 5 min]
+        SUB_COUNT[subscriber_count<br/>incremented]
+        POLL[Orchestrator polls<br/>tier-aware intervals]
         ITEMS[New articles<br/>in feed_items]
-        PUSH[Silent push<br/>to device]
+        DEAD[Dead feed detection<br/>3-strike + daily retry]
+        VELOCITY[Velocity re-inference<br/>from last 7 days]
     end
 
-    subgraph Extraction["Extraction Cache"]
-        OPEN[User opens article]
-        CHECK[Check cloud cache]
-        HIT[Cache hit: ~80ms]
-        MISS[Cache miss → ECS extracts]
-        CACHED[Article cached in S3]
+    subgraph Extraction["Two-Tier Extraction"]
+        PRE[Pre-extract if<br/>subscribers >= 3]
+        JSDOM[jsdom Lambda<br/>~80% of sites, ~200ms]
+        PUPPET[Puppeteer Fargate<br/>~20% fallback, ~5-10s]
+        ENRICH_ITEM[Enrich feed_items:<br/>word_count, topic_tags]
     end
 
-    subgraph Feedback["Affinity Loop"]
+    subgraph Enrichment["Hourly Enrichment"]
+        ENRICH_JOB[enrich-feeds Lambda<br/>every 1 hour]
+        QUALITY[quality_score =<br/>0.4 × extraction_rate<br/>+ 0.3 × content_depth<br/>+ 0.3 × recency]
+        TOPICS[Aggregate topic_tags<br/>from items → feed]
+    end
+
+    subgraph Discovery["Feed Discovery"]
+        SEARCH[POST /v1/discover<br/>GIN index on topics]
+        RANK[Re-rank with<br/>ephemeral topicAffinities<br/>NEVER stored]
+        AGENT[AI Agent<br/>live registry + Claude Haiku]
+        CATALOG[FeedCatalogService<br/>GitHub OPML fallback]
+    end
+
+    subgraph UserDevice["iOS Device (Private)"]
+        USER_SUB[User subscribes<br/>to new feed]
+        CLOUD_SYNC[CloudFeedService<br/>POST /v1/feeds]
         READ[User reads articles]
-        AFF[AffinityTracker<br/>updates scores]
-        BETTER[Agent uses affinity<br/>for better recommendations]
+        AFFINITY[AffinityTracker<br/>warm-up alpha<br/>LOCAL ONLY]
+        TOPIC_AFF[Compute topicAffinities<br/>from local affinity + feed tags]
     end
 
-    QUERY --> SEARCH --> CARDS --> SUB
-    SUB --> REG --> POLL --> ITEMS --> PUSH
-    PUSH --> OPEN --> CHECK
-    CHECK --> HIT
-    CHECK --> MISS --> CACHED
-    CACHED -.->|next user| HIT
+    %% The flywheel cycle
+    USER_SUB --> CLOUD_SYNC --> SUB_COUNT
+    SUB_COUNT --> POLL --> ITEMS
+    ITEMS --> PRE
+    PRE --> JSDOM
+    JSDOM -->|thin content| PUPPET
+    JSDOM --> ENRICH_ITEM
+    PUPPET --> ENRICH_ITEM
+    ENRICH_ITEM --> ENRICH_JOB
+    ENRICH_JOB --> QUALITY
+    ENRICH_JOB --> TOPICS
+    QUALITY --> SEARCH
+    TOPICS --> SEARCH
+    SEARCH --> RANK --> USER_SUB
 
-    OPEN --> READ --> AFF --> BETTER --> SEARCH
+    %% Agent path
+    AGENT --> SEARCH
+    CATALOG -.->|fallback if <3 results| AGENT
 
-    REG -.->|more feeds in catalog| SEARCH
+    %% Affinity loop (device-local)
+    READ --> AFFINITY --> TOPIC_AFF --> RANK
 
-    style Discovery fill:#007AFF,color:#fff
-    style Polling fill:#FF9500,color:#fff
+    %% Dead feed cleanup
+    POLL --> DEAD
+    DEAD -.->|remove from discovery| SEARCH
+
+    %% Velocity feedback
+    ITEMS --> VELOCITY
+    VELOCITY -.->|adjust poll interval| POLL
+
+    %% Styling
+    style Polling fill:#FF9500,color:#000
     style Extraction fill:#34C759,color:#000
-    style Feedback fill:#AF52DE,color:#fff
+    style Enrichment fill:#5856D6,color:#fff
+    style Discovery fill:#007AFF,color:#fff
+    style UserDevice fill:#AF52DE,color:#fff

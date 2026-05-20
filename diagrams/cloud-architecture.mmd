@@ -3,130 +3,187 @@ title: Payam Cloud Architecture
 ---
 graph TB
     subgraph Client["iOS Client (Payam)"]
+        AUTH_MGR[AuthenticationManager<br/>Apple Sign-In + JWT]
         SK[StoreKitService]
         CA[CloudAuthService]
-        CFS[CloudFeedSyncService]
-        CE[CloudExtractionService]
-        API[PayamAPIClient<br/>JWT Auth + 401 Retry]
 
-        subgraph Pipeline["On-Device Pipeline (unchanged)"]
-            FIS[FeedIngestService]
-            SCS[SemanticClusterService]
-            RGS[RateGateService]
-            DSS[DecayScoringService]
+        subgraph CloudServices["Cloud Services"]
+            CFS[CloudFeedSyncService<br/>serverTime tracking]
+            CF[CloudFeedService<br/>subscribe/unsubscribe]
+            CE[CloudExtractionService<br/>retry on 202]
+            API[PayamAPIClient<br/>JWT Auth]
+            HTTP[CloudHTTP<br/>device-ID header]
+        end
+
+        subgraph Pipeline["On-Device Pipeline"]
+            FIS[FeedIngestService<br/>cloud-first + local fallback]
+            SCS[SemanticClusterService<br/>CoreML MiniLM-L6-v2]
+            RGS[RateGateService<br/>affinity-adjusted slots]
+            DSS[DecayScoringService<br/>per-tier half-lives]
             RSS[RiverSnapshotService]
         end
 
-        subgraph Extraction["Article Extraction"]
-            L0[L0: Cloud Cache]
-            L1[L1: NSCache]
-            L2[L2: SwiftData]
-            L3[L3: WKWebView + Readability.js]
+        subgraph Extraction["4-Level Article Extraction"]
+            L0[L0: Cloud Cache<br/>80ms, 72h TTL]
+            L1[L1: NSCache<br/>50ms, 30MB]
+            L2[L2: SwiftData<br/>200ms, 7-day]
+            L3[L3: WKWebView + Readability<br/>3-8s, on-device]
         end
 
-        SQLite[(SQLite Store)]
+        subgraph Signals["Signal System (LOCAL ONLY)"]
+            AT[AffinityTracker<br/>warm-up alpha 0.4→0.15]
+            IE[InteractionEvents<br/>dwell, scroll, dismiss]
+            SA[SourceAffinity<br/>15-min rolling refresh]
+        end
+
+        SQLITE[(SQLite Store)]
+        FID[FeedID<br/>SHA256 canonical]
+        CATALOG[FeedCatalogService<br/>GitHub OPML + 24h cache]
+        BANNER[SyncFailedBanner]
     end
 
-    subgraph AWS["AWS Cloud"]
-        APIGW[API Gateway<br/>HTTP API]
+    subgraph AWS["AWS Cloud (us-west-2)"]
+        APIGW[API Gateway HTTP API]
 
-        subgraph Lambdas["Lambda Functions"]
-            AUTH[auth-validate]
-            RIVER[river-sync]
-            STATE[state-sync]
-            EXTPROXY[extract-proxy]
-            AGENT[agent<br/>existing]
+        subgraph Lambdas["Lambda Functions (Node 20)"]
+            AUTH_L[auth.mjs<br/>POST /v1/auth/apple]
+            DEVREG[device-register.mjs<br/>POST /v1/devices/register]
+            RIVER[river-sync.mjs<br/>GET /v1/river]
+            STATE[state-sync.mjs<br/>POST /v1/state]
+            FEEDS[feeds.mjs<br/>POST /v1/feeds]
+            EXTPROXY[extract-proxy.mjs<br/>GET /v1/extract]
+            DISCOVER[discover.mjs<br/>POST /v1/discover]
         end
 
         subgraph Polling["Feed Polling Engine"]
-            EB[EventBridge<br/>every 5min]
-            ORCH[Orchestrator Lambda]
-            SQS_FEED[SQS Feed Queue]
-            WORKER[Worker Lambdas<br/>1 per feed URL]
+            EB[EventBridge<br/>every 5 min]
+            ORCH[Orchestrator<br/>tier-aware intervals]
+            SQS_FEED[SQS Feed Poll Queue]
+            WORKER[Feed Worker<br/>rss-parser + dead feed 3-strike]
         end
 
-        subgraph ExtractionCloud["Extraction Cache"]
-            SQS_EXT[SQS Extraction Queue]
-            ECS[ECS Fargate<br/>Puppeteer + Readability.js]
+        subgraph ExtractionCloud["Two-Tier Extraction"]
+            SQS_LIGHT[SQS Light Queue]
+            EXT_LIGHT[extract-light<br/>jsdom + Readability<br/>~80% of sites]
+            SQS_PUPPET[SQS Puppeteer Queue<br/>FIFO]
+            ECS[ECS Fargate<br/>Puppeteer + Chrome<br/>~20% fallback]
+        end
+
+        subgraph Enrichment["Feed Enrichment"]
+            EB_ENRICH[EventBridge<br/>every 1 hour]
+            ENRICH[enrich-feeds<br/>quality score + topics]
+        end
+
+        subgraph Agent["AI Agent (payam-chat)"]
+            AGENT[agent.mjs<br/>POST /v1/agent]
+            REGISTRY[registry.mjs<br/>live feed_registry queries]
+            INTENT[Intent Classifier<br/>Haiku, prompt-cached]
+            DISC_TOOL[discoverSources<br/>registry + catalog fallback]
         end
 
         subgraph Data["Data Stores"]
-            RDS[(RDS PostgreSQL<br/>t4g.micro)]
+            RDS[(RDS PostgreSQL<br/>feed_registry<br/>feed_items<br/>user_feeds<br/>user_item_state)]
             DYNAMO[(DynamoDB<br/>users, device-tokens<br/>extraction-index)]
-            S3[(S3 Bucket<br/>72hr TTL)]
+            S3[(S3 Extractions<br/>72h lifecycle)]
         end
 
-        SNS[SNS → APNs]
+        SNS[SNS]
         CLAUDE[Claude Haiku API]
     end
 
     APNs[Apple Push<br/>Notification Service]
-    APPLE_AUTH[Apple Sign-In<br/>Servers]
-
-    %% Client to API
-    SK -->|StoreKit receipt| API
-    CA -->|Apple identity token| API
-    CFS -->|GET /v1/river| API
-    CE -->|GET /v1/extract| API
-    API -->|HTTPS + JWT| APIGW
-
-    %% API Gateway to Lambdas
-    APIGW --> AUTH
-    APIGW --> RIVER
-    APIGW --> STATE
-    APIGW --> EXTPROXY
-    APIGW --> AGENT
+    APPLE_AUTH[Apple Sign-In Servers]
 
     %% Auth flow
-    AUTH -->|verify token| APPLE_AUTH
-    AUTH -->|read/write user| DYNAMO
-    AUTH -->|issue JWT| APIGW
+    AUTH_MGR -->|Apple identity token| API
+    API -->|HTTPS + JWT| APIGW
+    APIGW --> AUTH_L
+    AUTH_L -->|verify token| APPLE_AUTH
+    AUTH_L -->|read/write user| DYNAMO
+
+    %% Subscription sync
+    CF -->|POST /v1/feeds| API
+    APIGW --> FEEDS
+    FEEDS -->|upsert feed_registry<br/>update subscriber_count| RDS
+
+    %% River sync
+    CFS -->|GET /v1/river| API
+    APIGW --> RIVER
+    RIVER -->|JOIN query + serverTime| RDS
+    CFS -->|map feedId via FeedID.swift| FID
+
+    %% State sync
+    APIGW --> STATE
+    STATE -->|upsert read/bookmark| RDS
+
+    %% Device registration
+    APIGW --> DEVREG
+    DEVREG -->|store APNs token| DYNAMO
 
     %% Polling flow
     EB --> ORCH
-    ORCH -->|query due feeds| RDS
-    ORCH -->|enqueue URLs| SQS_FEED
+    ORCH -->|query due feeds<br/>per-tier intervals| RDS
+    ORCH -->|batch enqueue| SQS_FEED
     SQS_FEED --> WORKER
-    WORKER -->|conditional GET| WORKER
-    WORKER -->|INSERT new items| RDS
+    WORKER -->|conditional GET<br/>rss-parser| WORKER
+    WORKER -->|INSERT items<br/>re-infer velocity| RDS
+    WORKER -->|if subscribers>=3| SQS_LIGHT
     WORKER -->|notify subscribers| SNS
     SNS --> APNs
 
-    %% River sync
-    RIVER -->|JOIN query| RDS
-    STATE -->|upsert state| RDS
-
     %% Extraction flow
+    APIGW --> EXTPROXY
     EXTPROXY -->|lookup urlHash| DYNAMO
-    EXTPROXY -->|fetch content| S3
-    EXTPROXY -->|on miss: enqueue| SQS_EXT
-    SQS_EXT --> ECS
-    ECS -->|extract article| ECS
-    ECS -->|store ContentNode JSON| S3
+    EXTPROXY -->|cache hit: fetch| S3
+    EXTPROXY -->|cache miss: enqueue| SQS_LIGHT
+    SQS_LIGHT --> EXT_LIGHT
+    EXT_LIGHT -->|>=100 words: store| S3
+    EXT_LIGHT -->|index| DYNAMO
+    EXT_LIGHT -->|enrich item| RDS
+    EXT_LIGHT -->|<100 words: fallback| SQS_PUPPET
+    SQS_PUPPET --> ECS
+    ECS -->|store| S3
     ECS -->|index| DYNAMO
 
+    %% Enrichment
+    EB_ENRICH --> ENRICH
+    ENRICH -->|quality_score + topic_tags<br/>extraction_rate + avg_word_count| RDS
+
+    %% Discovery
+    APIGW --> DISCOVER
+    DISCOVER -->|GIN index topic_tags<br/>+ ILIKE title/description<br/>+ ephemeral topicAffinities| RDS
+
     %% Agent
-    AGENT -->|AI discovery| CLAUDE
-    AGENT -->|catalog search| RDS
-    AGENT -->|quota tracking| DYNAMO
+    APIGW --> AGENT
+    AGENT --> INTENT
+    INTENT -->|classify| CLAUDE
+    AGENT --> DISC_TOOL
+    DISC_TOOL --> REGISTRY
+    REGISTRY -->|read-only query| RDS
+    DISC_TOOL -->|rank + validate| CLAUDE
 
     %% Device-side flow
     APNs -->|silent push| CFS
-    CFS -->|delta items| SQLite
-    SQLite --> FIS
-    FIS --> SCS --> RGS --> DSS --> RSS
+    CFS -->|delta items| SQLITE
+    FIS -->|cloud-first or local RSS| SQLITE
+    SQLITE --> SCS --> RGS --> DSS --> RSS
+
+    %% Signals (local only)
+    IE --> AT --> SA
+    SA -->|frozen 15-min window| RGS
 
     %% Extraction layers
-    L0 -->|miss| L1
+    L0 -->|miss/202 retry| L1
     L1 -->|miss| L2
     L2 -->|miss| L3
 
     %% Styling
     classDef aws fill:#FF9900,color:#000,stroke:#FF9900
     classDef apple fill:#007AFF,color:#fff,stroke:#007AFF
-    classDef client fill:#34C759,color:#000,stroke:#34C759
     classDef data fill:#5856D6,color:#fff,stroke:#5856D6
+    classDef local fill:#34C759,color:#000,stroke:#34C759
 
-    class APIGW,AUTH,RIVER,STATE,EXTPROXY,AGENT,EB,ORCH,SQS_FEED,WORKER,SQS_EXT,ECS,SNS aws
+    class APIGW,AUTH_L,RIVER,STATE,FEEDS,EXTPROXY,DEVREG,DISCOVER,EB,ORCH,SQS_FEED,WORKER,SQS_LIGHT,EXT_LIGHT,SQS_PUPPET,ECS,SNS,EB_ENRICH,ENRICH,AGENT,INTENT,DISC_TOOL,REGISTRY aws
     class APNs,APPLE_AUTH,SK apple
     class RDS,DYNAMO,S3 data
+    class AT,IE,SA local
