@@ -94,6 +94,11 @@ enum AgentClient {
         request.httpBody = try JSONEncoder().encode(body)
         request.timeoutInterval = 30
 
+        // Attach JWT for tier enforcement and quota tracking
+        if let jwt = KeychainService.loadJWT() {
+            request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        }
+
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await URLSession.shared.data(for: request)

@@ -42,6 +42,12 @@ final class FeedIngestService: Sendable {
         velocityOverrides: [UUID: VelocityTier] = [:]
     ) async -> [FeedItem] {
 
+        // Premium users fetch from cloud instead of polling feeds directly.
+        if AuthenticationManager.shared.subscriptionTier.isPremium,
+           CloudAuthService.hasValidToken {
+            return await CloudFeedSyncService.shared.sync()
+        }
+
         let enabledSources = sources.filter(\.isEnabled)
         guard !enabledSources.isEmpty else { return [] }
 

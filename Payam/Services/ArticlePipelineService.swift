@@ -92,6 +92,23 @@ final class ArticlePipelineService {
     func process(item: RSSItem) async throws -> ExtractedArticle {
         let cacheKey = item.id.uuidString as NSString
 
+        // L0 — cloud extraction cache (premium only, ~80ms)
+        if AuthenticationManager.shared.subscriptionTier.isPremium,
+           CloudAuthService.hasValidToken,
+           let cloudResult = await CloudExtractionService.fetch(
+               articleURL: item.sourceURL,
+               itemID: item.id,
+               feedName: item.feedName
+           ) {
+            let cost = (try? JSONEncoder().encode(cloudResult.nodes).count) ?? 1024
+            Self.memoryCache.setObject(
+                CacheEntry(article: cloudResult, cost: cost),
+                forKey: cacheKey,
+                cost: cost
+            )
+            return cloudResult
+        }
+
         // L1 — memory cache (instant)
         if let entry = Self.memoryCache.object(forKey: cacheKey) {
             return entry.article
