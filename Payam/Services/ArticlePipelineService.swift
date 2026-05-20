@@ -15,10 +15,14 @@
 //  skipped.  Modern sites render content via JavaScript, so the WebView must
 //  navigate to the real URL to get a live network context.
 //
-//  Optimization: a two-level cache sits in front of the pipeline.
+//  Optimization: a four-level cache sits in front of the pipeline.
 //    L1  NSCache (in-memory) — instant, survives the session
+//    L0  cloud /v1/extractions cache — fast, shared across all users, skips the
+//        expensive WKWebView fetch when another device has already extracted
+//        the same URL. 422 (JS-rendered page, server gave up) and any 5xx
+//        result are treated as a silent fall-through to L2/L3.
 //    L2  SwiftData (disk)    — survives app relaunch
-//  Only if both miss do we run the expensive extraction pipeline.
+//    L3  WKWebView + Readability extraction (the slow path)
 //
 
 import Foundation
@@ -97,6 +101,22 @@ final class ArticlePipelineService {
             return entry.article
         }
 
+        // L0 — cloud extraction cache. Skips the WKWebView fetch when another
+        // device has already extracted this URL. On 422 (JS-rendered, server
+        // couldn't extract), 5xx, network error, or any decode failure we
+        // silently fall through to L2/L3. CancellationError propagates so a
+        // user-cancelled article navigation doesn't burn into the WebView path.
+        if let cloud = await fetchFromCloud(item: item) {
+            try? cache.save(article: cloud)
+            let cost = (try? JSONEncoder().encode(cloud.nodes).count) ?? 1024
+            Self.memoryCache.setObject(
+                CacheEntry(article: cloud, cost: cost),
+                forKey: cacheKey,
+                cost: cost
+            )
+            return cloud
+        }
+
         // L2 — SwiftData disk cache (fast, promotes to L1)
         if let cached = try cache.load(id: item.id) {
             let cost = (try? JSONEncoder().encode(cached.nodes).count) ?? 1024
@@ -115,21 +135,7 @@ final class ArticlePipelineService {
         // Phase 4 — normalise cleaned HTML into typed ContentNode array
         let nodes = try normalizer.normalize(content: readable)
 
-        // Deduplicate image nodes — compare normalized URLs (without query params
-        // or fragments) because og:image URLs often differ from <img src> URLs
-        // only in CDN sizing params (e.g. ?w=1200), causing a double hero image.
-        func normalizedKey(_ url: URL) -> String {
-            var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            comps?.queryItems = nil
-            comps?.fragment = nil
-            return comps?.url?.absoluteString ?? url.absoluteString
-        }
-        var seenKeys = Set<String>()
-        if let heroURL = readable.heroImageURL { seenKeys.insert(normalizedKey(heroURL)) }
-        let dedupedNodes = nodes.filter { node in
-            guard case .image(let url, _) = node else { return true }
-            return seenKeys.insert(normalizedKey(url)).inserted
-        }
+        let dedupedNodes = Self.dedupHeroImage(nodes: nodes, heroURL: readable.heroImageURL)
 
         // Build the ExtractedArticle
         let extracted = ExtractedArticle(
@@ -154,6 +160,120 @@ final class ArticlePipelineService {
         )
 
         return extracted
+    }
+
+    // MARK: - L0 Cloud Extraction Cache
+
+    /// Server-side extraction envelope returned by `GET /v1/extractions/{hash}`.
+    /// On `status == "hit"` (or `"miss-extracted"`) the payload at `contentUrl`
+    /// is the actual cached extraction. 422 / 502 / 500 responses raise an
+    /// `HTTPStatusError` that we silently swallow into a fall-through.
+    private struct ExtractEnvelope: Decodable {
+        let status: String
+        let contentUrl: String?
+        let cachedAt: Int?
+    }
+
+    /// Shape of the JSON the server writes to S3. Mirrors the `payload` object
+    /// constructed in payam-extract/src/extract.mjs.
+    private struct ExtractedPayload: Decodable {
+        let title: String
+        let byline: String?
+        let content: String          // HTML
+        let excerpt: String?
+        let lang: String?
+        let heroImageURL: String?
+        let sourceURL: String?
+        let extractedAt: Int?
+    }
+
+    /// Off-MainActor network helper so the L0 request doesn't block the UI
+    /// thread during a presigned-S3 fetch. All errors collapse to `nil`
+    /// (silent fall-through to L2/L3); `Task.isCancelled` is honored
+    /// cooperatively at the URLSession suspend points.
+    private nonisolated func fetchExtractionPayload(item: RSSItem) async -> ExtractedPayload? {
+        let urlString = item.sourceURL.absoluteString
+        let hash = ArticleState.hash(urlString)
+
+        var comps = URLComponents(
+            url: CloudHTTP.extractBase.appendingPathComponent("v1/extractions/\(hash)"),
+            resolvingAgainstBaseURL: false
+        )
+        comps?.queryItems = [URLQueryItem(name: "url", value: urlString)]
+        guard let endpoint = comps?.url else { return nil }
+
+        do {
+            let (envelope, _) = try await CloudHTTP.get(endpoint, as: ExtractEnvelope.self)
+            guard envelope.status == "hit" || envelope.status == "miss-extracted",
+                  let contentUrlStr = envelope.contentUrl,
+                  let contentURL = URL(string: contentUrlStr) else {
+                return nil
+            }
+            let data = try await CloudHTTP.fetchPresigned(contentURL)
+            return try JSONDecoder().decode(ExtractedPayload.self, from: data)
+        } catch {
+            // 422 (not_extractable), 502 (fetch_failed), 500 (persist_failed),
+            // network error, decode error, NSURLErrorCancelled — all silent
+            // fall-through to L2/L3.
+            return nil
+        }
+    }
+
+    /// Converts the server payload into a fully-formed `ExtractedArticle`.
+    /// Returns nil on missing content or normalization failure so the caller
+    /// falls through to the on-device extractor.
+    private func fetchFromCloud(item: RSSItem) async -> ExtractedArticle? {
+        guard let payload = await fetchExtractionPayload(item: item),
+              !payload.content.isEmpty else { return nil }
+
+        let heroURL = payload.heroImageURL.flatMap { URL(string: $0) }
+        let readable = ReadableContent(
+            title: payload.title,
+            byline: payload.byline,
+            content: payload.content,
+            excerpt: payload.excerpt,
+            heroImageURL: heroURL
+        )
+
+        let nodes: [ContentNode]
+        do {
+            nodes = try normalizer.normalize(content: readable)
+        } catch {
+            return nil
+        }
+
+        let dedupedNodes = Self.dedupHeroImage(nodes: nodes, heroURL: heroURL)
+
+        return ExtractedArticle(
+            id:           item.id,
+            sourceURL:    item.sourceURL,
+            title:        readable.title.isEmpty ? item.title : readable.title,
+            author:       readable.byline ?? item.author,
+            publishDate:  item.publishDate,
+            heroImageURL: heroURL,
+            feedName:     item.feedName,
+            nodes:        dedupedNodes,
+            cachedAt:     Date()
+        )
+    }
+
+    /// Drops duplicate hero images by comparing URLs with query/fragment
+    /// stripped. og:image URLs often differ from `<img src>` URLs only in CDN
+    /// sizing params (e.g. `?w=1200`), causing a double hero on the article
+    /// page if we keep both.
+    private static func dedupHeroImage(nodes: [ContentNode], heroURL: URL?) -> [ContentNode] {
+        func normalizedKey(_ url: URL) -> String {
+            var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            comps?.queryItems = nil
+            comps?.fragment = nil
+            return comps?.url?.absoluteString ?? url.absoluteString
+        }
+        var seenKeys = Set<String>()
+        if let heroURL { seenKeys.insert(normalizedKey(heroURL)) }
+        return nodes.filter { node in
+            guard case .image(let url, _) = node else { return true }
+            return seenKeys.insert(normalizedKey(url)).inserted
+        }
     }
 
     // MARK: - Cache Maintenance

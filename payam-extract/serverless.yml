@@ -1,0 +1,77 @@
+service: payam-extract
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    EXTRACTION_INDEX_TABLE: ${self:service}-${self:provider.stage}-extraction-index
+    EXTRACTIONS_BUCKET: ${self:service}-${self:provider.stage}-extractions-${aws:accountId}
+    PRESIGN_TTL_SECONDS: '600'
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource:
+            - !GetAtt ExtractionIndexTable.Arn
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - !Sub '${ExtractionsBucket.Arn}/*'
+
+functions:
+  extract:
+    name: ${self:service}-${self:provider.stage}-extract
+    handler: src/extract.main
+    timeout: 28
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /v1/extractions/{urlHash}
+          method: get
+
+resources:
+  Resources:
+    ExtractionIndexTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.EXTRACTION_INDEX_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: urlHash
+            AttributeType: S
+        KeySchema:
+          - AttributeName: urlHash
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+    ExtractionsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.EXTRACTIONS_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        LifecycleConfiguration:
+          Rules:
+            - Id: expire-after-72h
+              Status: Enabled
+              ExpirationInDays: 3
+
+package:
+  patterns:
+    - '!.git/**'
+    - '!.serverless/**'
+    - '!node_modules/.cache/**'

@@ -139,7 +139,7 @@ Every cloud feature requires authentication and tier enforcement. This is the ga
 Infrastructure decisions to make before writing code:
 
 - **IaC tool**: CDK (TypeScript, same language as Lambda code) or Terraform (team familiarity). Pick one, use it for everything.
-- **Region**: `us-east-1` (cheapest Aurora Serverless, required for some AWS features) or closest to user base.
+- **Region**: `us-west-2` (matches the deployed `openrss-chat` service in `payam-chat/serverless.yml`). The earlier draft of this doc said `us-east-1` for Aurora pricing reasons; that's moot now that v1 uses DynamoDB + Lambda end-to-end and there's no cross-region cost lever.
 - **JWT signing**: RSA or ECDSA. ECDSA is smaller and faster to verify on-device. Use ES256.
 
 ### Client-side
@@ -187,95 +187,62 @@ On-device polling has three real problems:
 
 Server-side polling solves all three. Each feed URL is fetched once regardless of how many users subscribe. Devices get a delta of new items via a single API call.
 
-### Database schema (Aurora Serverless v2 — PostgreSQL)
+### Storage — DynamoDB
 
-```sql
--- Shared feed registry. One row per unique feed URL across all users.
--- The polling engine reads this to know what to fetch and when.
-CREATE TABLE feed_registry (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    feed_url        TEXT UNIQUE NOT NULL,
-    title           TEXT,
-    description     TEXT,
-    image_url       TEXT,
-    etag            TEXT,
-    last_modified   TEXT,
-    last_fetched_at TIMESTAMPTZ,
-    last_item_at    TIMESTAMPTZ,
-    subscriber_count INT DEFAULT 0,
-    velocity_tier   TEXT NOT NULL DEFAULT 'article',
-    category        TEXT,
-    -- Discovery agent will use these columns (added now to avoid migration later)
-    search_vector   TSVECTOR,
-    quality_score   REAL DEFAULT 0.0,
-    is_dead         BOOLEAN DEFAULT FALSE,
-    created_at      TIMESTAMPTZ DEFAULT NOW()
-);
+The v1 polling backend uses DynamoDB instead of Aurora. Subscriber counts will start in the low thousands and the registry in the low hundreds of feeds; that's well inside DynamoDB's comfort zone and skips the VPC/connection-pooling/schema-migration overhead Aurora would impose. The schema below is the same shape as the Postgres design, just modelled for DynamoDB's key + GSI primitives.
 
-CREATE INDEX idx_feed_registry_due ON feed_registry (last_fetched_at)
-    WHERE is_dead = FALSE;
-CREATE INDEX idx_feed_registry_search ON feed_registry USING GIN (search_vector);
+**`payam-feed-registry`** — one row per unique feed URL.
 
--- Shared article store. One row per article, not per user.
-CREATE TABLE feed_items (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    feed_id         UUID NOT NULL REFERENCES feed_registry(id),
-    title           TEXT NOT NULL,
-    link            TEXT NOT NULL,
-    published_at    TIMESTAMPTZ NOT NULL,
-    fetched_at      TIMESTAMPTZ DEFAULT NOW(),
-    content_hash    TEXT,
-    excerpt         TEXT,
-    image_url       TEXT,
-    audio_url       TEXT,
-    author          TEXT,
-    velocity_tier   TEXT NOT NULL,
-    UNIQUE (feed_id, link)
-);
+| Key | Type | Notes |
+|---|---|---|
+| `feedUrl` (PK) | S | Canonicalised: lowercase scheme + host, `https://` upgraded from `http://` |
+| `feedId` | S | First 32 hex chars of sha256(feedUrl); reused as PK in items table |
+| `etag`, `lastModified` | S | For conditional GET |
+| `lastFetchedAt`, `lastItemAt`, `createdAt` | N | epoch seconds |
+| `velocityTier` | S | `breaking` / `news` / `article` / `essay` / `evergreen` |
+| `subscriberCount` | N | Atomic `ADD subscriberCount ±1` from the feeds endpoint |
+| `isDead` | BOOL | Set after 3 consecutive 5xx/timeouts; retried once per 24h |
+| `consecutiveFailures` | N | Reset on any 2xx/304 |
+| `title`, `description`, `imageURL` | S | Cached from last parse |
 
-CREATE INDEX idx_feed_items_feed_published
-    ON feed_items (feed_id, published_at DESC);
+**`payam-feed-items`** — one row per article. 30-day TTL via DynamoDB native TTL attribute.
 
--- Per-user feed subscriptions.
-CREATE TABLE user_feeds (
-    user_id         TEXT NOT NULL,
-    feed_id         UUID NOT NULL REFERENCES feed_registry(id),
-    folder_name     TEXT,
-    added_at        TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (user_id, feed_id)
-);
+| Key | Type | Notes |
+|---|---|---|
+| `feedId` (PK) | S | Same value as in `payam-feed-registry` |
+| `link` (SK) | S | Article URL — the natural dedup key |
+| `itemId` | S | Deterministic UUID (FNV-1a) so server and device produce matching IDs for cloud-delivered items |
+| `title`, `excerpt`, `author`, `imageURL`, `audioURL`, `videoURL` | S | |
+| `publishedAt`, `fetchedAt` | N | epoch seconds |
+| `velocityTier` | S | Denormalised from registry to skip a read on delta sync |
+| `ttl` | N | `fetchedAt + 2592000` — DynamoDB TTL handles deletion |
 
--- Per-user article state (read, bookmarked).
--- Only for premium users. Free users use CloudKit.
-CREATE TABLE user_item_state (
-    user_id         TEXT NOT NULL,
-    item_id         UUID NOT NULL REFERENCES feed_items(id),
-    is_read         BOOLEAN DEFAULT FALSE,
-    is_bookmarked   BOOLEAN DEFAULT FALSE,
-    updated_at      TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (user_id, item_id)
-);
-```
+GSI **`feedId-fetchedAt-index`** (PK `feedId`, SK `fetchedAt`, full projection) powers the `/v1/river` delta-sync query "items since X for this feed".
 
-30-day TTL on `feed_items` via scheduled cleanup job. Matches the on-device 30-day cache retention.
+**`payam-user-feeds`** — per-user subscriptions. PK `userId`, SK `feedUrl`. Stores `feedId` denormalised and `folderName`, `addedAt`.
+
+**`payam-user-item-state`** — premium-only read/bookmark state. PK `userId`, SK `itemId`. Free users keep CloudKit.
+
+**Orchestrator query strategy.** With < ~10K feeds, the orchestrator runs a full `Scan` with a velocity-tier filter every 5 min — at on-demand pricing this is ~$1.50/month, and a GSI keyed on velocity tier would create a hot-partition problem (only 5 distinct PK values). When the registry exceeds ~50K rows, migrate to a bucketed GSI or split the scan across multiple invocations.
+
+**When to revisit.** Move to Aurora when (a) registry > 50K feeds, (b) full-text search becomes a hard requirement for Discovery Tier 2 (see Phase 5), or (c) cross-feed analytical queries appear in product requirements. None of these is blocking at v1.
 
 ### Polling architecture
 
 ```
 EventBridge (every 5 min)
   → orchestrator Lambda
-    → SELECT feed_url FROM feed_registry
-      WHERE is_dead = FALSE
-      AND last_fetched_at < NOW() - polling_interval(velocity_tier)
-    → write each URL to SQS queue
+    → Scan payam-feed-registry, filter rows whose
+      polling_interval(velocityTier) has elapsed
+      (also retry rows where isDead = true && lastFetchedAt < now - 24h)
+    → SendMessageBatch one entry per due feed → payam-poll-queue
 
-SQS → worker Lambdas (concurrent, one per feed URL)
+SQS → worker Lambdas (concurrent, reservedConcurrency 50, one feed per msg)
   → conditional GET (If-None-Match / If-Modified-Since)
-  → 304: update last_fetched_at, done
-  → 200: parse feed, diff against existing items
-    → INSERT new items into feed_items
-    → UPDATE feed_registry (etag, last_modified, last_fetched_at, velocity_tier)
-    → for each subscriber: push APNs silent notification
+  → 304: UpdateItem lastFetchedAt, done
+  → 200: parse feed, BatchWriteItem with attribute_not_exists(link) for dedup
+    → UpdateItem on registry (etag, lastModified, lastFetchedAt, velocityTier)
+    → for each subscriber: push APNs silent notification (stub — iOS follow-up)
 ```
 
 Polling interval by velocity tier:
@@ -290,30 +257,24 @@ Dead feed detection: 3 consecutive 5xx or timeout → mark `is_dead = TRUE`. Ret
 ### Delta sync endpoint
 
 ```
-GET /v1/river?since={iso8601_timestamp}
+GET /v1/river?since={epochSec}
 Authorization: Bearer <JWT>
 
 Response:
 {
     "items": [FeedItem],        // new items since timestamp
-    "state": [ItemState],       // read/bookmark state changes
-    "deleted": [UUID],          // items that expired or were removed
-    "serverTime": "iso8601"     // client stores this for next sync
+    "state": [ItemState],       // read/bookmark state changes (premium only)
+    "deleted": [UUID],          // items expired or removed (empty until tombstones land)
+    "serverTime": epochSec      // client stores this for next sync
 }
 ```
 
-The query:
+Implementation:
 
-```sql
-SELECT fi.*, uis.is_read, uis.is_bookmarked
-FROM feed_items fi
-JOIN user_feeds uf ON fi.feed_id = uf.feed_id
-LEFT JOIN user_item_state uis ON fi.id = uis.item_id AND uis.user_id = $1
-WHERE uf.user_id = $1
-  AND fi.fetched_at > $2
-ORDER BY fi.published_at DESC
-LIMIT 500;
-```
+1. Query `payam-user-feeds` by `userId` → list of `feedId`s.
+2. Fan out parallel Queries against `feedId-fetchedAt-index` (`fetchedAt > since`), `Limit: 100` per feed, descending.
+3. Merge + cap to 500 items.
+4. If premium, `BatchGetItem` `payam-user-item-state` for the returned `itemId`s and merge into the response.
 
 ### Client-side
 
@@ -351,32 +312,33 @@ On-device article extraction takes 2-20 seconds per article (WKWebView + Readabi
 
 ```
 Device opens article
-  → ArticlePipelineService checks L0: GET /v1/extractions/{sha256(url)}
-  → Cache HIT: return ContentNode JSON from S3 (~80ms)
-  → Cache MISS: return 202, push URL to SQS extraction queue
-
-SQS → ECS Fargate extraction worker (warm Puppeteer pool)
-  → fetch page, run Readability.js
-  → store ContentNode JSON in S3
-  → index in DynamoDB (extraction-index: urlHash → s3Key)
-  → device retries after 3-5s, gets cache HIT
+  → ArticlePipelineService checks L0: GET /v1/extractions/{sha256(url)}?url=...
+    → Cache HIT  → presigned S3 URL → device fetches JSON (~80ms total)
+    → Cache MISS → Lambda fetches the page synchronously, runs jsdom +
+                   @mozilla/readability inline, writes to S3 + DynamoDB,
+                   returns the same {contentUrl, cachedAt} shape (1–3s)
+    → 422 not_extractable → device falls back to existing L1/L2/L3 pipeline
 ```
+
+No SQS extraction queue, no Fargate, no 202+retry dance. The cache miss path is a single synchronous Lambda invocation that fits inside the 28s API Gateway HTTP API timeout.
 
 ### Infrastructure
 
 | Component | Service | Config |
 |---|---|---|
-| Cache proxy | Lambda | Thin: DynamoDB lookup → S3 presigned URL or SQS dispatch |
-| Extraction workers | ECS Fargate | 0.5 vCPU, 1GB RAM, Puppeteer + Readability.js |
-| Content storage | S3 | 72-hour lifecycle policy |
-| Cache index | DynamoDB `extraction-index` | `urlHash` → `{s3Key, cachedAt, ttl}` |
-| Extraction queue | SQS | Dedup by urlHash (5-min dedup window) |
+| Extract Lambda | Lambda (Node.js 20) | 1024 MB, 28s timeout, jsdom + @mozilla/readability bundled |
+| Content storage | S3 (`payam-extractions`) | 72-hour lifecycle, blocked public access, presigned GETs (10-min TTL) |
+| Cache index | DynamoDB `payam-extraction-index` | `urlHash` → `{s3Key, cachedAt, extractedHost, ttl}` (native TTL) |
 
-Scale: ECS task count driven by SQS queue depth. Minimum 0 (scale to zero overnight), maximum 10. First-morning cold start is ~20-30s — acceptable because the on-device fallback (L1-L3) still works.
+### JS-heavy sites
+
+The Lambda runs `jsdom`, which parses static HTML and runs no JavaScript. SPA-heavy sites (~20% of articles) will fail the quality gate (`length < 500 chars` or empty title) and receive `422 not_extractable`. The iOS client treats this as a signal to fall back to its existing L3 pipeline: WKWebView loads the live URL, JS renders, on-device Readability.js extracts. **No regression vs today** — those articles already take 2–20s on-device.
+
+Server-side JS rendering (Fargate + Puppeteer) is a future upgrade, justified only by usage data showing the SPA gap is a real user complaint.
 
 ### Client-side
 
-One change to `ArticlePipelineService.swift`: add L0 cloud check before the existing L1 (NSCache), L2 (SwiftData), L3 (WKWebView) layers. Premium users check cloud first. Free users skip L0 entirely.
+One change to `ArticlePipelineService.swift`: add L0 cloud check before the existing L1 (NSCache), L2 (SwiftData), L3 (WKWebView) layers. Premium users check cloud first. On HIT or MISS-extracted the device fetches the JSON, runs the existing `ContentNormalizerService.normalize()` on the returned HTML to produce `[ContentNode]`, and caches the result in L1/L2 so re-opens stay instant. On 422 the device runs the existing L3 path unchanged. Free users skip L0 entirely.
 
 ---
 
@@ -403,7 +365,9 @@ Remaining work:
 
 **Tier 2 — Cloud catalog search (premium)**
 
-Search against `feed_registry` in Aurora. Every feed that any premium user has ever subscribed to is in this table, with live quality signals.
+> **Storage caveat for v1.** The feed registry lives in DynamoDB (see Phase 3), which has no native full-text search. Tier 2 is therefore not buildable as written without one of: (a) deferring Tier 2 until an Aurora migration; (b) projecting the registry into OpenSearch via DynamoDB streams; (c) shipping Tier 1 + Tier 3 only and treating Tier 2 as a v2 feature. Decide before Phase 5 starts. The rest of this section describes the Aurora-backed design as a target architecture.
+
+Search against `feed_registry`. Every feed that any premium user has ever subscribed to is in this table, with live quality signals.
 
 ```
 GET /v1/discovery?q=machine+learning&limit=20
@@ -479,7 +443,7 @@ Priority order based on user demand and implementation complexity:
 | Slack | High | OAuth relay + webhook. Deferred unless user demand is clear. |
 | Discord | High | Similar to Slack. Deferred. |
 
-Each adapter is a standalone Lambda that outputs `FeedItem`-compatible JSON to Aurora. The client sees no difference — these items enter the same pipeline as RSS items.
+Each adapter is a standalone Lambda that writes `FeedItem`-shaped rows directly into `payam-feed-items` (with a synthesised `feedId` per source — e.g. `reddit:<subreddit>`, `github:<owner>/<repo>`). The client sees no difference — these items enter the same delta-sync pipeline as RSS items.
 
 Client-side: add `sourceType` enum cases to `Source.swift`. The pipeline doesn't care about source type — it processes `FeedItem`s identically regardless of origin.
 
@@ -510,17 +474,17 @@ Free users call zero endpoints. Premium users call all of them.
 
 | Component | Service | Monthly cost estimate |
 |---|---|---|
-| API Gateway | AWS API Gateway | ~$3.50/million requests |
+| API Gateway | AWS API Gateway HTTP API | ~$1.00/million requests |
 | Auth + sync + polling Lambdas | AWS Lambda | ~$0.20/million invocations |
-| Feed data | Aurora Serverless v2 (PostgreSQL) | ~$0 idle, ~$50 at moderate load |
+| Feed data (registry + items + user-feeds + user-item-state) | DynamoDB on-demand | ~$5–15 at v1 scale |
+| Extraction Lambda + jsdom workload | AWS Lambda | ~$1–3 per 100K extractions (1024 MB, ~1–3s each) |
 | Auth/cache data | DynamoDB | ~$1-5 on-demand |
-| Extraction workers | ECS Fargate | ~$15/task/month (scale 0-10) |
 | Extraction storage | S3 (72hr TTL) | <$1 |
 | Push notifications | SNS → APNs | Free (APNs is free, SNS is ~$0.50/million) |
 | AI discovery | Claude Haiku | ~$0.01-0.03/query |
 | AI summaries | Claude Haiku | ~$0.005/summary |
 
-Per premium user at steady state: $0.30-0.60/month light usage, $1.20-2.50 heavy AI usage. Premium subscription nets ~$4.67 after Apple's cut. Margins are healthy.
+Per premium user at steady state, the simpler v1 stack lands well under the original Aurora-plus-Fargate envelope — roughly $0.20–0.50/month light usage, $1.00–2.20 heavy AI usage. Aurora and Fargate re-enter the cost table only when (a) the feed registry exceeds ~50K rows and an Aurora migration becomes necessary, or (b) usage data shows server-side JavaScript rendering for the cache is justified.
 
 ---
 
