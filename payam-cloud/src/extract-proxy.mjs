@@ -18,6 +18,7 @@ const QUEUE_URL = process.env.EXTRACTION_QUEUE_URL;
 
 async function handler(event) {
   const urlHash = event.pathParameters?.hash;
+  const articleUrl = event.queryStringParameters?.url;
   if (!urlHash) {
     return respond(400, { error: "URL hash required" });
   }
@@ -58,7 +59,7 @@ async function handler(event) {
       await sqs.send(
         new SendMessageCommand({
           QueueUrl: QUEUE_URL,
-          MessageBody: JSON.stringify({ urlHash }),
+          MessageBody: JSON.stringify({ urlHash, url: articleUrl }),
           MessageDeduplicationId: urlHash,
           MessageGroupId: "extractions",
         })

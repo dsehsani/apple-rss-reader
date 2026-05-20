@@ -1,0 +1,46 @@
+---
+title: Feed Polling Data Flow
+---
+sequenceDiagram
+    participant EB as EventBridge<br/>(every 5min)
+    participant Orch as Orchestrator<br/>Lambda
+    participant PG as PostgreSQL
+    participant SQS as SQS Feed Queue
+    participant Worker as Worker Lambda
+    participant Feed as RSS Feed Server
+    participant SNS as SNS
+    participant APNs as APNs
+    participant Device as iOS Device
+    participant SQLite as SQLite Store
+    participant Pipeline as River Pipeline<br/>(stages 2-5)
+
+    EB->>Orch: trigger
+    Orch->>PG: SELECT feeds WHERE next_fetch_at <= NOW()
+    PG-->>Orch: due feed URLs
+    loop Each feed URL
+        Orch->>SQS: enqueue feed_url
+    end
+
+    SQS->>Worker: dequeue
+    Worker->>Feed: GET feed.xml<br/>(If-None-Match: etag)
+    alt 304 Not Modified
+        Feed-->>Worker: 304
+        Worker->>PG: UPDATE last_fetched_at
+    else 200 New Content
+        Feed-->>Worker: 200 + XML
+        Worker->>Worker: parse RSS/Atom
+        Worker->>Worker: compute FNV-1a UUIDs
+        Worker->>PG: diff against existing items
+        Worker->>PG: INSERT new feed_items
+        Worker->>PG: SELECT subscribers
+        PG-->>Worker: subscriber device tokens
+        Worker->>SNS: push to subscribers
+        SNS->>APNs: silent push<br/>(content-available: 1)
+    end
+
+    APNs->>Device: wake app
+    Device->>PG: GET /v1/river?since=lastSync
+    PG-->>Device: FeedItem[] delta + read state
+    Device->>SQLite: upsertCloudItems()
+    SQLite->>Pipeline: runCycle()
+    Note over Pipeline: Clustering, rate gating,<br/>decay scoring, snapshot<br/>all run on-device unchanged

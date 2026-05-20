@@ -19,6 +19,7 @@ provider:
     EXTRACTION_INDEX_TABLE: payam-extraction-index-${self:provider.stage}
     EXTRACTION_BUCKET: payam-extractions-${self:provider.stage}
     FEED_POLL_QUEUE_URL: !Ref FeedPollQueue
+    EXTRACTION_QUEUE_URL: https://sqs.us-west-2.amazonaws.com/100731996760/payam-extraction-dev.fifo
     SNS_PLATFORM_ARN: ${env:PAYAM_SNS_PLATFORM_ARN, ''}
   iam:
     role:
@@ -98,7 +99,6 @@ functions:
   feedWorker:
     handler: src/feed-worker.main
     timeout: 30
-    reservedConcurrency: 50
     events:
       - sqs:
           arn: !GetAtt FeedPollQueue.Arn

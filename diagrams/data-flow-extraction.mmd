@@ -1,0 +1,57 @@
+---
+title: Extraction Cache Data Flow
+---
+sequenceDiagram
+    participant User as User taps article
+    participant APS as ArticlePipelineService
+    participant Cloud as extract-proxy Lambda
+    participant DDB as DynamoDB<br/>extraction-index
+    participant S3 as S3 Bucket
+    participant SQS as SQS Extraction Queue
+    participant ECS as ECS Fargate<br/>Puppeteer
+    participant Web as Article Website
+    participant NSC as NSCache (L1)
+    participant SD as SwiftData (L2)
+    participant WK as WKWebView (L3)
+
+    User->>APS: process(item)
+
+    Note over APS: Premium user: check L0 first
+    APS->>Cloud: GET /v1/extract/{sha256(url)}
+    Cloud->>DDB: lookup urlHash
+
+    alt Cache Hit
+        DDB-->>Cloud: s3Key found
+        Cloud->>S3: GET ContentNode JSON
+        S3-->>Cloud: article content
+        Cloud-->>APS: 200 + ExtractedArticle
+        Note over APS: ~80ms total
+        APS-->>User: display article instantly
+    else Cache Miss
+        DDB-->>Cloud: not found
+        Cloud->>SQS: enqueue URL for extraction
+        Cloud-->>APS: 404 (miss)
+
+        Note over APS: Fall through to local cache
+        APS->>NSC: check L1
+        NSC-->>APS: miss
+        APS->>SD: check L2
+        SD-->>APS: miss
+        APS->>WK: extract via Readability.js
+        WK->>Web: load page
+        Web-->>WK: HTML + JS rendered
+        WK-->>APS: ContentNode[]
+        Note over APS: 2-5 seconds
+        APS-->>User: display article
+
+        par Server-side extraction (async)
+            SQS->>ECS: dequeue URL
+            ECS->>Web: Puppeteer loads page
+            Web-->>ECS: rendered HTML
+            ECS->>ECS: Readability.js extract
+            ECS->>S3: store ContentNode JSON
+            ECS->>DDB: index urlHash → s3Key
+            Note over S3: 72hr TTL
+            Note over ECS: Next user gets cache hit
+        end
+    end

@@ -1,0 +1,14 @@
+{
+  "name": "payam-extraction-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.787.0",
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/client-sqs": "^3.787.0",
+    "@mozilla/readability": "^0.5.0",
+    "jsdom": "^25.0.0",
+    "puppeteer": "^23.0.0"
+  }
+}

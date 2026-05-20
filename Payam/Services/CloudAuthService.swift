@@ -67,6 +67,9 @@ enum CloudAuthService {
 
     /// Returns true if a JWT exists and hasn't expired.
     static var hasValidToken: Bool {
+        #if DEBUG
+        if AuthenticationManager.shared.debugForcePremium { return true }
+        #endif
         guard KeychainService.loadJWT() != nil else { return false }
         let expiresAt = UserDefaults.standard.double(forKey: "payam.jwt.expiresAt")
         guard expiresAt > 0 else { return false }

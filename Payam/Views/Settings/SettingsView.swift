@@ -58,6 +58,9 @@ struct SettingsView: View {
                     affinitySection
                     dataSection
                     aboutSection
+                    #if DEBUG
+                    debugSection
+                    #endif
                 }
                 .padding(.top, Design.Spacing.edge)
             }
@@ -86,6 +89,9 @@ struct SettingsView: View {
                     affinitySection
                     dataSection
                     aboutSection
+                    #if DEBUG
+                    debugSection
+                    #endif
                 }
                 .padding(.top, Design.Spacing.edge)
             }
@@ -322,6 +328,60 @@ struct SettingsView: View {
             .buttonStyle(.plain)
         }
     }
+
+    // MARK: - Debug Section
+
+    #if DEBUG
+    private var debugSection: some View {
+        settingsSection(title: "Debug", icon: "ladybug.fill") {
+            VStack(spacing: 0) {
+                Toggle(isOn: Bindable(authManager).debugForcePremium) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Force Premium Tier")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                        Text("Routes feeds through cloud, enables extraction cache")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    }
+                }
+                .tint(Design.Colors.primary)
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+
+                Divider().padding(.leading, Design.Spacing.edge)
+
+                HStack {
+                    Text("Current Tier")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Text(authManager.subscriptionTier.rawValue.capitalized)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(authManager.subscriptionTier.isPremium
+                            ? Design.Colors.primary
+                            : Design.Colors.secondaryText(for: colorScheme))
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+
+                Divider().padding(.leading, Design.Spacing.edge)
+
+                HStack {
+                    Text("Cloud JWT")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Text(CloudAuthService.hasValidToken ? "Valid" : "None")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(CloudAuthService.hasValidToken ? .green : .red)
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+            }
+        }
+    }
+    #endif
 
     // MARK: - Helper Views
 

@@ -1,0 +1,47 @@
+---
+title: Discovery → Polling → Extraction Flywheel
+---
+graph LR
+    subgraph Discovery["Discovery Agent"]
+        QUERY[User asks:<br/>'find iOS dev feeds']
+        SEARCH[Search cloud catalog<br/>+ Claude Haiku]
+        CARDS[Return feed cards]
+        SUB[User subscribes]
+    end
+
+    subgraph Polling["Feed Polling Engine"]
+        REG[feed_registry<br/>gets new entry]
+        POLL[Server polls<br/>every 5 min]
+        ITEMS[New articles<br/>in feed_items]
+        PUSH[Silent push<br/>to device]
+    end
+
+    subgraph Extraction["Extraction Cache"]
+        OPEN[User opens article]
+        CHECK[Check cloud cache]
+        HIT[Cache hit: ~80ms]
+        MISS[Cache miss → ECS extracts]
+        CACHED[Article cached in S3]
+    end
+
+    subgraph Feedback["Affinity Loop"]
+        READ[User reads articles]
+        AFF[AffinityTracker<br/>updates scores]
+        BETTER[Agent uses affinity<br/>for better recommendations]
+    end
+
+    QUERY --> SEARCH --> CARDS --> SUB
+    SUB --> REG --> POLL --> ITEMS --> PUSH
+    PUSH --> OPEN --> CHECK
+    CHECK --> HIT
+    CHECK --> MISS --> CACHED
+    CACHED -.->|next user| HIT
+
+    OPEN --> READ --> AFF --> BETTER --> SEARCH
+
+    REG -.->|more feeds in catalog| SEARCH
+
+    style Discovery fill:#007AFF,color:#fff
+    style Polling fill:#FF9500,color:#fff
+    style Extraction fill:#34C759,color:#000
+    style Feedback fill:#AF52DE,color:#fff

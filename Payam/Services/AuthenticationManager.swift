@@ -49,9 +49,28 @@ final class AuthenticationManager {
     /// The full UserProfile from SwiftData, available after sign-in.
     private(set) var currentUser: UserProfile?
 
+    /// Debug toggle: simulate premium tier without a real subscription.
+    /// Set to true in debug builds to test cloud features.
+    #if DEBUG
+    var debugForcePremium: Bool = false {
+        didSet {
+            if debugForcePremium {
+                // Store a long-lived debug JWT so API calls authenticate
+                let debugJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZWJ1Zy11c2VyIiwidGllciI6InByZW1pdW0iLCJpYXQiOjE3NzkyNDUwOTUsImV4cCI6MTgxMDc4MTA5NX0.jtA-JoFFGc3fZA8eKUlI7dcaMX8dsIvm6TL0jBJAKA8"
+                KeychainService.saveJWT(debugJWT)
+            } else {
+                KeychainService.deleteJWT()
+            }
+        }
+    }
+    #endif
+
     /// The current subscription tier, derived from UserProfile.
     var subscriptionTier: SubscriptionTier {
-        currentUser?.subscriptionTier ?? .free
+        #if DEBUG
+        if debugForcePremium { return .premium }
+        #endif
+        return currentUser?.subscriptionTier ?? .free
     }
 
     /// Whether the user explicitly chose to skip sign-in (guest mode).

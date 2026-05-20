@@ -45,7 +45,11 @@ final class FeedIngestService: Sendable {
         // Premium users fetch from cloud instead of polling feeds directly.
         if AuthenticationManager.shared.subscriptionTier.isPremium,
            CloudAuthService.hasValidToken {
-            return await CloudFeedSyncService.shared.sync()
+            let start = CFAbsoluteTimeGetCurrent()
+            let items = await CloudFeedSyncService.shared.sync()
+            let ms = Int((CFAbsoluteTimeGetCurrent() - start) * 1000)
+            print("☁️ Cloud feed sync: \(items.count) items in \(ms)ms")
+            return items
         }
 
         let enabledSources = sources.filter(\.isEnabled)

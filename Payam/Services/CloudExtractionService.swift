@@ -31,12 +31,15 @@ enum CloudExtractionService {
         itemID: UUID,
         feedName: String
     ) async -> ExtractedArticle? {
-        let urlHash = sha256(articleURL.absoluteString)
+        let urlString = articleURL.absoluteString
+        let urlHash = sha256(urlString)
+        let encodedURL = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? urlString
 
         do {
             let response = try await PayamAPIClient.send(
                 ExtractionResponse.self,
-                path: "/v1/extract/\(urlHash)"
+                path: "/v1/extract/\(urlHash)?url=\(encodedURL)",
+                timeout: 3 // Fast timeout — don't delay local fallback
             )
 
             return ExtractedArticle(

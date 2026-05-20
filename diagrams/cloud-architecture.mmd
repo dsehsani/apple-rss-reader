@@ -1,0 +1,132 @@
+---
+title: Payam Cloud Architecture
+---
+graph TB
+    subgraph Client["iOS Client (Payam)"]
+        SK[StoreKitService]
+        CA[CloudAuthService]
+        CFS[CloudFeedSyncService]
+        CE[CloudExtractionService]
+        API[PayamAPIClient<br/>JWT Auth + 401 Retry]
+
+        subgraph Pipeline["On-Device Pipeline (unchanged)"]
+            FIS[FeedIngestService]
+            SCS[SemanticClusterService]
+            RGS[RateGateService]
+            DSS[DecayScoringService]
+            RSS[RiverSnapshotService]
+        end
+
+        subgraph Extraction["Article Extraction"]
+            L0[L0: Cloud Cache]
+            L1[L1: NSCache]
+            L2[L2: SwiftData]
+            L3[L3: WKWebView + Readability.js]
+        end
+
+        SQLite[(SQLite Store)]
+    end
+
+    subgraph AWS["AWS Cloud"]
+        APIGW[API Gateway<br/>HTTP API]
+
+        subgraph Lambdas["Lambda Functions"]
+            AUTH[auth-validate]
+            RIVER[river-sync]
+            STATE[state-sync]
+            EXTPROXY[extract-proxy]
+            AGENT[agent<br/>existing]
+        end
+
+        subgraph Polling["Feed Polling Engine"]
+            EB[EventBridge<br/>every 5min]
+            ORCH[Orchestrator Lambda]
+            SQS_FEED[SQS Feed Queue]
+            WORKER[Worker Lambdas<br/>1 per feed URL]
+        end
+
+        subgraph ExtractionCloud["Extraction Cache"]
+            SQS_EXT[SQS Extraction Queue]
+            ECS[ECS Fargate<br/>Puppeteer + Readability.js]
+        end
+
+        subgraph Data["Data Stores"]
+            RDS[(RDS PostgreSQL<br/>t4g.micro)]
+            DYNAMO[(DynamoDB<br/>users, device-tokens<br/>extraction-index)]
+            S3[(S3 Bucket<br/>72hr TTL)]
+        end
+
+        SNS[SNS → APNs]
+        CLAUDE[Claude Haiku API]
+    end
+
+    APNs[Apple Push<br/>Notification Service]
+    APPLE_AUTH[Apple Sign-In<br/>Servers]
+
+    %% Client to API
+    SK -->|StoreKit receipt| API
+    CA -->|Apple identity token| API
+    CFS -->|GET /v1/river| API
+    CE -->|GET /v1/extract| API
+    API -->|HTTPS + JWT| APIGW
+
+    %% API Gateway to Lambdas
+    APIGW --> AUTH
+    APIGW --> RIVER
+    APIGW --> STATE
+    APIGW --> EXTPROXY
+    APIGW --> AGENT
+
+    %% Auth flow
+    AUTH -->|verify token| APPLE_AUTH
+    AUTH -->|read/write user| DYNAMO
+    AUTH -->|issue JWT| APIGW
+
+    %% Polling flow
+    EB --> ORCH
+    ORCH -->|query due feeds| RDS
+    ORCH -->|enqueue URLs| SQS_FEED
+    SQS_FEED --> WORKER
+    WORKER -->|conditional GET| WORKER
+    WORKER -->|INSERT new items| RDS
+    WORKER -->|notify subscribers| SNS
+    SNS --> APNs
+
+    %% River sync
+    RIVER -->|JOIN query| RDS
+    STATE -->|upsert state| RDS
+
+    %% Extraction flow
+    EXTPROXY -->|lookup urlHash| DYNAMO
+    EXTPROXY -->|fetch content| S3
+    EXTPROXY -->|on miss: enqueue| SQS_EXT
+    SQS_EXT --> ECS
+    ECS -->|extract article| ECS
+    ECS -->|store ContentNode JSON| S3
+    ECS -->|index| DYNAMO
+
+    %% Agent
+    AGENT -->|AI discovery| CLAUDE
+    AGENT -->|catalog search| RDS
+    AGENT -->|quota tracking| DYNAMO
+
+    %% Device-side flow
+    APNs -->|silent push| CFS
+    CFS -->|delta items| SQLite
+    SQLite --> FIS
+    FIS --> SCS --> RGS --> DSS --> RSS
+
+    %% Extraction layers
+    L0 -->|miss| L1
+    L1 -->|miss| L2
+    L2 -->|miss| L3
+
+    %% Styling
+    classDef aws fill:#FF9900,color:#000,stroke:#FF9900
+    classDef apple fill:#007AFF,color:#fff,stroke:#007AFF
+    classDef client fill:#34C759,color:#000,stroke:#34C759
+    classDef data fill:#5856D6,color:#fff,stroke:#5856D6
+
+    class APIGW,AUTH,RIVER,STATE,EXTPROXY,AGENT,EB,ORCH,SQS_FEED,WORKER,SQS_EXT,ECS,SNS aws
+    class APNs,APPLE_AUTH,SK apple
+    class RDS,DYNAMO,S3 data

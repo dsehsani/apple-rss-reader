@@ -75,9 +75,11 @@ enum PayamAPIClient {
         method: String = "GET",
         path: String,
         body: (any Encodable)? = nil,
-        requiresAuth: Bool = true
+        requiresAuth: Bool = true,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
-        let req = try request(method: method, path: path, body: body, requiresAuth: requiresAuth)
+        var req = try request(method: method, path: path, body: body, requiresAuth: requiresAuth)
+        if let timeout { req.timeoutInterval = timeout }
 
         let (data, response): (Data, URLResponse)
         do {

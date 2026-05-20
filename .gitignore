@@ -17,3 +17,6 @@ DerivedData/
 # macOS
 .DS_Store
 Payam.xcodeproj/project.xcworkspace/xcuserdata/
+payam-cloud/node_modules/
+payam-cloud/.serverless/
+payam-cloud/extraction-worker/node_modules/

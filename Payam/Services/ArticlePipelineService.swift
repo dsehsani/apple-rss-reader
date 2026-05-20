@@ -91,31 +91,43 @@ final class ArticlePipelineService {
     /// Returns a cached result immediately if one exists (memory or disk).
     func process(item: RSSItem) async throws -> ExtractedArticle {
         let cacheKey = item.id.uuidString as NSString
+        let pipelineStart = CFAbsoluteTimeGetCurrent()
 
         // L0 — cloud extraction cache (premium only, ~80ms)
         if AuthenticationManager.shared.subscriptionTier.isPremium,
-           CloudAuthService.hasValidToken,
-           let cloudResult = await CloudExtractionService.fetch(
-               articleURL: item.sourceURL,
-               itemID: item.id,
-               feedName: item.feedName
-           ) {
-            let cost = (try? JSONEncoder().encode(cloudResult.nodes).count) ?? 1024
-            Self.memoryCache.setObject(
-                CacheEntry(article: cloudResult, cost: cost),
-                forKey: cacheKey,
-                cost: cost
-            )
-            return cloudResult
+           CloudAuthService.hasValidToken {
+            let l0Start = CFAbsoluteTimeGetCurrent()
+            if let cloudResult = await CloudExtractionService.fetch(
+                articleURL: item.sourceURL,
+                itemID: item.id,
+                feedName: item.feedName
+            ) {
+                let ms = Int((CFAbsoluteTimeGetCurrent() - l0Start) * 1000)
+                print("☁️ L0 cloud cache: HIT (\(ms)ms) — \(item.title)")
+                let cost = (try? JSONEncoder().encode(cloudResult.nodes).count) ?? 1024
+                Self.memoryCache.setObject(
+                    CacheEntry(article: cloudResult, cost: cost),
+                    forKey: cacheKey,
+                    cost: cost
+                )
+                return cloudResult
+            } else {
+                let ms = Int((CFAbsoluteTimeGetCurrent() - l0Start) * 1000)
+                print("☁️ L0 cloud cache: MISS (\(ms)ms) — \(item.title)")
+            }
         }
 
         // L1 — memory cache (instant)
         if let entry = Self.memoryCache.object(forKey: cacheKey) {
+            let ms = Int((CFAbsoluteTimeGetCurrent() - pipelineStart) * 1000)
+            print("⚡ L1 memory cache: HIT (\(ms)ms) — \(item.title)")
             return entry.article
         }
 
         // L2 — SwiftData disk cache (fast, promotes to L1)
         if let cached = try cache.load(id: item.id) {
+            let ms = Int((CFAbsoluteTimeGetCurrent() - pipelineStart) * 1000)
+            print("💾 L2 disk cache: HIT (\(ms)ms) — \(item.title)")
             let cost = (try? JSONEncoder().encode(cached.nodes).count) ?? 1024
             Self.memoryCache.setObject(
                 CacheEntry(article: cached, cost: cost),
@@ -126,6 +138,8 @@ final class ArticlePipelineService {
         }
 
         // Full pipeline — cache miss
+        print("🔧 L3 extracting via WKWebView — \(item.title)")
+        let l3Start = CFAbsoluteTimeGetCurrent()
         // Phase 3 — WebView navigates to the live URL, JS renders, Readability extracts
         let readable = try await extractor.extract(sourceURL: item.sourceURL)
 
@@ -147,6 +161,9 @@ final class ArticlePipelineService {
             guard case .image(let url, _) = node else { return true }
             return seenKeys.insert(normalizedKey(url)).inserted
         }
+
+        let l3ms = Int((CFAbsoluteTimeGetCurrent() - l3Start) * 1000)
+        print("🔧 L3 WKWebView extraction: \(l3ms)ms — \(item.title)")
 
         // Build the ExtractedArticle
         let extracted = ExtractedArticle(

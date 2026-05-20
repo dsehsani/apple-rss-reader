@@ -48,8 +48,8 @@ async function handler(event) {
     sourceID: row.feed_id,
     title: row.title,
     link: row.link,
-    publishedAt: row.published_at,
-    fetchedAt: row.fetched_at,
+    publishedAt: Number(row.published_at),
+    fetchedAt: Number(row.fetched_at),
     excerpt: row.excerpt || "",
     imageURL: row.image_url,
     audioURL: row.audio_url,
@@ -61,7 +61,7 @@ async function handler(event) {
   }));
 
   const syncToken = result.rows.length > 0
-    ? String(Math.max(...result.rows.map((r) => r.fetched_at)))
+    ? String(Math.max(...result.rows.map((r) => Number(r.fetched_at))))
     : since;
 
   return {
