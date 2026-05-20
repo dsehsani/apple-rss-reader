@@ -39,6 +39,18 @@ final class UserProfile {
     /// Master toggle for iCloud sync. When false, data stays local-only.
     var syncEnabled: Bool
 
+    /// The user's subscription tier (free, premium, founding).
+    var subscriptionTierRaw: String = SubscriptionTier.free.rawValue
+
+    /// When the premium subscription expires. Nil for free users.
+    var premiumExpiresAt: Date?
+
+    /// Computed accessor for the subscription tier.
+    var subscriptionTier: SubscriptionTier {
+        get { SubscriptionTier(rawValue: subscriptionTierRaw) ?? .free }
+        set { subscriptionTierRaw = newValue.rawValue }
+    }
+
     // MARK: - Initialization
 
     init(

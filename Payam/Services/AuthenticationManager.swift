@@ -49,6 +49,11 @@ final class AuthenticationManager {
     /// The full UserProfile from SwiftData, available after sign-in.
     private(set) var currentUser: UserProfile?
 
+    /// The current subscription tier, derived from UserProfile.
+    var subscriptionTier: SubscriptionTier {
+        currentUser?.subscriptionTier ?? .free
+    }
+
     /// Whether the user explicitly chose to skip sign-in (guest mode).
     /// Must be a stored property so `@Observable` can track it for SwiftUI.
     /// Synced to UserDefaults so the choice persists across launches.
@@ -164,15 +169,54 @@ final class AuthenticationManager {
 
         state = .signedIn(appleUserID: userID)
 
+        // Exchange Apple identity token for cloud JWT (non-blocking)
+        if let identityToken = credential.identityToken {
+            Task {
+                await exchangeCloudToken(identityToken: identityToken, appleUserID: userID)
+            }
+        }
+
         NotificationCenter.default.post(name: Notification.Name("Payam.AuthStateChanged"), object: nil)
     }
 
     // MARK: - Sign Out
 
+    /// Exchanges the Apple identity token for a cloud JWT and updates the user's tier.
+    /// Called after sign-in and on app launch if a valid Apple credential exists.
+    @MainActor
+    func exchangeCloudToken(identityToken: Data, appleUserID: String) async {
+        do {
+            let authResponse = try await CloudAuthService.exchangeAppleToken(
+                identityToken: identityToken,
+                appleUserID: appleUserID
+            )
+
+            if let tier = SubscriptionTier(rawValue: authResponse.tier) {
+                currentUser?.subscriptionTier = tier
+            }
+            if let tierExpiry = authResponse.tierExpiresAt {
+                currentUser?.premiumExpiresAt = Date(timeIntervalSince1970: tierExpiry)
+            }
+            try? modelContext?.save()
+        } catch {
+            print("Cloud auth exchange failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Updates the user's subscription tier from StoreKit entitlements.
+    @MainActor
+    func updateTierFromStoreKit() {
+        let tier = StoreKitService.shared.currentTier
+        guard currentUser?.subscriptionTier != tier else { return }
+        currentUser?.subscriptionTier = tier
+        try? modelContext?.save()
+    }
+
     /// Signs the user out, clears credentials, and transitions to `.signedOut`.
     @MainActor
     func signOut() {
         KeychainService.deleteAppleUserID()
+        CloudAuthService.clearToken()
         currentUser = nil
         state = .signedOut
 

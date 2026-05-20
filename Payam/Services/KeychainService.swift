@@ -20,38 +20,65 @@ enum KeychainService {
 
     private static let service = "com.openrss.auth"
     private static let appleUserIDKey = "appleUserID"
+    private static let jwtKey = "cloudJWT"
 
     // MARK: - Save
 
     /// Stores the Apple user identifier in Keychain.
-    /// Overwrites any existing value for the same key.
     @discardableResult
     static func saveAppleUserID(_ userID: String) -> Bool {
-        guard let data = userID.data(using: .utf8) else { return false }
+        save(key: appleUserIDKey, value: userID)
+    }
 
-        // Delete any existing item first to avoid errSecDuplicateItem
-        deleteAppleUserID()
+    /// Retrieves the stored Apple user identifier, or nil if not found.
+    static func loadAppleUserID() -> String? {
+        load(key: appleUserIDKey)
+    }
+
+    /// Removes the stored Apple user identifier from Keychain.
+    @discardableResult
+    static func deleteAppleUserID() -> Bool {
+        delete(key: appleUserIDKey)
+    }
+
+    // MARK: - JWT
+
+    @discardableResult
+    static func saveJWT(_ token: String) -> Bool {
+        save(key: jwtKey, value: token)
+    }
+
+    static func loadJWT() -> String? {
+        load(key: jwtKey)
+    }
+
+    @discardableResult
+    static func deleteJWT() -> Bool {
+        delete(key: jwtKey)
+    }
+
+    // MARK: - Generic Helpers
+
+    private static func save(key: String, value: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
+        delete(key: key)
 
         let query: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
             kSecAttrService as String:  service,
-            kSecAttrAccount as String:  appleUserIDKey,
+            kSecAttrAccount as String:  key,
             kSecValueData as String:    data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
         ]
 
-        let status = SecItemAdd(query as CFDictionary, nil)
-        return status == errSecSuccess
+        return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
     }
 
-    // MARK: - Load
-
-    /// Retrieves the stored Apple user identifier, or nil if not found.
-    static func loadAppleUserID() -> String? {
+    private static func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
             kSecAttrService as String:  service,
-            kSecAttrAccount as String:  appleUserIDKey,
+            kSecAttrAccount as String:  key,
             kSecReturnData as String:   true,
             kSecMatchLimit as String:   kSecMatchLimitOne,
         ]
@@ -61,21 +88,18 @@ enum KeychainService {
 
         guard status == errSecSuccess,
               let data = result as? Data,
-              let userID = String(data: data, encoding: .utf8)
+              let value = String(data: data, encoding: .utf8)
         else { return nil }
 
-        return userID
+        return value
     }
 
-    // MARK: - Delete
-
-    /// Removes the stored Apple user identifier from Keychain.
     @discardableResult
-    static func deleteAppleUserID() -> Bool {
+    private static func delete(key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
             kSecAttrService as String:  service,
-            kSecAttrAccount as String:  appleUserIDKey,
+            kSecAttrAccount as String:  key,
         ]
 
         let status = SecItemDelete(query as CFDictionary)
