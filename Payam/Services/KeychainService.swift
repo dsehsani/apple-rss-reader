@@ -57,6 +57,19 @@ enum KeychainService {
         delete(key: jwtKey)
     }
 
+    // MARK: - Device ID
+
+    private static let deviceIDKey = "com.payam.device-id"
+
+    @discardableResult
+    static func saveDeviceID(_ deviceID: String) -> Bool {
+        save(key: deviceIDKey, value: deviceID)
+    }
+
+    static func loadDeviceID() -> String? {
+        load(key: deviceIDKey)
+    }
+
     // MARK: - Generic Helpers
 
     private static func save(key: String, value: String) -> Bool {

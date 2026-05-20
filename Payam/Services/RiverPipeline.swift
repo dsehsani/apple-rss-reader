@@ -87,19 +87,25 @@ final class RiverPipeline: @unchecked Sendable {
     /// - Parameter sourceFilterMeta: `sourceID → (feedURL, folderName)` for filter-scope
     ///   resolution. Caller is responsible for joining sources with folder names from
     ///   MainActor SwiftData state before passing in.
+    enum IngestOutcome {
+        case ok
+        case syncFailed
+    }
+
+    @discardableResult
     func runCycle(
         sources: [Source],
         velocityOverrides: [UUID: VelocityTier] = [:],
         filterRules: [FilterRuleSnapshot] = [],
         sourceFilterMeta: [UUID: (feedURL: String, folderName: String?)] = [:]
-    ) async {
+    ) async -> IngestOutcome {
         // Prevent overlapping runs
         let shouldRun: Bool = pipelineQueue.sync {
             guard !isRunning else { return false }
             isRunning = true
             return true
         }
-        guard shouldRun else { return }
+        guard shouldRun else { return .ok }
 
         defer {
             pipelineQueue.sync { isRunning = false }
@@ -120,9 +126,17 @@ final class RiverPipeline: @unchecked Sendable {
         lastSourceFilterMeta = sourceFilterMeta
 
         // Stage 1 — Ingest
-        let (ingestResult, _) = await timer.time("Stage1-Ingest") {
-            await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
+        var syncFailed = false
+        let ingestResult: [FeedItem]
+        let ingestStart = CFAbsoluteTimeGetCurrent()
+        do {
+            ingestResult = try await ingestService.ingest(sources: sources, velocityOverrides: velocityOverrides)
+        } catch {
+            print("⚠️ Cloud sync failed: \(error.localizedDescription) — running pipeline with cached items")
+            syncFailed = true
+            ingestResult = []
         }
+        let ingestMs = (CFAbsoluteTimeGetCurrent() - ingestStart) * 1000
 
         // #region agent log
         let ingestBySource: [[String: Any]] = Dictionary(grouping: ingestResult, by: \.sourceID)
@@ -202,6 +216,8 @@ final class RiverPipeline: @unchecked Sendable {
             pipelineDurationMs: totalMs
         )
         snapshotPublisher.send(finalSnapshot)
+
+        return syncFailed ? .syncFailed : .ok
     }
 
     /// Runs only the scoring + snapshot stages (no network fetch).

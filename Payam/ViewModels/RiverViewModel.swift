@@ -41,6 +41,9 @@ final class RiverViewModel {
     /// Last pipeline run duration in milliseconds (for diagnostics).
     var lastPipelineDurationMs: Double = 0
 
+    /// True when the last cloud sync failed. Drives SyncFailedBanner display.
+    var syncFailed: Bool = false
+
     // MARK: - River State
 
     /// Raw RiverItems from the pipeline snapshot.
@@ -413,11 +416,12 @@ final class RiverViewModel {
         ])
         // #endregion
 
-        await pipeline.runCycle(
+        let outcome = await pipeline.runCycle(
             sources: sources,
             filterRules: filterRules,
             sourceFilterMeta: sourceFilterMeta
         )
+        syncFailed = (outcome == .syncFailed)
 
         // Sync the full 30-day cache back to SwiftDataService so source/folder
         // views show all retained content, not just river-visible items.

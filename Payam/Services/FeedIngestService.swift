@@ -37,22 +37,37 @@ final class FeedIngestService: Sendable {
     /// server-side rate limits while still being dramatically faster than serial.
     private static let maxConcurrentFetches = 6
 
+    private let cloudSync = CloudFeedSyncService()
+
+    /// Ingests feeds — cloud-first for premium users, local RSS fallback otherwise.
+    /// Throws on cloud sync failure so the caller can surface a SyncFailedBanner.
     func ingest(
         sources: [Source],
         velocityOverrides: [UUID: VelocityTier] = [:]
-    ) async -> [FeedItem] {
-
-        // Premium users fetch from cloud instead of polling feeds directly.
-        if AuthenticationManager.shared.subscriptionTier.isPremium,
-           CloudAuthService.hasValidToken {
-            let start = CFAbsoluteTimeGetCurrent()
-            let items = await CloudFeedSyncService.shared.sync()
-            let ms = Int((CFAbsoluteTimeGetCurrent() - start) * 1000)
-            print("☁️ Cloud feed sync: \(items.count) items in \(ms)ms")
-            return items
-        }
+    ) async throws -> [FeedItem] {
 
         let enabledSources = sources.filter(\.isEnabled)
+        guard !enabledSources.isEmpty else { return [] }
+
+        // Cloud sync path — throws on failure so RiverViewModel can show banner.
+        if AuthenticationManager.shared.subscriptionTier.isPremium,
+           CloudAuthService.hasValidToken {
+            let newItems = try await cloudSync.sync(sources: enabledSources)
+
+            // Refresh affinity rows with velocity tiers from cloud items
+            let bySource = Dictionary(grouping: newItems, by: \.sourceID)
+            for source in enabledSources {
+                let items = bySource[source.id] ?? []
+                let tier = velocityOverrides[source.id]
+                    ?? items.first?.velocityTier
+                    ?? inferVelocityTier(sourceID: source.id)
+                updateSourceAffinity(source: source, tier: tier)
+            }
+
+            return newItems
+        }
+
+        // Local RSS polling fallback (offline, free tier, no JWT)
         guard !enabledSources.isEmpty else { return [] }
 
         // Fetch + parse all feeds concurrently (bounded by maxConcurrentFetches).

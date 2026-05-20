@@ -55,6 +55,11 @@ struct TodayView: View {
                 VStack(spacing: 0) {
                     headerView
                     LazyVStack(spacing: Design.Spacing.cardGap) {
+                    // Sync failed banner
+                    if viewModel.syncFailed {
+                        SyncFailedBanner()
+                            .padding(.horizontal, Design.Spacing.cardPadding)
+                    }
                     // Empty states
                     if viewModel.filteredRiverItems.isEmpty {
                         noResultsPrompt
