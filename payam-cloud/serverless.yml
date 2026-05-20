@@ -89,6 +89,15 @@ functions:
           path: /v1/state
           method: post
 
+  # --- Feed Subscriptions ---
+  feeds:
+    handler: src/feeds.main
+    timeout: 10
+    events:
+      - httpApi:
+          path: /v1/feeds
+          method: post
+
   # --- Feed Polling ---
   feedOrchestrator:
     handler: src/feed-orchestrator.main

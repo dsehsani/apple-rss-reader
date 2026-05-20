@@ -1,5 +1,7 @@
 // GET /v1/river?since={epoch}&limit={500}
 // Returns feed item delta for the authenticated user.
+// Response includes serverTime (epoch seconds) so the iOS client tracks
+// sync position using the server's clock, not the device clock.
 
 import { query } from "./db.mjs";
 import { requireAuth } from "./jwt.mjs";
@@ -7,7 +9,8 @@ import { requireAuth } from "./jwt.mjs";
 async function handler(event) {
   const userId = event.auth.sub;
   const since = event.queryStringParameters?.since || "0";
-  const limit = Math.min(parseInt(event.queryStringParameters?.limit || "500"), 500);
+  const rawLimit = parseInt(event.queryStringParameters?.limit || "500");
+  const limit = (!rawLimit || rawLimit < 1) ? 500 : Math.min(rawLimit, 500);
 
   const sinceDate = new Date(parseInt(since) * 1000);
 
@@ -29,23 +32,11 @@ async function handler(event) {
     [userId, sinceDate, limit]
   );
 
-  // Build source ID mapping: feed_registry.feed_url → deterministic UUID
-  const feedIds = [...new Set(result.rows.map((r) => r.feed_id))];
-  let feedUrlMap = {};
-  if (feedIds.length > 0) {
-    const placeholders = feedIds.map((_, i) => `$${i + 1}`).join(",");
-    const feeds = await query(
-      `SELECT id, feed_url FROM feed_registry WHERE id IN (${placeholders})`,
-      feedIds
-    );
-    for (const f of feeds.rows) {
-      feedUrlMap[f.id] = f.feed_url;
-    }
-  }
-
+  // Map rows to the shape CloudFeedSyncService.RiverItemRow expects:
+  //   feedId, itemId, link, title, excerpt, author, imageURL, audioURL, videoURL, publishedAt, fetchedAt
   const items = result.rows.map((row) => ({
-    id: row.id,
-    sourceID: row.feed_id,
+    feedId: row.feed_id,
+    itemId: row.id,
     title: row.title,
     link: row.link,
     publishedAt: Number(row.published_at),
@@ -60,16 +51,16 @@ async function handler(event) {
     isBookmarked: row.is_bookmarked,
   }));
 
-  const syncToken = result.rows.length > 0
-    ? String(Math.max(...result.rows.map((r) => Number(r.fetched_at))))
-    : since;
+  // Server time in epoch seconds — the iOS client stores this and passes it
+  // as `since` on the next sync, avoiding device clock drift issues.
+  const serverTime = Math.floor(Date.now() / 1000);
 
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       items,
-      syncToken,
+      serverTime,
       hasMore: result.rows.length === limit,
     }),
   };
