@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --test tests/unit/**/*.test.mjs",
+    "test:smoke": "node tests/smoke.mjs"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -11,7 +15,10 @@
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/client-sns": "^3.787.0",
     "@aws-sdk/client-sqs": "^3.787.0",
-    "pg": "^8.13.0"
+    "@mozilla/readability": "^0.5.0",
+    "jsdom": "^24.1.0",
+    "pg": "^8.13.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "serverless": "^3.40.0"

@@ -10,6 +10,12 @@ provider:
   runtime: nodejs20.x
   region: us-west-2
   stage: ${opt:stage, 'dev'}
+  environment:
+    DB_HOST: ${env:PAYAM_DB_HOST, ''}
+    DB_PORT: '5432'
+    DB_NAME: payam
+    DB_USER: payam
+    DB_PASSWORD: ${env:PAYAM_DB_PASSWORD, ''}
   iam:
     role:
       statements:

@@ -40,6 +40,7 @@ enum AgentClient {
         let messages: [Message]
         let articleContext: ArticleContext?
         let subscriptions: [SubscriptionRef]
+        let topicAffinities: [String: Double]?
 
         struct Message: Encodable {
             let role: String
@@ -70,7 +71,8 @@ enum AgentClient {
     static func send(
         history: [ChatMessage],
         articleContext: ArticleContext?,
-        subscriptions: [SubscriptionRef]
+        subscriptions: [SubscriptionRef],
+        topicAffinities: [String: Double]? = nil
     ) async throws -> AgentEnvelope {
 
         guard let url = endpoint else { throw AgentError.invalidURL }
@@ -85,7 +87,8 @@ enum AgentClient {
         let body = RequestBody(
             messages: messages,
             articleContext: articleContext,
-            subscriptions: subscriptions
+            subscriptions: subscriptions,
+            topicAffinities: topicAffinities
         )
 
         var request = URLRequest(url: url)

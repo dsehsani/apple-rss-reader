@@ -101,7 +101,7 @@ export async function main(event) {
           intent = 'explain';
           break;
         }
-        toolResult = await runDiscoverSources({ topic, subscribedURLs });
+        toolResult = await runDiscoverSources({ topic, subscribedURLs, topicAffinities: payload.topicAffinities });
         break;
       }
       case 'filter_rule': {

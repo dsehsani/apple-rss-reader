@@ -1,16 +1,49 @@
 // SQS → This Lambda (1 per feed URL)
 // Fetches a single feed with conditional GET, diffs against existing items,
-// inserts new items, and notifies subscribers via APNs.
+// inserts new items, re-infers velocity tier, handles dead feed detection,
+// enqueues pre-extraction for popular feeds, and notifies subscribers via APNs.
 
 import { query } from "./db.mjs";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import crypto from "node:crypto";
+import Parser from "rss-parser";
 
+const sqs = new SQSClient({});
 const sns = new SNSClient({});
 const dynamo = new DynamoDBClient({});
+
 const PLATFORM_ARN = process.env.SNS_PLATFORM_ARN;
 const DEVICE_TOKENS_TABLE = process.env.DEVICE_TOKENS_TABLE || "payam-device-tokens";
+const EXTRACTION_LIGHT_QUEUE_URL = process.env.EXTRACTION_LIGHT_QUEUE_URL;
+
+const parser = new Parser({
+  timeout: 15_000,
+  headers: {
+    "User-Agent": "Payam/1.0 RSS Reader (https://payam.app)",
+    Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+  },
+  customFields: {
+    item: [
+      ["media:thumbnail", "mediaThumbnail", { keepArray: false }],
+      ["media:content", "mediaContent", { keepArray: false }],
+      ["enclosure"],
+    ],
+  },
+});
+
+// Velocity tier inference — matches Darius's payam-polling/src/lib/velocity.mjs
+// and iOS FeedIngestService.inferVelocityTier
+function inferVelocityTier(itemsCount, daySpanSeconds) {
+  const days = Math.max(1, daySpanSeconds / 86400);
+  const perDay = itemsCount / days;
+  if (perDay >= 50) return "breaking";
+  if (perDay >= 10) return "news";
+  if (perDay >= 1) return "article";
+  if (perDay >= 0.15) return "essay";
+  return "evergreen";
+}
 
 export async function main(event) {
   for (const record of event.Records) {
@@ -19,36 +52,49 @@ export async function main(event) {
   }
 }
 
-async function processFeed({ feedId, feedUrl, etag, lastModified, velocityTier }) {
+async function processFeed({ feedId, feedUrl, etag, lastModified, velocityTier, subscriberCount, isDead }) {
   try {
     // Conditional GET
-    const headers = {};
+    const headers = {
+      "User-Agent": "Payam/1.0 RSS Reader (https://payam.app)",
+      Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+    };
     if (etag) headers["If-None-Match"] = etag;
     if (lastModified) headers["If-Modified-Since"] = lastModified;
 
     const response = await fetch(feedUrl, {
-      headers: {
-        ...headers,
-        "User-Agent": "Payam/1.0 RSS Reader (https://payam.app)",
-        Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-      },
+      headers,
       signal: AbortSignal.timeout(15_000),
     });
 
-    // Update last_fetched_at regardless
+    // Update last_fetched_at regardless of result
     await query(
       `UPDATE feed_registry SET last_fetched_at = NOW() WHERE id = $1`,
       [feedId]
     );
 
     if (response.status === 304) {
-      return; // No new content
+      // Not modified — reset failures on successful contact
+      if (isDead) {
+        await resetDeadFeed(feedId);
+      }
+      return;
     }
 
     if (!response.ok) {
-      // Track failures for dead feed detection
-      console.warn(`Feed ${feedUrl} returned ${response.status}`);
+      await recordFailure(feedId, feedUrl, response.status);
       return;
+    }
+
+    // Successful fetch — reset failures if previously dead
+    if (isDead) {
+      await resetDeadFeed(feedId);
+    } else {
+      // Reset consecutive failures on success
+      await query(
+        `UPDATE feed_registry SET consecutive_failures = 0 WHERE id = $1 AND consecutive_failures > 0`,
+        [feedId]
+      );
     }
 
     const xml = await response.text();
@@ -63,8 +109,47 @@ async function processFeed({ feedId, feedUrl, etag, lastModified, velocityTier }
       );
     }
 
-    // Parse feed items
-    const items = parseFeedXML(xml, feedId, velocityTier);
+    // Parse feed with rss-parser
+    let feed;
+    try {
+      feed = await parser.parseString(xml);
+    } catch (parseErr) {
+      console.warn(`Parse failed for ${feedUrl}: ${parseErr.message}`);
+      await recordFailure(feedId, feedUrl, "PARSE_ERROR");
+      return;
+    }
+
+    // Update feed title/description if missing
+    if (feed.title || feed.description) {
+      await query(
+        `UPDATE feed_registry SET
+           title = COALESCE(NULLIF($2, ''), title),
+           description = COALESCE(NULLIF($3, ''), description),
+           image_url = COALESCE(NULLIF($4, ''), image_url)
+         WHERE id = $1`,
+        [feedId, feed.title || "", feed.description || "", feed.image?.url || feed.itunes?.image || ""]
+      );
+    }
+
+    // Convert parsed items to our format
+    const items = (feed.items || [])
+      .filter((item) => item.title?.trim() && (item.link?.trim() || item.guid?.trim()))
+      .map((item) => {
+        const link = item.link?.trim() || item.guid?.trim();
+        const id = deterministicUUID(feedId, link);
+        return {
+          id,
+          title: item.title.trim(),
+          link,
+          publishedAt: item.pubDate ? new Date(item.pubDate) : item.isoDate ? new Date(item.isoDate) : new Date(),
+          excerpt: item.contentSnippet?.substring(0, 500)?.trim() || "",
+          imageUrl: extractImage(item),
+          audioUrl: extractAudio(item),
+          videoUrl: null,
+          author: item.creator || item["dc:creator"] || item.author || null,
+        };
+      });
+
     if (items.length === 0) return;
 
     // Diff against existing items (by link within this feed)
@@ -94,110 +179,135 @@ async function processFeed({ feedId, feedUrl, etag, lastModified, velocityTier }
 
     console.log(`Inserted ${newItems.length} items from ${feedUrl}`);
 
+    // Re-infer velocity tier from last 7 days of items
+    await reInferVelocityTier(feedId);
+
+    // Pre-extract for popular feeds
+    if (subscriberCount >= 3 && ["breaking", "news", "article"].includes(velocityTier)) {
+      await enqueuePreExtraction(newItems);
+    }
+
+    // Update last_item_at
+    const latestPub = newItems.reduce((max, i) => i.publishedAt > max ? i.publishedAt : max, newItems[0].publishedAt);
+    await query(
+      `UPDATE feed_registry SET last_item_at = GREATEST(last_item_at, $2) WHERE id = $1`,
+      [feedId, latestPub]
+    );
+
     // Notify subscribers
     await notifySubscribers(feedId);
   } catch (err) {
     console.error(`Error processing feed ${feedUrl}:`, err.message);
+    await recordFailure(feedId, feedUrl, "EXCEPTION");
   }
 }
 
-// Minimal RSS/Atom parser — extracts title, link, pubDate, description
-function parseFeedXML(xml, feedId, velocityTier) {
-  const items = [];
+// --- Dead Feed Detection ---
 
-  // Match <item> (RSS) or <entry> (Atom) blocks
-  const itemRegex = /<(?:item|entry)[\s>]([\s\S]*?)<\/(?:item|entry)>/gi;
-  let match;
+async function recordFailure(feedId, feedUrl, reason) {
+  console.warn(`Feed ${feedUrl} failed: ${reason}`);
+  const result = await query(
+    `UPDATE feed_registry
+     SET consecutive_failures = consecutive_failures + 1
+     WHERE id = $1
+     RETURNING consecutive_failures`,
+    [feedId]
+  );
 
-  while ((match = itemRegex.exec(xml)) !== null) {
-    const block = match[1];
+  const failures = result.rows[0]?.consecutive_failures ?? 0;
+  if (failures >= 3) {
+    await query(
+      `UPDATE feed_registry SET is_dead = TRUE WHERE id = $1`,
+      [feedId]
+    );
+    console.warn(`Feed ${feedUrl} marked dead after ${failures} consecutive failures`);
+  }
+}
 
-    const title = extractTag(block, "title") || "";
-    if (!title.trim()) continue;
+async function resetDeadFeed(feedId) {
+  await query(
+    `UPDATE feed_registry SET is_dead = FALSE, consecutive_failures = 0 WHERE id = $1`,
+    [feedId]
+  );
+}
 
-    const link = extractLink(block) || "";
-    if (!link.trim()) continue;
+// --- Velocity Re-inference ---
 
-    const pubDate = extractTag(block, "pubDate") || extractTag(block, "published") || extractTag(block, "updated");
-    const description = extractTag(block, "description") || extractTag(block, "summary") || extractTag(block, "content");
-    const author = extractTag(block, "author") || extractTag(block, "dc:creator");
-    const imageUrl = extractImageFromEnclosure(block) || extractImageFromContent(block);
-    const audioUrl = extractAudioEnclosure(block);
+async function reInferVelocityTier(feedId) {
+  const result = await query(
+    `SELECT COUNT(*) AS item_count,
+            EXTRACT(EPOCH FROM (MAX(published_at) - MIN(published_at))) AS day_span_sec
+     FROM feed_items
+     WHERE feed_id = $1 AND published_at > NOW() - INTERVAL '7 days'`,
+    [feedId]
+  );
 
-    // Deterministic UUID from feedId + link (matches client FNV-1a scheme)
-    const id = deterministicUUID(feedId, link);
+  const row = result.rows[0];
+  if (!row || row.item_count < 2) return; // Not enough data to infer
 
-    items.push({
-      id,
-      title: stripHTML(title).trim(),
-      link: link.trim(),
-      publishedAt: pubDate ? new Date(pubDate) : new Date(),
-      excerpt: description ? stripHTML(description).substring(0, 500).trim() : "",
-      imageUrl,
-      audioUrl,
-      videoUrl: null,
-      author: author ? stripHTML(author).trim() : null,
-    });
+  const newTier = inferVelocityTier(parseInt(row.item_count), parseFloat(row.day_span_sec) || 86400);
+
+  await query(
+    `UPDATE feed_registry SET velocity_tier = $2 WHERE id = $1 AND velocity_tier != $2`,
+    [feedId, newTier]
+  );
+}
+
+// --- Pre-extraction for popular feeds ---
+
+async function enqueuePreExtraction(items) {
+  if (!EXTRACTION_LIGHT_QUEUE_URL) return;
+
+  // Pre-extract up to 5 newest items
+  const toExtract = items.slice(0, 5);
+  for (const item of toExtract) {
+    const urlHash = crypto.createHash("sha256").update(item.link).digest("hex").substring(0, 64);
+    try {
+      await sqs.send(
+        new SendMessageCommand({
+          QueueUrl: EXTRACTION_LIGHT_QUEUE_URL,
+          MessageBody: JSON.stringify({ urlHash, url: item.link, feedId: item.id, preExtract: true }),
+        })
+      );
+    } catch (err) {
+      console.warn(`Pre-extraction enqueue failed for ${item.link}:`, err.message);
+    }
+  }
+}
+
+// --- Image/Audio Extraction from rss-parser output ---
+
+function extractImage(item) {
+  // Media thumbnail
+  if (item.mediaThumbnail?.$.url) return item.mediaThumbnail.$.url;
+
+  // Media content (non-audio)
+  if (item.mediaContent?.$.url && !item.mediaContent.$.type?.startsWith("audio/")) {
+    return item.mediaContent.$.url;
   }
 
-  return items;
-}
+  // Enclosure with image type
+  if (item.enclosure?.type?.startsWith("image/")) return item.enclosure.url;
 
-function extractTag(block, tag) {
-  // Handle CDATA
-  const cdataRegex = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, "i");
-  const cdataMatch = block.match(cdataRegex);
-  if (cdataMatch) return cdataMatch[1];
-
-  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
-  const match = block.match(regex);
-  return match ? match[1] : null;
-}
-
-function extractLink(block) {
-  // RSS: <link>url</link>
-  const rssLink = extractTag(block, "link");
-  if (rssLink && rssLink.trim().startsWith("http")) return rssLink.trim();
-
-  // Atom: <link href="url" />
-  const atomMatch = block.match(/<link[^>]*href=["']([^"']+)["'][^>]*\/?>/i);
-  if (atomMatch) return atomMatch[1];
-
-  // Fallback: <guid>url</guid>
-  const guid = extractTag(block, "guid");
-  if (guid && guid.trim().startsWith("http")) return guid.trim();
+  // First img in content HTML
+  const content = item["content:encoded"] || item.content || "";
+  const imgMatch = content.match(/<img[^>]*src=["']([^"']+)["']/i);
+  if (imgMatch) return imgMatch[1];
 
   return null;
 }
 
-function extractImageFromEnclosure(block) {
-  const match = block.match(/<enclosure[^>]*type=["']image\/[^"']*["'][^>]*url=["']([^"']+)["']/i);
-  if (match) return match[1];
-  const match2 = block.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image\//i);
-  return match2 ? match2[1] : null;
+function extractAudio(item) {
+  if (item.enclosure?.type?.startsWith("audio/")) return item.enclosure.url;
+  if (item.mediaContent?.$.type?.startsWith("audio/")) return item.mediaContent.$.url;
+  return null;
 }
 
-function extractImageFromContent(block) {
-  const match = block.match(/<img[^>]*src=["']([^"']+)["']/i);
-  return match ? match[1] : null;
-}
+// --- Deterministic UUID ---
 
-function extractAudioEnclosure(block) {
-  const match = block.match(/<enclosure[^>]*type=["']audio\/[^"']*["'][^>]*url=["']([^"']+)["']/i);
-  if (match) return match[1];
-  const match2 = block.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']audio\//i);
-  return match2 ? match2[1] : null;
-}
-
-function stripHTML(str) {
-  return str.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-}
-
-// Deterministic UUID v5-style from feedId + link (must match client's FNV-1a scheme)
 function deterministicUUID(feedId, link) {
   const input = `${feedId}|${link}`;
   const hash = crypto.createHash("md5").update(input).digest("hex");
-  // Format as UUID
   return [
     hash.substring(0, 8),
     hash.substring(8, 12),
@@ -207,15 +317,15 @@ function deterministicUUID(feedId, link) {
   ].join("-");
 }
 
+// --- Push Notifications ---
+
 async function notifySubscribers(feedId) {
-  // Get all users subscribed to this feed
   const subs = await query(
     `SELECT user_id FROM user_feeds WHERE feed_id = $1`,
     [feedId]
   );
 
   for (const sub of subs.rows) {
-    // Get device tokens for this user
     const tokens = await dynamo.send(
       new QueryCommand({
         TableName: DEVICE_TOKENS_TABLE,

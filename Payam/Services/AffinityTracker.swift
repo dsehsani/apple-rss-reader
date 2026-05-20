@@ -20,8 +20,16 @@ final class AffinityTracker: Sendable {
 
     // MARK: - Constants
 
-    /// EMA smoothing factor. Higher = recent events weigh more.
-    private static let alpha: Double = 0.15
+    /// Steady-state EMA smoothing factor. Higher = recent events weigh more.
+    private static let steadyAlpha: Double = 0.15
+
+    /// Returns an event-count-dependent alpha for faster warm-up on new sources.
+    /// First 5 events: alpha=0.4 (fast response). Linearly decays to 0.15 by event 20.
+    private static func effectiveAlpha(eventCount: Int) -> Double {
+        if eventCount < 5 { return 0.4 }
+        if eventCount < 20 { return 0.4 - (0.25 * Double(eventCount - 5) / 15.0) }
+        return steadyAlpha
+    }
 
     // MARK: - Dependencies
 
@@ -77,7 +85,8 @@ final class AffinityTracker: Sendable {
         let velocityTier = existing?.velocityTier ?? .article
         let slotLimit = existing?.slotLimit ?? velocityTier.defaultSlotLimit
 
-        let updated = Self.alpha * eventWeight + (1.0 - Self.alpha) * currentScore
+        let alpha = Self.effectiveAlpha(eventCount: currentCount)
+        let updated = alpha * eventWeight + (1.0 - alpha) * currentScore
         let clamped = min(max(updated, -0.3), 1.0)
 
         let record = SourceAffinityRecord(
@@ -95,7 +104,8 @@ final class AffinityTracker: Sendable {
     // MARK: - Utility
 
     /// Pure function for computing EMA (useful for testing).
-    static func updateAffinity(current: Double, eventWeight: Double) -> Double {
+    static func updateAffinity(current: Double, eventWeight: Double, eventCount: Int = 20) -> Double {
+        let alpha = effectiveAlpha(eventCount: eventCount)
         let updated = alpha * eventWeight + (1.0 - alpha) * current
         return min(max(updated, -0.3), 1.0)
     }

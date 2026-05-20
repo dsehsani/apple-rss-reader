@@ -57,11 +57,14 @@ final class RiverPipeline: @unchecked Sendable {
     /// hopping back to the main actor.
     private var lastPreferUniqueStories: [UUID: Bool] = [:]
 
-    /// Affinity scores frozen at the first pipeline cycle of this session.
+    /// Affinity scores refreshed on a 15-minute rolling window.
     /// Used by rate gating so that reading articles mid-session doesn't change
     /// slot limits and cause DigestCards to flicker or disappear.
-    /// Reset on next app launch (new RiverPipeline instance).
+    /// Refreshes every 15 minutes to respond to sustained engagement
+    /// within a session rather than requiring an app relaunch.
     private var sessionAffinitySnapshot: [UUID: SourceAffinityRecord]?
+    private var affinitySnapshotTimestamp: Date?
+    private static let affinityRefreshInterval: TimeInterval = 15 * 60
 
     /// AI-generated (or hand-edited) filter rules to apply in the snapshot stage.
     /// Sendable snapshots — safe to read from the background pipeline queue.
@@ -143,14 +146,17 @@ final class RiverPipeline: @unchecked Sendable {
             clusterService.clusterRecentItems()
         }
 
-        // Freeze affinity scores on the first pipeline cycle of this session.
-        // Subsequent cycles reuse the same snapshot so that reading articles
-        // mid-session doesn't shift slot limits and cause DigestCards to vanish.
-        if sessionAffinitySnapshot == nil {
+        // Rolling affinity snapshot: refresh every 15 minutes.
+        // Prevents per-article DigestCard flicker while still responding
+        // to sustained engagement within a session.
+        let now = Date()
+        let snapshotAge = affinitySnapshotTimestamp.map { now.timeIntervalSince($0) } ?? .infinity
+        if sessionAffinitySnapshot == nil || snapshotAge > Self.affinityRefreshInterval {
             let allAffinities = store.fetchAllAffinities()
             sessionAffinitySnapshot = Dictionary(
                 uniqueKeysWithValues: allAffinities.map { ($0.sourceID, $0) }
             )
+            affinitySnapshotTimestamp = now
         }
 
         // Stage 3 — Rate Gating

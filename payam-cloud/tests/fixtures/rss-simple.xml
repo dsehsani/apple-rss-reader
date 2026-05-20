@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Blog</title>
+    <link>https://test.example.com</link>
+    <description>A test RSS feed</description>
+    <item>
+      <title>First Post</title>
+      <link>https://test.example.com/first-post</link>
+      <pubDate>Mon, 19 May 2026 12:00:00 GMT</pubDate>
+      <description>This is the first post content with enough words to be meaningful.</description>
+      <author>Test Author</author>
+    </item>
+    <item>
+      <title>Second Post</title>
+      <link>https://test.example.com/second-post</link>
+      <pubDate>Sun, 18 May 2026 12:00:00 GMT</pubDate>
+      <description><![CDATA[<p>This has <strong>HTML</strong> in CDATA.</p>]]></description>
+    </item>
+    <item>
+      <title></title>
+      <link>https://test.example.com/no-title</link>
+      <pubDate>Sat, 17 May 2026 12:00:00 GMT</pubDate>
+      <description>This item has no title and should be skipped.</description>
+    </item>
+  </channel>
+</rss>

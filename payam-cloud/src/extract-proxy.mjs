@@ -14,7 +14,8 @@ const sqs = new SQSClient({});
 
 const INDEX_TABLE = process.env.EXTRACTION_INDEX_TABLE || "payam-extraction-index";
 const BUCKET = process.env.EXTRACTION_BUCKET || "payam-extractions";
-const QUEUE_URL = process.env.EXTRACTION_QUEUE_URL;
+const LIGHT_QUEUE_URL = process.env.EXTRACTION_LIGHT_QUEUE_URL;
+const PUPPETEER_QUEUE_URL = process.env.EXTRACTION_QUEUE_URL;
 
 async function handler(event) {
   const urlHash = event.pathParameters?.hash;
@@ -53,23 +54,27 @@ async function handler(event) {
     }
   }
 
-  // Cache miss — enqueue for extraction if queue is configured
-  if (QUEUE_URL) {
+  // Cache miss — enqueue for lightweight extraction first (jsdom),
+  // which falls back to Puppeteer if content is thin or JS-rendered.
+  const queueUrl = LIGHT_QUEUE_URL || PUPPETEER_QUEUE_URL;
+  if (queueUrl) {
     try {
-      await sqs.send(
-        new SendMessageCommand({
-          QueueUrl: QUEUE_URL,
-          MessageBody: JSON.stringify({ urlHash, url: articleUrl }),
-          MessageDeduplicationId: urlHash,
-          MessageGroupId: "extractions",
-        })
-      );
+      const messageParams = {
+        QueueUrl: queueUrl,
+        MessageBody: JSON.stringify({ urlHash, url: articleUrl }),
+      };
+      // FIFO queue requires dedup/group IDs
+      if (queueUrl.endsWith(".fifo")) {
+        messageParams.MessageDeduplicationId = urlHash;
+        messageParams.MessageGroupId = "extractions";
+      }
+      await sqs.send(new SendMessageCommand(messageParams));
     } catch {
       // Non-critical — extraction will happen on next request
     }
   }
 
-  return respond(404, { status: "miss" });
+  return respond(202, { status: "queued", retryAfterSeconds: 5 });
 }
 
 function respond(statusCode, body) {

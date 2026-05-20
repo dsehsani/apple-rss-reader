@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta property="og:image" content="https://example.com/hero.jpg"/>
+  <title>Test Article</title>
+</head>
+<body>
+  <article>
+    <h1>Machine Learning in Production</h1>
+    <p>Artificial intelligence and machine learning have transformed how we build software. Deep learning models are now deployed in production systems at scale.</p>
+    <p>This article explores the challenges of deploying neural networks, including model serving, monitoring, and continuous training pipelines.</p>
+    <blockquote>The best model is the one that ships.</blockquote>
+    <h2>Infrastructure</h2>
+    <p>Modern ML infrastructure requires careful consideration of compute resources, data pipelines, and model versioning. Teams use frameworks like TensorFlow and PyTorch for training, then convert to optimized formats for serving.</p>
+    <p>Kubernetes has become the standard platform for orchestrating model serving containers, with tools like Seldon and KServe providing ML-specific abstractions.</p>
+    <ul>
+      <li>Model registry for versioning</li>
+      <li>Feature store for data consistency</li>
+      <li>A/B testing for model comparison</li>
+    </ul>
+    <h2>Monitoring</h2>
+    <p>Production ML systems require monitoring beyond standard application metrics. Teams must track model drift, data quality, and prediction distributions to catch degradation early.</p>
+    <p>Alerting on prediction confidence scores helps identify when models encounter out-of-distribution inputs that may produce unreliable results.</p>
+    <figure>
+      <img src="https://example.com/diagram.png" alt="ML pipeline diagram"/>
+      <figcaption>A typical ML deployment pipeline</figcaption>
+    </figure>
+    <p>Organizations that invest in observability for their ML systems see faster iteration cycles and fewer production incidents related to model quality.</p>
+  </article>
+</body>
+</html>

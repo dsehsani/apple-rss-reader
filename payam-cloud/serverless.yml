@@ -20,6 +20,7 @@ provider:
     EXTRACTION_BUCKET: payam-extractions-${self:provider.stage}
     FEED_POLL_QUEUE_URL: !Ref FeedPollQueue
     EXTRACTION_QUEUE_URL: https://sqs.us-west-2.amazonaws.com/100731996760/payam-extraction-dev.fifo
+    EXTRACTION_LIGHT_QUEUE_URL: !Ref ExtractionLightQueue
     SNS_PLATFORM_ARN: ${env:PAYAM_SNS_PLATFORM_ARN, ''}
   iam:
     role:
@@ -40,6 +41,7 @@ provider:
             - sqs:SendMessageBatch
           Resource:
             - !GetAtt FeedPollQueue.Arn
+            - !GetAtt ExtractionLightQueue.Arn
         - Effect: Allow
           Action:
             - s3:GetObject
@@ -113,6 +115,33 @@ functions:
           path: /v1/extract/{hash}
           method: get
 
+  extractLight:
+    handler: src/extract-light.main
+    timeout: 30
+    memorySize: 512
+    events:
+      - sqs:
+          arn: !GetAtt ExtractionLightQueue.Arn
+          batchSize: 5
+
+  # --- Discovery ---
+  discover:
+    handler: src/discover.main
+    timeout: 10
+    events:
+      - httpApi:
+          path: /v1/discover
+          method: post
+
+  # --- Feed Enrichment ---
+  enrichFeeds:
+    handler: src/enrich-feeds.main
+    timeout: 120
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+
 resources:
   Resources:
     # --- DynamoDB Tables ---
@@ -161,6 +190,13 @@ resources:
       Properties:
         QueueName: payam-feed-poll-${self:provider.stage}
         VisibilityTimeout: 60
+        MessageRetentionPeriod: 3600
+
+    ExtractionLightQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payam-extraction-light-${self:provider.stage}
+        VisibilityTimeout: 120
         MessageRetentionPeriod: 3600
 
     # --- S3 Bucket ---
