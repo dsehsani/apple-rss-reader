@@ -1,0 +1,181 @@
+service: payam-cloud
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DB_HOST: ${env:PAYAM_DB_HOST, ''}
+    DB_PORT: '5432'
+    DB_NAME: payam
+    DB_USER: payam
+    DB_PASSWORD: ${env:PAYAM_DB_PASSWORD, ''}
+    JWT_SECRET: ${env:PAYAM_JWT_SECRET, ''}
+    USERS_TABLE: payam-users-${self:provider.stage}
+    DEVICE_TOKENS_TABLE: payam-device-tokens-${self:provider.stage}
+    EXTRACTION_INDEX_TABLE: payam-extraction-index-${self:provider.stage}
+    EXTRACTION_BUCKET: payam-extractions-${self:provider.stage}
+    FEED_POLL_QUEUE_URL: !Ref FeedPollQueue
+    SNS_PLATFORM_ARN: ${env:PAYAM_SNS_PLATFORM_ARN, ''}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:Query
+            - dynamodb:UpdateItem
+          Resource:
+            - !GetAtt UsersTable.Arn
+            - !GetAtt DeviceTokensTable.Arn
+            - !GetAtt ExtractionIndexTable.Arn
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:SendMessageBatch
+          Resource:
+            - !GetAtt FeedPollQueue.Arn
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::payam-extractions-${self:provider.stage}/*
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource: '*'
+
+functions:
+  # --- Auth ---
+  authApple:
+    handler: src/auth.main
+    timeout: 10
+    events:
+      - httpApi:
+          path: /v1/auth/apple
+          method: post
+
+  # --- Device Registration ---
+  deviceRegister:
+    handler: src/device-register.main
+    timeout: 5
+    events:
+      - httpApi:
+          path: /v1/devices/register
+          method: post
+
+  # --- Feed Sync ---
+  riverSync:
+    handler: src/river-sync.main
+    timeout: 15
+    events:
+      - httpApi:
+          path: /v1/river
+          method: get
+
+  stateSync:
+    handler: src/state-sync.main
+    timeout: 10
+    events:
+      - httpApi:
+          path: /v1/state
+          method: post
+
+  # --- Feed Polling ---
+  feedOrchestrator:
+    handler: src/feed-orchestrator.main
+    timeout: 60
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          enabled: true
+
+  feedWorker:
+    handler: src/feed-worker.main
+    timeout: 30
+    reservedConcurrency: 50
+    events:
+      - sqs:
+          arn: !GetAtt FeedPollQueue.Arn
+          batchSize: 1
+
+  # --- Extraction Cache ---
+  extractProxy:
+    handler: src/extract-proxy.main
+    timeout: 10
+    events:
+      - httpApi:
+          path: /v1/extract/{hash}
+          method: get
+
+resources:
+  Resources:
+    # --- DynamoDB Tables ---
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: payam-users-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+
+    DeviceTokensTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: payam-device-tokens-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+
+    ExtractionIndexTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: payam-extraction-index-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: urlHash
+            AttributeType: S
+        KeySchema:
+          - AttributeName: urlHash
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+    # --- SQS Queues ---
+    FeedPollQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payam-feed-poll-${self:provider.stage}
+        VisibilityTimeout: 60
+        MessageRetentionPeriod: 3600
+
+    # --- S3 Bucket ---
+    ExtractionBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: payam-extractions-${self:provider.stage}
+        LifecycleConfiguration:
+          Rules:
+            - Id: expire-72hr
+              Status: Enabled
+              ExpirationInDays: 3
+
+package:
+  patterns:
+    - '!.git/**'
+    - '!sql/**'
+    - '!node_modules/.cache/**'
