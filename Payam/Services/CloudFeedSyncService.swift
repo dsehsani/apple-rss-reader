@@ -25,6 +25,7 @@ private struct RiverResponse: Decodable {
 
 private struct RiverItemRow: Decodable {
     let feedId: String
+    let feedURL: String?
     let link: String
     let itemId: String
     let title: String
@@ -61,22 +62,25 @@ final class CloudFeedSyncService: Sendable {
     /// surface a "couldn't reach server" banner instead of silently returning
     /// zero items.
     func sync(sources: [Source]) async throws -> [FeedItem] {
-        // Map server `feedId` → local `Source` so cloud-delivered rows can be
-        // attributed to the right subscription. Linear scan over ≤ ~100 sources.
+        // Map canonicalized feed URL → local Source so cloud-delivered rows can
+        // be attributed to the right subscription.
         let feedMap: [String: Source] = Dictionary(
-            uniqueKeysWithValues: sources.map { (FeedID.id(for: $0.feedURL), $0) }
+            uniqueKeysWithValues: sources.map { (FeedID.canonicalize($0.feedURL), $0) }
         )
 
         let since = UserDefaults.standard.integer(forKey: Self.lastServerTimeKey)
-        let url = Self.riverURL(since: since)
 
-        let (response, _) = try await CloudHTTP.get(url, as: RiverResponse.self)
+        let response = try await PayamAPIClient.send(
+            RiverResponse.self,
+            path: "/v1/river?since=\(since)"
+        )
 
         // Map rows → FeedItem, dropping any whose feedId we don't recognize
         // locally (server has a subscription we haven't loaded yet).
         var unknownFeedIDs = Set<String>()
         let mapped: [FeedItem] = response.items.compactMap { row in
-            guard let source = feedMap[row.feedId] else {
+            let key = row.feedURL.map(FeedID.canonicalize) ?? row.feedId
+            guard let source = feedMap[key] else {
                 unknownFeedIDs.insert(row.feedId)
                 return nil
             }
@@ -132,14 +136,4 @@ final class CloudFeedSyncService: Sendable {
         return newItems
     }
 
-    // MARK: - URL building
-
-    private static func riverURL(since: Int) -> URL {
-        var comps = URLComponents(
-            url: CloudHTTP.pollingBase.appendingPathComponent("v1/river"),
-            resolvingAgainstBaseURL: false
-        )!
-        comps.queryItems = [URLQueryItem(name: "since", value: String(since))]
-        return comps.url!
-    }
 }

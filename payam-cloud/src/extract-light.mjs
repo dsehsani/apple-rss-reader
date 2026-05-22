@@ -9,6 +9,7 @@ import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { query } from "./db.mjs";
+import { assertSafeURL } from "./url-guard.mjs";
 import crypto from "node:crypto";
 
 const dynamo = new DynamoDBClient({});
@@ -55,6 +56,8 @@ async function extractArticle({ urlHash, url, feedId, preExtract }) {
   }
 
   try {
+    assertSafeURL(url);
+
     // Fetch page HTML
     const response = await fetch(url, {
       headers: {

@@ -85,4 +85,4 @@ function respond(statusCode, body) {
   };
 }
 
-export const main = requireAuth(handler, process.env.JWT_SECRET);
+export const main = requireAuth(handler);

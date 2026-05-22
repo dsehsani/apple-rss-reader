@@ -4,6 +4,7 @@
 // enqueues pre-extraction for popular feeds, and notifies subscribers via APNs.
 
 import { query } from "./db.mjs";
+import { assertSafeURL } from "./url-guard.mjs";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
@@ -54,6 +55,8 @@ export async function main(event) {
 
 async function processFeed({ feedId, feedUrl, etag, lastModified, velocityTier, subscriberCount, isDead }) {
   try {
+    assertSafeURL(feedUrl);
+
     // Conditional GET
     const headers = {
       "User-Agent": "Payam/1.0 RSS Reader (https://payam.app)",

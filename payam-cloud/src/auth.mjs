@@ -3,6 +3,7 @@
 
 import crypto from "node:crypto";
 import { sign } from "./jwt.mjs";
+import { getJWTSecret } from "./secrets.mjs";
 import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const dynamo = new DynamoDBClient({});
@@ -27,7 +28,7 @@ export async function main(event) {
     const user = await getOrCreateUser(appleUserID);
 
     // Sign JWT
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = await getJWTSecret();
     if (!jwtSecret) {
       return respond(500, { error: "JWT secret not configured" });
     }

@@ -15,7 +15,7 @@ async function handler(event) {
   const sinceDate = new Date(parseInt(since) * 1000);
 
   const result = await query(
-    `SELECT fi.id, fi.feed_id, fi.title, fi.link,
+    `SELECT fi.id, fi.feed_id, fr.feed_url, fi.title, fi.link,
             EXTRACT(EPOCH FROM fi.published_at)::bigint AS published_at,
             EXTRACT(EPOCH FROM fi.fetched_at)::bigint AS fetched_at,
             fi.excerpt, fi.image_url, fi.audio_url, fi.video_url,
@@ -23,6 +23,7 @@ async function handler(event) {
             COALESCE(uis.is_read, false) AS is_read,
             COALESCE(uis.is_bookmarked, false) AS is_bookmarked
      FROM feed_items fi
+     JOIN feed_registry fr ON fi.feed_id = fr.id
      JOIN user_feeds uf ON fi.feed_id = uf.feed_id
      LEFT JOIN user_item_state uis ON fi.id = uis.item_id AND uis.user_id = $1
      WHERE uf.user_id = $1
@@ -36,6 +37,7 @@ async function handler(event) {
   //   feedId, itemId, link, title, excerpt, author, imageURL, audioURL, videoURL, publishedAt, fetchedAt
   const items = result.rows.map((row) => ({
     feedId: row.feed_id,
+    feedURL: row.feed_url,
     itemId: row.id,
     title: row.title,
     link: row.link,
@@ -66,4 +68,4 @@ async function handler(event) {
   };
 }
 
-export const main = requireAuth(handler, process.env.JWT_SECRET);
+export const main = requireAuth(handler);

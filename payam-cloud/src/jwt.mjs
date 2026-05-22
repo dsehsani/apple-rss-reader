@@ -2,6 +2,7 @@
 // No external dependency — uses Node's built-in crypto module.
 
 import crypto from "node:crypto";
+import { getJWTSecret } from "./secrets.mjs";
 
 const ALG = "HS256";
 const HEADER = Buffer.from(JSON.stringify({ alg: ALG, typ: "JWT" })).toString("base64url");
@@ -38,7 +39,8 @@ export function verify(token, secret) {
 
 // Middleware: extracts and verifies JWT from Authorization header.
 // Attaches payload to event.auth. Returns 401 response on failure.
-export function requireAuth(handler, secret) {
+// Secret is loaded from Secrets Manager (cached after cold start).
+export function requireAuth(handler) {
   return async (event) => {
     const authHeader = event.headers?.authorization || event.headers?.Authorization;
     if (!authHeader?.startsWith("Bearer ")) {
@@ -46,6 +48,7 @@ export function requireAuth(handler, secret) {
     }
 
     try {
+      const secret = await getJWTSecret();
       event.auth = verify(authHeader.slice(7), secret);
     } catch (err) {
       return { statusCode: 401, body: JSON.stringify({ error: err.message }) };

@@ -7,6 +7,8 @@ provider:
   runtime: nodejs20.x
   region: us-west-2
   stage: ${opt:stage, 'dev'}
+  httpApi:
+    metrics: true
   environment:
     DB_HOST: ${env:PAYAM_DB_HOST, ''}
     DB_PORT: '5432'
@@ -14,6 +16,7 @@ provider:
     DB_USER: payam
     DB_PASSWORD: ${env:PAYAM_DB_PASSWORD, ''}
     JWT_SECRET: ${env:PAYAM_JWT_SECRET, ''}
+    SECRETS_ARN: ${env:PAYAM_SECRETS_ARN, ''}
     USERS_TABLE: payam-users-${self:provider.stage}
     DEVICE_TOKENS_TABLE: payam-device-tokens-${self:provider.stage}
     EXTRACTION_INDEX_TABLE: payam-extraction-index-${self:provider.stage}
@@ -52,6 +55,11 @@ provider:
           Action:
             - sns:Publish
           Resource: '*'
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - ${env:PAYAM_SECRETS_ARN, 'arn:aws:secretsmanager:us-west-2:*:secret:payam/*'}
 
 functions:
   # --- Auth ---
@@ -76,6 +84,7 @@ functions:
   riverSync:
     handler: src/river-sync.main
     timeout: 15
+    reservedConcurrency: 5
     events:
       - httpApi:
           path: /v1/river
@@ -84,6 +93,7 @@ functions:
   stateSync:
     handler: src/state-sync.main
     timeout: 10
+    reservedConcurrency: 3
     events:
       - httpApi:
           path: /v1/state
@@ -93,6 +103,7 @@ functions:
   feeds:
     handler: src/feeds.main
     timeout: 10
+    reservedConcurrency: 3
     events:
       - httpApi:
           path: /v1/feeds
@@ -102,6 +113,7 @@ functions:
   feedOrchestrator:
     handler: src/feed-orchestrator.main
     timeout: 60
+    reservedConcurrency: 1
     events:
       - schedule:
           rate: rate(5 minutes)
@@ -110,6 +122,7 @@ functions:
   feedWorker:
     handler: src/feed-worker.main
     timeout: 30
+    reservedConcurrency: 5
     events:
       - sqs:
           arn: !GetAtt FeedPollQueue.Arn
@@ -128,6 +141,7 @@ functions:
     handler: src/extract-light.main
     timeout: 30
     memorySize: 512
+    reservedConcurrency: 3
     events:
       - sqs:
           arn: !GetAtt ExtractionLightQueue.Arn
@@ -137,15 +151,28 @@ functions:
   discover:
     handler: src/discover.main
     timeout: 10
+    reservedConcurrency: 3
     events:
       - httpApi:
           path: /v1/discover
           method: post
 
   # --- Feed Enrichment ---
+  # --- Cleanup ---
+  cleanup:
+    handler: src/cleanup.main
+    timeout: 60
+    reservedConcurrency: 1
+    events:
+      - schedule:
+          rate: rate(1 day)
+          enabled: true
+
+  # --- Feed Enrichment ---
   enrichFeeds:
     handler: src/enrich-feeds.main
     timeout: 120
+    reservedConcurrency: 1
     events:
       - schedule:
           rate: rate(1 hour)
@@ -200,6 +227,15 @@ resources:
         QueueName: payam-feed-poll-${self:provider.stage}
         VisibilityTimeout: 60
         MessageRetentionPeriod: 3600
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt FeedPollDLQ.Arn
+          maxReceiveCount: 3
+
+    FeedPollDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payam-feed-poll-dlq-${self:provider.stage}
+        MessageRetentionPeriod: 1209600
 
     ExtractionLightQueue:
       Type: AWS::SQS::Queue
@@ -207,6 +243,26 @@ resources:
         QueueName: payam-extraction-light-${self:provider.stage}
         VisibilityTimeout: 120
         MessageRetentionPeriod: 3600
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt ExtractionLightDLQ.Arn
+          maxReceiveCount: 3
+
+    ExtractionLightDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payam-extraction-light-dlq-${self:provider.stage}
+        MessageRetentionPeriod: 1209600
+
+    # --- API Gateway Throttling ---
+    HttpApiStage:
+      Type: AWS::ApiGatewayV2::Stage
+      Properties:
+        ApiId: !Ref HttpApi
+        StageName: $default
+        AutoDeploy: true
+        DefaultRouteSettings:
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 10
 
     # --- S3 Bucket ---
     ExtractionBucket:
@@ -218,6 +274,55 @@ resources:
             - Id: expire-72hr
               Status: Enabled
               ExpirationInDays: 3
+
+    # --- CloudWatch Alarms ---
+    LambdaErrorAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: payam-lambda-errors-${self:provider.stage}
+        AlarmDescription: Fires when any Lambda function errors exceed 10 in 5 minutes
+        Namespace: AWS/Lambda
+        MetricName: Errors
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 1
+        Threshold: 10
+        ComparisonOperator: GreaterThanThreshold
+        TreatMissingData: notBreaching
+
+    FeedPollQueueDepthAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: payam-feed-poll-depth-${self:provider.stage}
+        AlarmDescription: Feed poll queue backing up (>100 messages visible)
+        Namespace: AWS/SQS
+        MetricName: ApproximateNumberOfMessagesVisible
+        Dimensions:
+          - Name: QueueName
+            Value: !GetAtt FeedPollQueue.QueueName
+        Statistic: Maximum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 100
+        ComparisonOperator: GreaterThanThreshold
+        TreatMissingData: notBreaching
+
+    ExtractionQueueDepthAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: payam-extraction-depth-${self:provider.stage}
+        AlarmDescription: Extraction queue backing up (>200 messages visible)
+        Namespace: AWS/SQS
+        MetricName: ApproximateNumberOfMessagesVisible
+        Dimensions:
+          - Name: QueueName
+            Value: !GetAtt ExtractionLightQueue.QueueName
+        Statistic: Maximum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 200
+        ComparisonOperator: GreaterThanThreshold
+        TreatMissingData: notBreaching
 
 package:
   patterns:
