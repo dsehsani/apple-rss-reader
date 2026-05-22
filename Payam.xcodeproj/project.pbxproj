@@ -48,6 +48,7 @@
 				Prompts/OnboardingPrompt.md,
 				Prompts/OPMLPrompt.md,
 				Prompts/SearchBarImplementation.md,
+				Prompts/SplashScreen.md,
 				Prompts/stitchCSS.md,
 				Prompts/TextRenderingOptimizationPrompt.md,
 				Prompts/TextRenderingPrompt.md,

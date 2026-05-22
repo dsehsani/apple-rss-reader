@@ -249,15 +249,24 @@ struct TodayView: View {
         Button {
             showChatSheet = true
         } label: {
-            Image(systemName: "sparkles")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 50, height: 50)
-                .background(
+            Image("DiscoverAgentLogo")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+                .overlay(
                     Circle()
-                        .fill(Design.Colors.primary)
-                        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.45), .white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(Circle().stroke(Color.white.opacity(0.55), lineWidth: 1))
                 )
+                .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
@@ -495,7 +504,7 @@ struct TodayView: View {
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-                Text("Add sources in My Feeds to start\nseeing articles here.")
+                Text("Add sources in Sources to start\nseeing articles here.")
                     .font(.system(size: 15))
                     .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)

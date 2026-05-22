@@ -359,13 +359,12 @@ struct PayamApp: App {
     // MARK: - App State
 
     @State private var appState = AppState()
-    @State private var hasCheckedAuth = false
 
     // MARK: - Body
 
     var body: some Scene {
         WindowGroup {
-            rootView
+            SplashGate(resolvedRoot: { rootView })
                 .environment(appState)
                 .onAppear {
                     // Sync persisted preferences into AppState so all views
@@ -399,11 +398,6 @@ struct PayamApp: App {
                 ) { _ in
                     let isNowSignedIn = AuthenticationManager.shared.isSignedIn
                     SyncService.shared.startMonitoring(isCloudKitEnabled: isNowSignedIn)
-                }
-                .task {
-                    guard !hasCheckedAuth else { return }
-                    hasCheckedAuth = true
-                    await AuthenticationManager.shared.checkExistingCredential()
                 }
         }
         .modelContainer(container)

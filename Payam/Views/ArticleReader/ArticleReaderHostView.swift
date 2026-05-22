@@ -47,6 +47,7 @@ struct ArticleReaderHostView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self)  private var appState
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Body
 
@@ -229,15 +230,24 @@ struct ArticleReaderHostView: View {
         Button {
             showChatSheet = true
         } label: {
-            Image(systemName: "sparkles")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 50, height: 50)
-                .background(
+            Image("DiscoverAgentLogo")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+                .overlay(
                     Circle()
-                        .fill(Design.Colors.primary)
-                        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.45), .white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(Circle().stroke(Color.white.opacity(0.55), lineWidth: 1))
                 )
+                .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }

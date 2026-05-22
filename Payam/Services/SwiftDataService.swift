@@ -310,11 +310,18 @@ final class SwiftDataService: FeedDataService {
     // MARK: - CRUD: Feeds
 
     /// Creates a new feed subscription and optionally assigns it to a folder, on a background context.
+    /// Silently no-ops if a feed with the same canonical URL already exists — prevents the
+    /// duplicate `Source` rows that crashed CloudFeedSyncService's `uniqueKeysWithValues` map.
     @MainActor
     func addFeed(feedURL: String, title: String, websiteURL: String, folderID: UUID?) async throws {
         guard let container else { return }
+        let canonical = FeedID.canonicalize(feedURL)
         try await Task.detached {
             let bg = ModelContext(container)
+            let existing = (try? bg.fetch(FetchDescriptor<FeedModel>())) ?? []
+            if existing.contains(where: { FeedID.canonicalize($0.feedURL) == canonical }) {
+                return
+            }
             let feed = FeedModel(feedURL: feedURL, title: title, websiteURL: websiteURL)
             if let folderID {
                 let descriptor = FetchDescriptor<FolderModel>(

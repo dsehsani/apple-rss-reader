@@ -29,11 +29,10 @@ enum FeedID {
         return comps.url?.absoluteString ?? trimmed
     }
 
-    /// Returns the same 32-char hex identifier the server stores in `feedId`.
+    /// Returns the full 64-char SHA-256 hex identifier the server stores in `feedId`.
     static func id(for feedURL: String) -> String {
         let canon = canonicalize(feedURL)
         let digest = SHA256.hash(data: Data(canon.utf8))
-        let hex = digest.map { String(format: "%02x", $0) }.joined()
-        return String(hex.prefix(32))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -41,7 +41,7 @@ struct MainTabView: View {
     @available(iOS 26.0, *)
     private var liquidGlassTabView: some View {
         TabView(selection: Bindable(appState).selectedTab) {
-            Tab("Today", systemImage: Design.Icons.today, value: .today) {
+            Tab("Feed", systemImage: Design.Icons.today, value: .today) {
                 TodayView()
             }
 
@@ -49,7 +49,7 @@ struct MainTabView: View {
                 DiscoverView()
             }
 
-            Tab("My Feeds", systemImage: "list.bullet.below.rectangle", value: .saved) {
+            Tab("Sources", systemImage: "antenna.radiowaves.left.and.right", value: .saved) {
                 MyFeedsView()
             }
 
@@ -204,9 +204,9 @@ enum AppTab: CaseIterable {
 
     var title: String {
         switch self {
-        case .today: return "Today"
+        case .today: return "Feed"
         case .discover: return "Discover"
-        case .saved: return "My Feeds"
+        case .saved: return "Sources"
         case .settings: return "Settings"
         case .search: return "Search"
         }
@@ -216,7 +216,7 @@ enum AppTab: CaseIterable {
         switch self {
         case .today: return Design.Icons.today
         case .discover: return Design.Icons.discover
-        case .saved: return "list.bullet.below.rectangle"
+        case .saved: return "antenna.radiowaves.left.and.right"
         case .settings: return Design.Icons.settings
         case .search: return Design.Icons.search
         }

@@ -63,8 +63,11 @@ final class CloudFeedSyncService: Sendable {
     func sync(sources: [Source]) async throws -> [FeedItem] {
         // Map server `feedId` → local `Source` so cloud-delivered rows can be
         // attributed to the right subscription. Linear scan over ≤ ~100 sources.
+        // If two local Sources canonicalize to the same feedURL (subscription
+        // dupes), keep the last — `uniqueKeysWithValues` would crash here.
         let feedMap: [String: Source] = Dictionary(
-            uniqueKeysWithValues: sources.map { (FeedID.id(for: $0.feedURL), $0) }
+            sources.map { (FeedID.id(for: $0.feedURL), $0) },
+            uniquingKeysWith: { _, last in last }
         )
 
         let since = UserDefaults.standard.integer(forKey: Self.lastServerTimeKey)

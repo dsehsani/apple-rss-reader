@@ -34,10 +34,10 @@ struct Category: Identifiable, Hashable {
 // MARK: - Special Categories
 
 extension Category {
-    /// "All Updates" category - shows articles from all sources
+    /// "River" category - shows articles from all sources
     static let allUpdates = Category(
         id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
-        name: "All Updates",
+        name: "River",
         icon: "tray.full.fill",
         color: .blue,
         sortOrder: -1  // Always first

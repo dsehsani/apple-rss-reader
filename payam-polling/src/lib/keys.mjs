@@ -1,6 +1,6 @@
 // Deterministic key derivation that matches the iOS client.
 //
-// - feedId(feedUrl) = first 32 hex chars of sha256(canonicalFeedUrl).
+// - feedId(feedUrl) = full 64 hex chars of sha256(canonicalFeedUrl).
 // - itemId(feedId, link) = UUID built from the same FNV-1a algorithm as
 //   FeedIngestService.swift's `UUID(name:)`, with input "${feedId}|${link}".
 //   The follow-up iOS plan will update the client to use the same
@@ -29,7 +29,7 @@ export function canonicalizeFeedUrl(raw) {
 
 export function feedIdFor(feedUrl) {
   const canon = canonicalizeFeedUrl(feedUrl);
-  return createHash('sha256').update(canon).digest('hex').slice(0, 32);
+  return createHash('sha256').update(canon).digest('hex');
 }
 
 // Mirror of FeedIngestService.swift `UUID(name:)`.
