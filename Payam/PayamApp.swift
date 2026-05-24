@@ -60,10 +60,10 @@ struct PayamApp: App {
         do {
             container = try ModelContainer(for: schema, configurations: config)
         } catch {
-            // Schema changed and lightweight migration failed (common during development).
-            // Wipe all store files and recreate a clean container.
-            // User data (folders/feeds) will be lost but can be re-added.
+            // Schema changed and lightweight migration failed.
+            // Auto-export an OPML backup before wiping so the user can recover.
             print("⚠️ SwiftData migration failed — wiping store: \(error)")
+            Self.emergencyOPMLExport(schema: schema)
             let storeURL  = config.url
             let storeDir  = storeURL.deletingLastPathComponent()
             let storeName = storeURL.lastPathComponent
@@ -310,16 +310,61 @@ struct PayamApp: App {
         }
     }
 
+    // MARK: - Emergency OPML Backup
+
+    /// Attempts to read folders and feeds from the existing (pre-migration) store
+    /// and write an OPML backup to Documents. Called before the store is wiped.
+    /// Best-effort: if the old store is too corrupted to read, we skip silently.
+    private static func emergencyOPMLExport(schema: Schema) {
+        do {
+            let readOnlyConfig = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
+            let oldContainer = try ModelContainer(
+                for: FolderModel.self, FeedModel.self,
+                configurations: readOnlyConfig
+            )
+            let context = ModelContext(oldContainer)
+            context.autosaveEnabled = false
+
+            let folders = (try? context.fetch(FetchDescriptor<FolderModel>())) ?? []
+            let allFeeds = (try? context.fetch(FetchDescriptor<FeedModel>())) ?? []
+            let folderedFeedIDs = Set(folders.flatMap { $0.feeds.map(\.id) })
+            let unfiledFeeds = allFeeds.filter { !folderedFeedIDs.contains($0.id) }
+
+            guard !folders.isEmpty || !unfiledFeeds.isEmpty else {
+                print("⚠️ OPML backup: no feeds found in old store, skipping")
+                return
+            }
+
+            let opmlURL = try OPMLService.shared.export(
+                folders: folders,
+                unfiledFeeds: unfiledFeeds
+            )
+
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let backupURL = docs.appendingPathComponent("payam-recovery-backup.opml")
+            try? FileManager.default.removeItem(at: backupURL)
+            try FileManager.default.copyItem(at: opmlURL, to: backupURL)
+
+            let count = folders.flatMap(\.feeds).count + unfiledFeeds.count
+            print("✅ OPML backup saved (\(count) feeds) → \(backupURL.path)")
+        } catch {
+            print("⚠️ OPML backup failed (store too corrupted): \(error)")
+        }
+    }
+
     // MARK: - App State
 
     @State private var appState = AppState()
-    @State private var hasCheckedAuth = false
 
     // MARK: - Body
 
     var body: some Scene {
         WindowGroup {
-            rootView
+            SplashGate(resolvedRoot: { rootView })
                 .environment(appState)
                 .onAppear {
                     // Sync persisted preferences into AppState so all views
@@ -353,11 +398,6 @@ struct PayamApp: App {
                 ) { _ in
                     let isNowSignedIn = AuthenticationManager.shared.isSignedIn
                     SyncService.shared.startMonitoring(isCloudKitEnabled: isNowSignedIn)
-                }
-                .task {
-                    guard !hasCheckedAuth else { return }
-                    hasCheckedAuth = true
-                    await AuthenticationManager.shared.checkExistingCredential()
                 }
         }
         .modelContainer(container)

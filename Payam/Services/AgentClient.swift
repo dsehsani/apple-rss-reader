@@ -2,10 +2,10 @@
 //  AgentClient.swift
 //  Payam
 //
-//  Replaces the legacy GeminiService for the new action-first agent.
-//  POSTs to /v1/agent with messages, optional articleContext, and the user's
-//  current subscriptions (so the backend can avoid suggesting duplicates and
-//  scope filter rules accurately). Returns a typed AgentEnvelope.
+//  Action-first agent client used by the chat sheet and the article-summary
+//  action. POSTs to /v1/agent with messages, optional articleContext, and the
+//  user's current subscriptions (so the backend can avoid suggesting
+//  duplicates and scope filter rules accurately). Returns a typed AgentEnvelope.
 //
 
 import Foundation

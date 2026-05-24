@@ -48,22 +48,26 @@ struct FolderDetailView: View {
             } else {
                 List {
                     ForEach(feeds) { feed in
-                        feedRow(feed)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        viewModel.deleteFeed(feed)
-                                    }
-                                } label: {
-                                    Image(systemName: "trash")
+                        NavigationLink {
+                            SourceFeedView(sourceID: feed.id)
+                        } label: {
+                            feedRow(feed)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    viewModel.deleteFeed(feed)
                                 }
+                            } label: {
+                                Image(systemName: "trash")
                             }
-                            .listRowBackground(
-                                Design.Colors.cardBackground(for: colorScheme)
-                            )
-                            .listRowSeparatorTint(
-                                Design.Colors.glassBorder(for: colorScheme)
-                            )
+                        }
+                        .listRowBackground(
+                            Design.Colors.cardBackground(for: colorScheme)
+                        )
+                        .listRowSeparatorTint(
+                            Design.Colors.glassBorder(for: colorScheme)
+                        )
                     }
                 }
                 .listStyle(.insetGrouped)

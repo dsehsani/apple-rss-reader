@@ -7,7 +7,7 @@ title: Privacy Policy — Payam
 
 **Payam** is a native iOS RSS reader developed by Darius Ehsani as a personal project.
 
-**Effective date: May 11, 2026**
+**Effective date: May 24, 2026**
 
 ---
 
@@ -60,7 +60,7 @@ When you add an RSS feed or open an article, the app makes HTTP requests to:
 - The RSS feed URLs you have subscribed to
 - The original article web pages (to display the full article text)
 
-These requests are made directly from your device. The servers at those URLs receive standard HTTP request information: your IP address and an app User-Agent string. **Payam does not attach any personal identifiers to these requests.** We do not proxy, log, or store these requests on any developer-owned server.
+These requests are made directly from your device to those third-party servers. They receive standard HTTP request information: your IP address and an app User-Agent string. **Payam does not attach any personal identifiers to these requests.** We do not proxy, log, or store these requests on any developer-owned server.
 
 ---
 
@@ -76,6 +76,55 @@ The push notifications entitlement is present in the app but **not currently act
 
 ---
 
+### 2f. Cloud Services Operated by the Developer
+
+To make the app fast and to power the in-app AI assistant, Payam contacts three back-end services that the developer operates on Amazon Web Services (AWS), in the `us-west-2` region. None of these services contains advertising, analytics, or tracking infrastructure. They exist solely to provide the features described below.
+
+#### i. AI Assistant Service (`payam-chat`)
+
+- **Endpoint:** `https://7qtnn7up84.execute-api.us-west-2.amazonaws.com` (`POST /v1/agent`)
+- **Triggered by:** Tapping the circular assistant button on an article, or tapping "Summarize" on an article.
+- **Data sent from your device:**
+  - The chat messages you type in the assistant
+  - The article you are currently reading: title, feed name, and the extracted plain-text body
+  - A lightweight list of your subscribed feeds (title + feed URL) so the assistant can avoid recommending duplicates and can scope filter rules
+  - Standard HTTP information (IP address, app User-Agent)
+- **What happens on the server:** The Lambda forwards your messages and the article context to **Anthropic's Claude API** for inference and returns the model's reply to your device. Anthropic's API privacy policy governs that hop. We do not retain conversation logs beyond short-lived operational diagnostics, and we never sell, share, or use this data for training, advertising, or analytics.
+- **Device identifier:** This endpoint does **not** receive the per-install device identifier described in §2f-iv.
+
+#### ii. Server-Side Feed Polling (`payam-polling`)
+
+- **Endpoint:** `https://h439queahl.execute-api.us-west-2.amazonaws.com` (`GET /v1/river?since=…`, `POST /v1/feeds`)
+- **Triggered by:** Subscribing to or unsubscribing from a feed; opening the app to refresh the article river; background refresh.
+- **Data sent from your device:**
+  - The URLs of feeds you are adding or removing, and the folder names you assign
+  - A timestamp (the last time your device synced) so the server only returns new items
+  - The per-install device identifier described in §2f-iv (sent as the `x-payam-user` request header)
+  - Standard HTTP information (IP address, app User-Agent)
+- **What happens on the server:** The Lambda polls the public RSS feeds you have subscribed to, on the schedule the app sets, and returns new items to your device. The list of feeds associated with your device identifier is stored so the server knows which feeds to poll for you. We do not retain article reading state, viewing history, or analytics about which articles you opened.
+
+#### iii. Article Extraction Cache (`payam-extract`)
+
+- **Endpoint:** `https://kvzr90nd9a.execute-api.us-west-2.amazonaws.com` (`GET /v1/extractions/{hash}?url=…`), plus on-demand fetches of Amazon S3 presigned URLs returned by that endpoint.
+- **Triggered by:** Opening an article in the in-app reader.
+- **Data sent from your device:**
+  - The URL of the article you opened (and a SHA-256 hash of it, used as a cache key)
+  - The per-install device identifier described in §2f-iv (sent as the `x-payam-user` request header)
+  - Standard HTTP information (IP address, app User-Agent)
+  - Subsequent S3 presigned-URL fetches send **no** device identifier — only the IP address Amazon S3 sees as part of any HTTPS request
+- **What happens on the server:** If another Payam user (or your own previous session) has already opened the same article, the Lambda returns the cleaned text and images from a shared cache, sparing your device from re-extracting it. If not, the Lambda extracts the article and stores the result in the cache for future requests.
+
+#### iv. Per-Install Device Identifier
+
+The first time you launch Payam, the app generates a random identifier and stores it securely in the iOS Keychain. It is sent in the `x-payam-user` HTTP header on requests to the polling and extraction services (above) to associate your subscription list and cache requests with your install. Notes:
+
+- It is **not** an Apple ID, an advertising identifier, or any device hardware ID.
+- It **is** stable across app deletions and reinstalls, because the iOS Keychain persists across uninstalls. You can clear it by erasing all content and settings on the device.
+- It is **not** used for advertising, analytics, cross-app tracking, or profiling, and is never shared with third parties.
+- It is **not** sent to the AI assistant service (§2f-i); that service sees only IP address and User-Agent.
+
+---
+
 ## 3. Data We Do NOT Collect
 
 Payam does **not** use or integrate:
@@ -84,7 +133,7 @@ Payam does **not** use or integrate:
 - Crash-reporting services (no Crashlytics, Sentry, etc.)
 - Advertising identifiers (no IDFA, no ATT prompt)
 - Third-party tracking or data-broker services
-- Any developer-owned backend server (all data is local or in your own iCloud)
+- Third-party advertising networks of any kind
 
 ---
 
@@ -96,6 +145,7 @@ Payam does **not** use or integrate:
 | Sign out | Account tab → Sign Out (local session is cleared; local data remains on device) |
 | Delete all local data | Delete the Payam app from your device |
 | Delete your iCloud data | iOS Settings → \[Your Name\] → iCloud → Manage Account Storage → Payam → Delete Data |
+| Reset your per-install device identifier | iOS Settings → General → Transfer or Reset iPhone → Erase All Content and Settings (full reset clears the Keychain) |
 | Request information | Email darius.ehsani@gmail.com |
 
 ---

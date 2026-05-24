@@ -37,7 +37,7 @@ private let onboardingPages: [OnboardingPage] = [
     OnboardingPage(
         icon: "lock.shield",
         headline: "Just yours.",
-        subheadline: "Your data lives in your iCloud account. No tracking. No ads. No third-party servers.",
+        subheadline: "Your data lives in your iCloud account. No tracking. No ads. No advertising trackers.",
         accentColor: Color(hex: "34C759"),   // Apple system green
         animateIcon: false
     ),

@@ -2,9 +2,10 @@
 //  CloudHTTP.swift
 //  Payam
 //
-//  Tiny URLSession wrapper shared by the two cloud endpoints we currently call:
-//    GET /v1/river?since=…           (payam-polling)
-//    GET /v1/extractions/{hash}?url=…  (payam-extract)
+//  Tiny URLSession wrapper shared by the cloud endpoints we currently call:
+//    GET  /v1/river?since=…           (payam-polling)
+//    POST /v1/feeds                    (payam-polling)
+//    GET  /v1/extractions/{hash}?url=… (payam-extract)
 //
 //  Centralizes base URLs, device-ID header bootstrapping, JSON decoding, and
 //  status-code classification so each call site stays a one-liner.
@@ -41,6 +42,33 @@ enum CloudHTTP {
         request.setValue("Payam/2.0 (iOS)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(deviceID(), forHTTPHeaderField: "x-payam-user")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw HTTPStatusError(statusCode: http.statusCode, body: data)
+        }
+
+        let decoded = try JSONDecoder().decode(T.self, from: data)
+        return (decoded, http)
+    }
+
+    /// Performs a POST with a JSON-encoded body. Attaches the same headers as
+    /// `get`. Returns the decoded payload and the response.
+    static func post<Body: Encodable, T: Decodable>(
+        _ url: URL,
+        body: Body,
+        as type: T.Type
+    ) async throws -> (T, HTTPURLResponse) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Payam/2.0 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(deviceID(), forHTTPHeaderField: "x-payam-user")
+        request.httpBody = try JSONEncoder().encode(body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {

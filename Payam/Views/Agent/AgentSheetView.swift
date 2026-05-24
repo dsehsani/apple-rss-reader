@@ -43,14 +43,12 @@ struct AgentSheetView: View {
 
     private var headerBar: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Design.Colors.primary.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Design.Colors.primary)
-            }
+            Image("DiscoverAgentLogo")
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Payam Assistant")

@@ -14,6 +14,14 @@ import { ddb, TABLES, ITEMS_BY_FETCHED_INDEX } from './lib/ddb.mjs';
 const MAX_ITEMS_PER_FEED = 100;
 const MAX_ITEMS_TOTAL = 500;
 
+// Workers stamp `fetchedAt` with the time they started polling, then write
+// items several seconds later. If a client refreshes during that window, its
+// `lastServerTime` lands *after* the in-flight items' `fetchedAt`, and they
+// become unreachable forever for that device. Re-query a grace window so
+// recent items are always re-delivered; iOS dedupes by stable itemId, so the
+// cost is just bandwidth, not correctness.
+const SINCE_GRACE_SEC = 10 * 60;
+
 export async function main(event) {
   // TODO(auth): re-enable 401 once JWT middleware lands. TestFlight build accepts
   // unauthenticated callers identifying themselves via the x-payam-user header.
@@ -34,7 +42,8 @@ export async function main(event) {
   }
 
   const feedIds = [...new Set(subs.map((s) => s.feedId).filter(Boolean))];
-  const perFeed = await Promise.all(feedIds.map((feedId) => queryItemsSince(feedId, since)));
+  const effectiveSince = Math.max(0, since - SINCE_GRACE_SEC);
+  const perFeed = await Promise.all(feedIds.map((feedId) => queryItemsSince(feedId, effectiveSince)));
 
   let items = perFeed.flat();
   items.sort((a, b) => b.publishedAt - a.publishedAt);

@@ -14,6 +14,9 @@
 //
 
 import Foundation
+import os
+
+private let log = Logger(subsystem: "com.openrss", category: "CloudSync")
 
 // MARK: - Wire types
 
@@ -63,8 +66,11 @@ final class CloudFeedSyncService: Sendable {
     func sync(sources: [Source]) async throws -> [FeedItem] {
         // Map server `feedId` → local `Source` so cloud-delivered rows can be
         // attributed to the right subscription. Linear scan over ≤ ~100 sources.
+        // If two local Sources canonicalize to the same feedURL (subscription
+        // dupes), keep the last — `uniqueKeysWithValues` would crash here.
         let feedMap: [String: Source] = Dictionary(
-            uniqueKeysWithValues: sources.map { (FeedID.id(for: $0.feedURL), $0) }
+            sources.map { (FeedID.id(for: $0.feedURL), $0) },
+            uniquingKeysWith: { _, last in last }
         )
 
         let since = UserDefaults.standard.integer(forKey: Self.lastServerTimeKey)
@@ -102,7 +108,13 @@ final class CloudFeedSyncService: Sendable {
         }
 
         if !unknownFeedIDs.isEmpty {
-            print("⚠️ CloudSync ignored \(unknownFeedIDs.count) unknown feedId(s) — local Source list is out of sync with server")
+            let sample = unknownFeedIDs.prefix(5).map { String($0.prefix(8)) }.joined(separator: ",")
+            log.warning("Dropped \(unknownFeedIDs.count, privacy: .public) item(s) with unknown feedId — sample: \(sample, privacy: .public)")
+            // No throw: a fully-empty `mapped` is legitimate during transients —
+            // newly-added feeds aren't polled yet, CloudKit hasn't restored the
+            // local Source list after reinstall, etc. With matching feedIdFor()
+            // on both sides + the subscription push, a real format mismatch
+            // can't recur. The OSLog warning is enough.
         }
 
         // Dedup against existing rows, then upsert.
@@ -111,7 +123,7 @@ final class CloudFeedSyncService: Sendable {
         let newItems = mapped.filter { !existingIDs.contains($0.id) }
         if !newItems.isEmpty {
             store.upsertFeedItems(newItems)
-            print("✅ CloudSync inserted \(newItems.count) new items (serverTime=\(response.serverTime))")
+            log.info("Inserted \(newItems.count, privacy: .public) new items (serverTime=\(response.serverTime, privacy: .public))")
         }
 
         // Persist serverTime only after a successful upsert. Using the server's

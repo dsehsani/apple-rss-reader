@@ -83,7 +83,7 @@ struct MyFeedsView: View {
                     mainContent
                 }
             }
-            .navigationTitle("Feeds")
+            .navigationTitle("Sources")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 14) {
@@ -186,7 +186,7 @@ struct MyFeedsView: View {
     private var legacyHeaderView: some View {
         VStack(spacing: 0) {
             HStack(alignment: .center) {
-                Text("Feeds")
+                Text("Sources")
                     .font(Design.Typography.largeTitle)
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
