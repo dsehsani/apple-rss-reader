@@ -2,8 +2,8 @@
 //  ChatSheetView.swift
 //  Payam
 //
-//  Modal chat interface powered by Gemini. Presented as a sheet from both
-//  TodayView (no article context) and ArticleReaderHostView (article context set).
+//  Modal chat interface powered by the AgentClient (Claude via AWS Lambda).
+//  Presented as a sheet from ArticleReaderHostView (article context set).
 //
 
 import SwiftUI

@@ -29,7 +29,7 @@ import Foundation
     }
 
     // Called once after the article pipeline finishes loading. Extracts plain text
-    // from the content nodes and stores it for Gemini context injection.
+    // from the content nodes and stores it for agent context injection.
     func setArticleContext(title: String, feedName: String, nodes: [ContentNode]) {
         guard articleContext == nil else { return }
         let plainText = nodes.compactMap { node -> String? in
