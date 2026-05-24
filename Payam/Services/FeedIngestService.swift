@@ -2,13 +2,21 @@
 //  FeedIngestService.swift
 //  Payam
 //
-//  Phase 2 — Stage 1 of the River Pipeline, now backed by the deployed
-//  /v1/river endpoint instead of direct RSS polling. Cloud sync is the
-//  single source of items; on a sync failure we propagate the throw so
-//  `RiverViewModel` can surface a "couldn't reach server" banner.
+//  Phase 2 — Stage 1 of the River Pipeline. Tries the deployed /v1/river
+//  endpoint first; on any throw (network down, server 5xx, auth blip)
+//  falls back to direct RSS polling so the app stays useful when cloud
+//  is unreachable. Items inserted by either path land in SQLite under
+//  the same stable itemId (UUID derived from "feedId|link"), so when
+//  cloud recovers there are no duplicates. The cloud error is re-thrown
+//  after the fallback completes so `RiverViewModel` still surfaces the
+//  "couldn't reach server" banner — the banner is informational; fresh
+//  items have already been ingested via the fallback path.
 //
 
 import Foundation
+import os
+
+private let log = Logger(subsystem: "com.openrss", category: "Ingest")
 
 // MARK: - FeedIngestService
 
@@ -33,7 +41,15 @@ final class FeedIngestService: Sendable {
         let enabledSources = sources.filter(\.isEnabled)
         guard !enabledSources.isEmpty else { return [] }
 
-        let newItems = try await cloudSync.sync(sources: enabledSources)
+        var newItems: [FeedItem] = []
+        var cloudError: Error?
+        do {
+            newItems = try await cloudSync.sync(sources: enabledSources)
+        } catch {
+            cloudError = error
+            log.warning("Cloud sync failed, falling back to direct RSS polling: \(String(describing: error), privacy: .public)")
+            newItems = await pollLocallyAsFallback(sources: enabledSources)
+        }
 
         // Refresh affinity rows so the rest of the pipeline (rate-gating, scoring)
         // sees up-to-date velocity tiers. Use the override if present; otherwise
@@ -48,6 +64,66 @@ final class FeedIngestService: Sendable {
             updateSourceAffinity(source: source, tier: tier)
         }
 
+        // Re-throw the cloud error so the UI shows the "couldn't reach server"
+        // banner. Items from the fallback are already in SQLite, so downstream
+        // pipeline stages (clustering, rate-gating, snapshot) will still see
+        // them via store reads — the banner is informational.
+        if let cloudError { throw cloudError }
+        return newItems
+    }
+
+    // MARK: - Local Fallback
+
+    /// Direct RSS polling for every enabled source, run in parallel. Items use
+    /// the same `UUID(name: "feedId|link")` algorithm as the cloud path, so
+    /// when cloud recovers the next sync naturally dedupes against these.
+    private func pollLocallyAsFallback(sources: [Source]) async -> [FeedItem] {
+        let parser = RSSParserService()
+        let store = self.store
+
+        let polled: [FeedItem] = await withTaskGroup(of: [FeedItem].self) { group in
+            for source in sources {
+                guard let url = URL(string: source.feedURL) else { continue }
+                group.addTask {
+                    do {
+                        let rssItems = try await parser.fetch(feedURL: url)
+                        let feedId = FeedID.id(for: source.feedURL)
+                        let fetchedAt = Date()
+                        return rssItems.map { rssItem in
+                            FeedItem(
+                                id: UUID(name: "\(feedId)|\(rssItem.sourceURL.absoluteString)"),
+                                sourceID: source.id,
+                                title: rssItem.title,
+                                link: rssItem.sourceURL,
+                                publishedAt: rssItem.publishDate ?? fetchedAt,
+                                fetchedAt: fetchedAt,
+                                excerpt: rssItem.summary ?? "",
+                                imageURL: nil,
+                                audioURL: nil,
+                                videoURL: nil,
+                                author: rssItem.author,
+                                velocityTier: source.effectiveVelocityTier,
+                                simhashValue: SimHash.compute(rssItem.title)
+                            )
+                        }
+                    } catch {
+                        log.warning("Fallback poll failed for \(source.feedURL, privacy: .public): \(String(describing: error), privacy: .public)")
+                        return []
+                    }
+                }
+            }
+            var all: [FeedItem] = []
+            for await items in group { all.append(contentsOf: items) }
+            return all
+        }
+
+        let candidateIDs = Set(polled.map(\.id))
+        let existingIDs = store.existingItemIDs(from: candidateIDs)
+        let newItems = polled.filter { !existingIDs.contains($0.id) }
+        if !newItems.isEmpty {
+            store.upsertFeedItems(newItems)
+            log.info("Fallback poll ingested \(newItems.count, privacy: .public) new items across \(sources.count, privacy: .public) source(s)")
+        }
         return newItems
     }
 

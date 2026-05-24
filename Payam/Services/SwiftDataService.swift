@@ -162,6 +162,13 @@ final class SwiftDataService: FeedDataService {
         } catch {
             print("SwiftDataService load error: \(error)")
         }
+
+        // Reconcile subscriptions with the polling server. Idempotent — only
+        // POSTs when the canonical-feedURL set differs from the last successful
+        // push, so calling on every load (CloudKit import, add, delete, toggle)
+        // is cheap. Without this, /v1/river returns empty and the River stays
+        // stale even though the local Source list is correct.
+        CloudFeedSubscriptionService.shared.requestSync()
     }
 
     // MARK: - FeedDataService Protocol

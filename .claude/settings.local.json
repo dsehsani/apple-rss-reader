@@ -20,7 +20,12 @@
       "Bash(xcodebuild -project Payam.xcodeproj -scheme Payam -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.4' build)",
       "Bash(xcrun simctl *)",
       "Bash(xcodebuild -project Payam.xcodeproj -scheme Payam -destination 'id=8E47569D-9A2E-4836-AD1B-B6EF4AFBB396' build)",
-      "Bash(shasum -a 256)"
+      "Bash(shasum -a 256)",
+      "Bash(git log *)",
+      "Bash(AWS_REGION=us-west-2 USER_FEEDS_TABLE=payam-polling-dev-user-feeds node --input-type=module -e ' *)",
+      "Bash(AWS_REGION=us-west-2 node --input-type=module -e ' *)",
+      "Bash(AWS_REGION=us-west-2 REGISTRY_TABLE=payam-polling-dev-feed-registry ITEMS_TABLE=payam-polling-dev-feed-items USER_FEEDS_TABLE=payam-polling-dev-user-feeds node --input-type=module -e ' *)",
+      "Bash(node --check payam-polling/src/river.mjs)"
     ]
   }
 }
