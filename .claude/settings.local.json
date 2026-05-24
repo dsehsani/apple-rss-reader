@@ -25,7 +25,9 @@
       "Bash(AWS_REGION=us-west-2 USER_FEEDS_TABLE=payam-polling-dev-user-feeds node --input-type=module -e ' *)",
       "Bash(AWS_REGION=us-west-2 node --input-type=module -e ' *)",
       "Bash(AWS_REGION=us-west-2 REGISTRY_TABLE=payam-polling-dev-feed-registry ITEMS_TABLE=payam-polling-dev-feed-items USER_FEEDS_TABLE=payam-polling-dev-user-feeds node --input-type=module -e ' *)",
-      "Bash(node --check payam-polling/src/river.mjs)"
+      "Bash(node --check payam-polling/src/river.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(node --check payam-polling/src/feeds.mjs)"
     ]
   }
 }
