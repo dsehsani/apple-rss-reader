@@ -54,6 +54,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: Design.Spacing.section) {
                     accountSection
+                    planSection
                     readingSection
                     affinitySection
                     dataSection
@@ -82,6 +83,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: Design.Spacing.section) {
                     accountSection
+                    planSection
                     readingSection
                     affinitySection
                     dataSection
@@ -172,6 +174,33 @@ struct SettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Plan Section
+
+    private var planSection: some View {
+        settingsSection(title: "Plan", icon: "star.fill") {
+            VStack(spacing: 0) {
+                settingsToggle(title: "Premium", isOn: Binding(
+                    get: { userPrefs?.isPremium ?? true },
+                    set: { newValue in
+                        userPrefs?.isPremium = newValue
+                        UserDefaults.standard.set(newValue, forKey: "payam.isPremium")
+                    }
+                ))
+                divider
+                HStack {
+                    Text(userPrefs?.isPremium ?? true
+                        ? "Cloud sync and AI features enabled."
+                        : "Local RSS only. No cloud sync or AI features.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                    Spacer()
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 10)
+            }
         }
     }
 

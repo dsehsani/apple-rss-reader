@@ -43,13 +43,18 @@ struct PayamApp: App {
         // If an Apple user ID is stored, the user was previously signed in.
         var isSignedIn = KeychainService.loadAppleUserID() != nil
 
+        // Read isPremium from UserDefaults — SwiftData isn't ready yet.
+        // Default true so new installs start on Premium.
+        let isPremium = UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true
+
         // Disable CloudKit on simulator/DEBUG builds so local development never
         // blocks on CloudKit sync round-trips. Production device builds keep
-        // the original behavior: enable CloudKit when the user is signed in.
+        // the original behavior: enable CloudKit when the user is signed in and
+        // on Premium (Basic mode skips all cloud services including CloudKit).
         #if targetEnvironment(simulator) || DEBUG
         let cloudKitDB: ModelConfiguration.CloudKitDatabase = .none
         #else
-        let cloudKitDB: ModelConfiguration.CloudKitDatabase = isSignedIn ? .automatic : .none
+        let cloudKitDB: ModelConfiguration.CloudKitDatabase = (isSignedIn && isPremium) ? .automatic : .none
         #endif
 
         let config = ModelConfiguration(
@@ -100,7 +105,7 @@ struct PayamApp: App {
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
 
-            SyncService.shared.startMonitoring(isCloudKitEnabled: isSignedIn)
+            SyncService.shared.startMonitoring(isCloudKitEnabled: isSignedIn && isPremium)
         }
 
         // Phase 2a — Register BGTask for background river refresh

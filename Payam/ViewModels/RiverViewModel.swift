@@ -317,7 +317,6 @@ final class RiverViewModel {
     }
 
     /// Unread count for a specific category.
-    /// Unread count for a specific category.
     func unreadCount(for category: Category) -> Int {
         // Use the data service's articles for unread counts (consistent with bookmark/read state)
         let visible = dataService.articles.filter { !$0.isRead }
@@ -412,13 +411,6 @@ final class RiverViewModel {
             }
         )
 
-        // #region agent log
-        DebugLog.log("H7", "RiverViewModel.swift:393", "river.refresh.start", [
-            "enabledSources": sources.filter(\.isEnabled).count,
-            "activeFilterRules": filterRules.count
-        ])
-        // #endregion
-
         let outcome = await pipeline.runCycle(
             sources: sources,
             filterRules: filterRules,
@@ -449,15 +441,6 @@ final class RiverViewModel {
                 let size = feedItem.clusterID.flatMap { clusterSizes[$0] } ?? 1
                 return feedItem.toArticle(categoryID: source.categoryID, clusterSize: size)
             }
-            // #region agent log
-            let vimeoArticles = articles.filter { $0.articleURL.lowercased().contains("vimeo.com") }
-            if !vimeoArticles.isEmpty {
-                DebugLog.log("H8", "RiverViewModel.swift:404", "river.sync.vimeoHeroStats", [
-                    "vimeoArticleCount": vimeoArticles.count,
-                    "nilImageURLAfterToArticle": vimeoArticles.filter { $0.imageURL == nil }.count
-                ])
-            }
-            // #endregion
             sds.syncArticles(articles)
         }
 

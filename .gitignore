@@ -1,5 +1,6 @@
 # API keys — never commit real credentials
 APIKeys.swift
+APIKeys.swift.example
 
 # Xcode
 *.xcuserstate
@@ -17,3 +18,13 @@ DerivedData/
 # macOS
 .DS_Store
 Payam.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Development prompts and AI scaffolding (kept locally, not tracked)
+Payam/Prompts/
+Payam/tasks/
+tasks/
+OpenRSS Development Plan*
+
+# Claude Code agent configuration
+.claude/
+.cursor/
