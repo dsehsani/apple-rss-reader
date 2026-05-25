@@ -169,33 +169,6 @@ final class RateGateService: Sendable {
         if !shouldShow.isEmpty { store.setRiverVisible(true,  forItemIDs: Array(shouldShow)) }
         if !shouldHide.isEmpty { store.setRiverVisible(false, forItemIDs: Array(shouldHide)) }
 
-        // #region agent log
-        let perSource: [[String: Any]] = grouped.map { sourceID, byDay in
-            let totalItems = byDay.values.map(\.count).reduce(0, +)
-            let mostRecentDay = byDay.keys.max() ?? todayStart
-            let tier = byDay[mostRecentDay]?.first?.velocityTier.rawValue ?? "?"
-            let defaultLimit = byDay[mostRecentDay]?.first?.velocityTier.defaultSlotLimit ?? 0
-            let hidden = byDay.values.flatMap { $0 }.filter { shouldHide.contains($0.id) }.count
-            return [
-                "sourceID": sourceID.uuidString.prefix(8),
-                "tier": tier,
-                "defaultLimit": defaultLimit,
-                "totalItemsInGroup": totalItems,
-                "hiddenCount": hidden,
-                "daysInGroup": byDay.keys.count,
-                "mostRecentDayCount": byDay[mostRecentDay]?.count ?? 0
-            ]
-        }
-        DebugLog.log("H3", "RateGateService.swift:130", "rateGate.done", [
-            "totalItems": allItems.count,
-            "shownCount": shouldShow.count,
-            "hiddenCount": shouldHide.count,
-            "digestCards": digestCards.count,
-            "nudgeCards": nudgeCards.count,
-            "perSource": perSource
-        ])
-        // #endregion
-
         return RateGateResult(
             digestCards: digestCards,
             nudgeCards: nudgeCards,
