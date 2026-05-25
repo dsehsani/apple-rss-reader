@@ -31,6 +31,10 @@ final class UserPreferences {
     /// "Small", "Medium", "Large".
     var textSize: String = "Medium"
 
+    /// When false, all cloud services (AWS polling, subscription sync, CloudKit)
+    /// are disabled and the app falls back to direct local RSS fetching.
+    var isPremium: Bool = true
+
     // MARK: - Computed
 
     var refreshInterval: RefreshInterval {

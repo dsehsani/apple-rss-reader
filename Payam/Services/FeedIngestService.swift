@@ -43,11 +43,18 @@ final class FeedIngestService: Sendable {
 
         var newItems: [FeedItem] = []
         var cloudError: Error?
-        do {
-            newItems = try await cloudSync.sync(sources: enabledSources)
-        } catch {
-            cloudError = error
-            log.warning("Cloud sync failed, falling back to direct RSS polling: \(String(describing: error), privacy: .public)")
+
+        let isPremium = UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true
+        if isPremium {
+            do {
+                newItems = try await cloudSync.sync(sources: enabledSources)
+            } catch {
+                cloudError = error
+                log.warning("Cloud sync failed, falling back to direct RSS polling: \(String(describing: error), privacy: .public)")
+                newItems = await pollLocallyAsFallback(sources: enabledSources)
+            }
+        } else {
+            log.info("Basic mode — skipping cloud sync, polling RSS directly")
             newItems = await pollLocallyAsFallback(sources: enabledSources)
         }
 
