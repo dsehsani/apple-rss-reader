@@ -1,5 +1,6 @@
 # API keys — never commit real credentials
 APIKeys.swift
+APIKeys.swift.example
 
 # Xcode
 *.xcuserstate
@@ -26,3 +27,4 @@ OpenRSS Development Plan*
 
 # Claude Code agent configuration
 .claude/
+.cursor/
