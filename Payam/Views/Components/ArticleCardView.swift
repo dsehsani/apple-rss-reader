@@ -172,8 +172,11 @@ struct ArticleCardView: View {
     private var heroImage: some View {
         // GIF URLs are channel-level logos (e.g. ESPN's espn_dotcom_black.gif), not
         // per-article images. Treat them as absent so ogImageURL is used instead.
-        let rssImage = (article.imageURL?.lowercased().hasSuffix(".gif") == true)
-            ? nil : article.imageURL
+        // Upgrade CDN size params for any remaining feed URL (e.g. BBC /240/ → /1024/).
+        let rssImage = article.imageURL.flatMap { url -> String? in
+            guard !url.lowercased().hasSuffix(".gif") else { return nil }
+            return OGImageService.upgradeImageQuality(url)
+        }
         // When the feed-provided image URL turns out to be dead, swap to og:image.
         let displayURL = feedImageFailed ? ogImageURL : (rssImage ?? ogImageURL)
         // Only escalate to og:image when the *feed-provided* URL fails.
