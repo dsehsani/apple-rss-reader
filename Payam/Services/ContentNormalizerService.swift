@@ -142,11 +142,12 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         // Video / media player control labels (JS-rendered players captured by Readability)
         "video player is loading", "video player is loading.",
         "current time", "duration", "remaining time", "playback rate",
-        "loaded: 0%", "loaded 0%",
+        "loaded", "loaded: 0%", "loaded 0%",
         "stream type live", "stream type: live",
         "seek to live", "seek to live, currently behind live",
         "seek to live, currently playing live",
         "mute", "unmute", "fullscreen", "quality levels",
+        "1x", "chapters", "descriptions off, selected", "captions off, selected",
         // Podcast / audio player action labels
         "transcript", "download", "embed",
     ]
@@ -177,6 +178,13 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
     /// Legitimate article text never starts with the character '<'.
     private func isRawHTMLText(_ text: String) -> Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<")
+    }
+
+    /// Returns true when the text is a browser-compatibility notice injected by
+    /// video player scripts (e.g. Sky Sports, BBC). These never belong in the
+    /// article body — the reader's AVPlayer handles playback natively.
+    private func isBrowserCompatibilityNotice(_ text: String) -> Bool {
+        text.lowercased().contains("please use chrome browser for a more accessible video player")
     }
 
     // MARK: - Node Extraction
@@ -216,6 +224,7 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
             let text = try plainText(el)
             guard !text.isEmpty, !isAdPlaceholder(text) else { return nil }
             guard !isVideoPlayerArtifact(text), !isRawHTMLText(text) else { return nil }
+            guard !isBrowserCompatibilityNotice(text) else { return nil }
             return .paragraph(text: text)
 
         // MARK: Images
@@ -409,11 +418,15 @@ final class ContentNormalizerService: ContentNormalizerServiceProtocol {
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Extracts text from each `<li>` child of a list element.
+    /// Extracts text from each `<li>` child of a list element, skipping items
+    /// that are video player artifact labels or browser-compatibility notices.
     private func listItems(_ el: Element) throws -> [String] {
         try el.select("li").compactMap { li in
             let text = (try? li.text())?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return text.isEmpty ? nil : text
+            guard !text.isEmpty,
+                  !isAdPlaceholder(text),
+                  !isBrowserCompatibilityNotice(text) else { return nil }
+            return text
         }
     }
 }

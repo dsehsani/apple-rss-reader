@@ -273,9 +273,18 @@ struct ArticleReaderView: View {
         // body image is the same as the og:image hero.
         let heroKey = extracted.heroImageURL.map { normalizedImageKey($0) }
         let displayNodes = extracted.nodes.filter { node in
-            guard case .image(let url, _) = node else { return true }
-            guard let key = heroKey else { return true }
-            return normalizedImageKey(url) != key
+            switch node {
+            case .image(let url, _):
+                // Drop body images that duplicate the hero shown in the header zone.
+                guard let key = heroKey else { return true }
+                return normalizedImageKey(url) != key
+            case .videoEmbed:
+                // For video articles the hero play button is the playback trigger;
+                // suppress inline embed boxes so they don't appear as a second player.
+                return videoURL == nil
+            default:
+                return true
+            }
         }
         // VStack (not LazyVStack) gives consistent width proposals to children.
         // LazyVStack has known layout quirks with fixedSize in scroll views,

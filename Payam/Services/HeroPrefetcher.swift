@@ -108,8 +108,11 @@ nonisolated enum HeroPrefetcher {
         let resolvedString: String?
         // Treat GIF imageURLs as absent — they are channel-level logos (e.g. ESPN),
         // not per-article images. Fall through to OGImageService to get the real one.
-        let directImage = input.imageURL.flatMap { url in
-            url.lowercased().hasSuffix(".gif") ? nil : url
+        // Also upgrade any CDN size params (e.g. BBC /ace/standard/240/ → /1024/)
+        // so the pre-warmed thumbnail matches the high-res URL shown in the card.
+        let directImage = input.imageURL.flatMap { url -> String? in
+            guard !url.lowercased().hasSuffix(".gif") else { return nil }
+            return OGImageService.upgradeImageQuality(url)
         }
         if let direct = directImage, !direct.isEmpty {
             resolvedString = direct

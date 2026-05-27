@@ -275,6 +275,7 @@ actor OGImageService {
 
     /// Resolves `candidate` against `baseURL` (handles `//host/...`, `/path/...`,
     /// and full URLs), then upgrades http:// → https:// for ATS compatibility.
+    /// Also applies CDN size-param upgrades so the highest-quality variant is used.
     /// Returns nil if the result isn't a usable absolute http(s) URL.
     private static func resolveAndUpgrade(_ candidate: String, baseURL: URL) -> String? {
         let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -297,6 +298,55 @@ actor OGImageService {
             absolute = "https://" + absolute.dropFirst(7)
         }
 
-        return absolute
+        return upgradeImageQuality(absolute)
+    }
+
+    // MARK: - CDN Quality Upgrade
+
+    /// Upgrades a feed-provided or og:image URL to the highest-resolution variant
+    /// where the size is encoded in a known, safe-to-modify position.
+    ///
+    /// Handles:
+    ///   • BBC iCHEF CDN path segments — `/ace/standard/{n}/` → `/ace/standard/1024/`
+    ///                                    `/news/{n}/`          → `/news/1024/`
+    ///     (1–4 digit constraint avoids touching story IDs like `/news/13540518/`)
+    ///   • Common query-param widths    — `w`, `width`, `mw`, `maxwidth` ≤ 640 → 1024
+    ///     (only fires when clearly low-res; ignores CDN signatures and quality params)
+    ///
+    /// Unrecognised URL patterns are returned unchanged.
+    static func upgradeImageQuality(_ urlString: String) -> String {
+        var result = urlString
+
+        // BBC iCHEF image CDN — path-based size parameter
+        if result.contains("ichef.bbci.co.uk") {
+            result = result.replacingOccurrences(
+                of: #"/ace/standard/\d{1,4}/"#,
+                with: "/ace/standard/1024/",
+                options: .regularExpression
+            )
+            result = result.replacingOccurrences(
+                of: #"/news/\d{1,4}/"#,
+                with: "/news/1024/",
+                options: .regularExpression
+            )
+            return result
+        }
+
+        // Generic query-param upgrade for unambiguous image-width controls.
+        // Guards: value must be a positive integer ≤ 640 (clearly a small thumbnail).
+        guard var comps = URLComponents(string: result),
+              let items = comps.queryItems, !items.isEmpty else { return result }
+
+        let sizeParams: Set<String> = ["w", "width", "mw", "maxwidth"]
+        var changed = false
+        comps.queryItems = items.map { item in
+            guard sizeParams.contains(item.name.lowercased()),
+                  let val = item.value,
+                  let n = Int(val), n > 0, n <= 640 else { return item }
+            changed = true
+            return URLQueryItem(name: item.name, value: "1024")
+        }
+
+        return changed ? (comps.url?.absoluteString ?? result) : result
     }
 }

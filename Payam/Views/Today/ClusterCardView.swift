@@ -82,8 +82,11 @@ struct ClusterCardView: View {
 
     private var heroImage: some View {
         // GIF URLs are channel-level logos (e.g. ESPN) — treat as absent so ogImageURL is used.
-        let rssImage = (cluster.canonicalItem.imageURL?.lowercased().hasSuffix(".gif") == true)
-            ? nil : cluster.canonicalItem.imageURL
+        // Upgrade CDN size params for any remaining feed URL (e.g. BBC /240/ → /1024/).
+        let rssImage = cluster.canonicalItem.imageURL.flatMap { url -> String? in
+            guard !url.lowercased().hasSuffix(".gif") else { return nil }
+            return OGImageService.upgradeImageQuality(url)
+        }
         let displayURL = rssImage ?? ogImageURL
         return CachedImageView(
             url: displayURL.flatMap(URL.init(string:)),

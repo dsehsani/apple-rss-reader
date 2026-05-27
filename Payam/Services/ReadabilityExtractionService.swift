@@ -194,6 +194,31 @@ private final class WebViewCoordinator: NSObject, WKNavigationDelegate {
                         || document.querySelector('meta[name="og:image"]');
                 var ogImage = ogEl ? (ogEl.getAttribute('content') || null) : null;
 
+                // Strip video player artifact nodes before Readability sees them.
+                // Targets leaf elements (no child elements) whose entire text content
+                // is an exact match for a known player label — so "Play at 1x speed"
+                // is never removed, only a node whose sole content is "1x".
+                // The Chrome browser notice uses contains() because it can appear
+                // combined with other text in the same element.
+                (function() {
+                    var exact = new Set([
+                        "1x","chapters","descriptions off, selected","captions off, selected",
+                        "seek to live","current time","duration","loaded","stream type live",
+                        "remaining time","playback rate","mute","unmute","fullscreen",
+                        "quality levels","video player is loading","video player is loading."
+                    ]);
+                    var all = document.querySelectorAll('*');
+                    for (var i = all.length - 1; i >= 0; i--) {
+                        var el = all[i];
+                        if (el.children.length > 0) continue;
+                        var t = (el.textContent || '').trim().toLowerCase();
+                        if (exact.has(t) ||
+                            t.indexOf("please use chrome browser for a more accessible video player") !== -1) {
+                            el.parentNode && el.parentNode.removeChild(el);
+                        }
+                    }
+                })();
+
                 var article = new Readability(document).parse();
                 if (!article) {
                     return JSON.stringify({ error: "parse_returned_null" });
