@@ -159,16 +159,33 @@ final class SwiftDataService: FeedDataService {
 
             self.categories = folders.map { Category(from: $0) }
             self.sources    = feeds.map   { Source(from: $0) }
+
+            // Reconcile subscriptions with the polling server. Idempotent — only
+            // POSTs when the canonical-feedURL set differs from the last successful
+            // push, so calling on every load (CloudKit import, add, delete, toggle)
+            // is cheap. Without this, /v1/river returns empty and the River stays
+            // stale even though the local Source list is correct.
+            //
+            // Only runs on a successful fetch: on a transient read error we keep
+            // the previous in-memory arrays and must NOT push an empty
+            // subscription set to the server.
+            CloudFeedSubscriptionService.shared.requestSync()
         } catch {
             print("SwiftDataService load error: \(error)")
         }
+    }
 
-        // Reconcile subscriptions with the polling server. Idempotent — only
-        // POSTs when the canonical-feedURL set differs from the last successful
-        // push, so calling on every load (CloudKit import, add, delete, toggle)
-        // is cheap. Without this, /v1/river returns empty and the River stays
-        // stale even though the local Source list is correct.
-        CloudFeedSubscriptionService.shared.requestSync()
+    /// Saves any pending changes on the main context. Called when the app moves
+    /// to the background so edits aren't lost if the OS suspends or memory-kills
+    /// us before the next explicit save.
+    @MainActor
+    func saveMainContext() {
+        guard let context = modelContext, context.hasChanges else { return }
+        do {
+            try context.save()
+        } catch {
+            print("SwiftDataService saveMainContext error: \(error)")
+        }
     }
 
     // MARK: - FeedDataService Protocol
