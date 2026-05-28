@@ -178,7 +178,7 @@ struct TodayView: View {
         .overlay(alignment: .bottomTrailing) {
             chatBubbleButton
                 .padding(.trailing, 20)
-                .padding(.bottom, 30)
+                .padding(.bottom, chatBubbleBottomPadding)
         }
         .sheet(isPresented: $showChatSheet) {
             AgentSheetView(viewModel: agentViewModel)
@@ -244,6 +244,17 @@ struct TodayView: View {
     }
 
     // MARK: - Chat Bubble
+
+    // On iOS 26+ the native tab bar insets the safe area, so a small gap clears it.
+    // On legacy the custom floating tab bar overlaps content, so lift the bubble
+    // above its 94pt clearance zone to keep it off the far-right Settings tab.
+    private var chatBubbleBottomPadding: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 30
+        } else {
+            return 106
+        }
+    }
 
     private var chatBubbleButton: some View {
         Button {
