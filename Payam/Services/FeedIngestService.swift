@@ -44,8 +44,7 @@ final class FeedIngestService: Sendable {
         var newItems: [FeedItem] = []
         var cloudError: Error?
 
-        let isPremium = UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true
-        if isPremium {
+        if PremiumGate.isPremium {
             do {
                 newItems = try await cloudSync.sync(sources: enabledSources)
             } catch {

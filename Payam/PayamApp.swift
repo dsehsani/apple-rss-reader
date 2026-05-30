@@ -43,9 +43,9 @@ struct PayamApp: App {
         // If an Apple user ID is stored, the user was previously signed in.
         let isSignedIn = KeychainService.loadAppleUserID() != nil
 
-        // Read isPremium from UserDefaults — SwiftData isn't ready yet.
+        // Read isPremium via PremiumGate — SwiftData isn't ready yet.
         // Default true so new installs start on Premium.
-        let isPremium = UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true
+        let isPremium = PremiumGate.isPremium
 
         // Disable CloudKit on simulator/DEBUG builds so local development never
         // blocks on CloudKit sync round-trips. Production device builds enable

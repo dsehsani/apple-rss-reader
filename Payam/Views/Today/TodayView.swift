@@ -176,9 +176,11 @@ struct TodayView: View {
             } // close else (hasSources)
         }
         .overlay(alignment: .bottomTrailing) {
-            chatBubbleButton
-                .padding(.trailing, 20)
-                .padding(.bottom, chatBubbleBottomPadding)
+            if PremiumGate.isPremium {
+                chatBubbleButton
+                    .padding(.trailing, 20)
+                    .padding(.bottom, chatBubbleBottomPadding)
+            }
         }
         .sheet(isPresented: $showChatSheet) {
             AgentSheetView(viewModel: agentViewModel)

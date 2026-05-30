@@ -19,7 +19,7 @@ struct SettingsView: View {
 
     // Cache
     @State private var cacheSizeLabel: String = "Calculating…"
-    @State private var cacheCleared: Bool = false
+    @State private var clearing: Bool = false
 
     // OPML
     @State private var isImporting = false
@@ -186,7 +186,7 @@ struct SettingsView: View {
                     get: { userPrefs?.isPremium ?? true },
                     set: { newValue in
                         userPrefs?.isPremium = newValue
-                        UserDefaults.standard.set(newValue, forKey: "payam.isPremium")
+                        UserDefaults.standard.set(newValue, forKey: PremiumGate.userDefaultsKey)
                     }
                 ))
                 divider
@@ -290,12 +290,16 @@ struct SettingsView: View {
                 divider
                 settingsButton(
                     title: "Clear Cache",
-                    subtitle: cacheCleared ? "Cleared" : cacheSizeLabel,
-                    color: cacheCleared ? Design.Colors.secondaryText(for: colorScheme) : .red
+                    subtitle: clearing ? "Clearing…" : cacheSizeLabel,
+                    color: clearing ? Design.Colors.secondaryText(for: colorScheme) : .red
                 ) {
-                    SwiftDataService.shared.clearAllCaches()
-                    cacheCleared = true
-                    cacheSizeLabel = "0 KB"
+                    guard !clearing else { return }
+                    clearing = true
+                    Task {
+                        await SwiftDataService.shared.clearAllCaches()
+                        computeCacheSize()
+                        clearing = false
+                    }
                 }
                 divider
                 settingsButton(title: "Import / Export", subtitle: "OPML", color: Design.Colors.primary) {
@@ -495,7 +499,6 @@ struct SettingsView: View {
             let label = Self.formatBytes(bytes)
             await MainActor.run {
                 self.cacheSizeLabel = label
-                self.cacheCleared = false
             }
         }
     }

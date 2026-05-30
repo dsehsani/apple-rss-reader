@@ -124,6 +124,16 @@ actor OGImageService {
         }
     }
 
+    /// Wipes the positive and negative caches in memory and removes the matching
+    /// UserDefaults entries. The schema-version marker is intentionally left in
+    /// place — it tracks the negative-cache format, not the cached data itself.
+    func purge() {
+        cache.removeAll()
+        negativeCache.removeAll()
+        UserDefaults.standard.removeObject(forKey: Self.cacheKey)
+        UserDefaults.standard.removeObject(forKey: Self.negativeCacheKey)
+    }
+
     // MARK: - Fetch (static — accesses no actor state)
 
     /// Streams the article page up to 64 KB, stopping early once `</head>`

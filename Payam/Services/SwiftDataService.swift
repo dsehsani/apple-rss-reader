@@ -14,6 +14,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import CryptoKit
+import WebKit
 
 // MARK: - Notification Names
 
@@ -651,10 +652,13 @@ final class SwiftDataService: FeedDataService {
         try? service.purgeOldCache(olderThan: days)
     }
 
-    /// Clears all caches: the JSON article cache, all SwiftData CachedArticle records,
-    /// and the shared URL response cache used for images.
+    /// Clears every cache the app writes to disk or UserDefaults: the JSON
+    /// article cache, all SwiftData CachedArticle records, the shared URL
+    /// response cache, the hero-thumbnail cache (memory + disk), and the
+    /// og:image lookup cache. Async because the thumbnail and og:image
+    /// services are actors.
     @MainActor
-    func clearAllCaches() {
+    func clearAllCaches() async {
         // 1. JSON file cache
         ArticleCacheStore.clear()
 
@@ -669,6 +673,34 @@ final class SwiftDataService: FeedDataService {
 
         // 3. URL response cache (images, web assets)
         URLCache.shared.removeAllCachedResponses()
+
+        // 4. ArticlePipelineService L1 — in-memory NSCache of extracted articles.
+        //    Without this, re-opening an article from earlier in the session
+        //    serves the in-memory copy instantly and the button looks like a no-op.
+        ArticlePipelineService.purgeMemoryCache()
+
+        // 5. WKWebView's own data store — separate from URLCache.shared; holds
+        //    HTTP responses fetched during Readability extraction. Without
+        //    clearing this, the next extraction hits the disk-cached HTML
+        //    instead of the live URL.
+        let webKitTypes: Set<String> = [
+            WKWebsiteDataTypeDiskCache,
+            WKWebsiteDataTypeMemoryCache,
+            WKWebsiteDataTypeOfflineWebApplicationCache,
+            WKWebsiteDataTypeFetchCache,
+        ]
+        await WKWebsiteDataStore.default().removeData(
+            ofTypes: webKitTypes,
+            modifiedSince: .distantPast
+        )
+
+        // 6. Hero thumbnail cache — memory NSCache + on-disk JPEGs under
+        //    Caches/thumbnails/. This is typically the bulk of the on-disk
+        //    cache size, so missing it made the button look broken.
+        await ThumbnailService.shared.purge()
+
+        // 7. og:image lookup cache (positive + negative entries in UserDefaults).
+        await OGImageService.shared.purge()
     }
 
     /// Returns the combined on-disk size of all caches in bytes.

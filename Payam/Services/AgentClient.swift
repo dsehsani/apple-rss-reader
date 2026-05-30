@@ -51,6 +51,7 @@ enum AgentClient {
 
     enum AgentError: LocalizedError {
         case invalidURL
+        case premiumRequired
         case http(Int, String?)
         case decoding(String)
         case transport(Error)
@@ -58,6 +59,7 @@ enum AgentClient {
         var errorDescription: String? {
             switch self {
             case .invalidURL:                return "Agent endpoint isn't configured."
+            case .premiumRequired:           return "Premium required for AI features."
             case .http(let code, let msg):   return "Agent error (HTTP \(code))" + (msg.map { ": \($0)" } ?? "")
             case .decoding(let detail):      return "Couldn't parse agent response: \(detail)"
             case .transport(let err):        return err.localizedDescription
@@ -72,6 +74,10 @@ enum AgentClient {
         articleContext: ArticleContext?,
         subscriptions: [SubscriptionRef]
     ) async throws -> AgentEnvelope {
+
+        // Defense-in-depth: even if a stale view still has an Ask AI entry
+        // visible after the user toggled off Premium, block the request here.
+        guard PremiumGate.isPremium else { throw AgentError.premiumRequired }
 
         guard let url = endpoint else { throw AgentError.invalidURL }
 
