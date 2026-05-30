@@ -1,60 +1,201 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { sumUsage, MODELS } from '../src/anthropic.mjs';
+import esmock from 'esmock';
 
-describe('MODELS', () => {
-  it('exports HAIKU model ID', () => {
-    assert.ok(typeof MODELS.HAIKU === 'string');
-    assert.ok(MODELS.HAIKU.includes('haiku'));
+describe('anthropic', () => {
+  describe('sumUsage', () => {
+    it('sums usage across multiple parts', async () => {
+      const { sumUsage } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+      });
+
+      const result = sumUsage([
+        { model: 'haiku', inputTokens: 10, cachedInputTokens: 5, cacheCreationInputTokens: 2, outputTokens: 20 },
+        { model: 'sonnet', inputTokens: 15, cachedInputTokens: 3, cacheCreationInputTokens: 1, outputTokens: 30 },
+      ]);
+      assert.equal(result.model, 'haiku+sonnet');
+      assert.equal(result.inputTokens, 25);
+      assert.equal(result.cachedInputTokens, 8);
+      assert.equal(result.cacheCreationInputTokens, 3);
+      assert.equal(result.outputTokens, 50);
+    });
+
+    it('handles missing fields in parts', async () => {
+      const { sumUsage } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+      });
+
+      const result = sumUsage([
+        { model: 'haiku' },
+        { model: 'sonnet', inputTokens: 10 },
+      ]);
+      assert.equal(result.inputTokens, 10);
+      assert.equal(result.cachedInputTokens, 0);
+      assert.equal(result.outputTokens, 0);
+    });
   });
 
-  it('exports SONNET model ID', () => {
-    assert.ok(typeof MODELS.SONNET === 'string');
-    assert.ok(MODELS.SONNET.includes('sonnet'));
-  });
-});
+  describe('callWithCachedSystem', () => {
+    it('returns parsed JSON when responseJSON is true', async () => {
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [{ type: 'text', text: '"intent":"explain","args":{},"confidence":0.9}' }],
+                  usage: { input_tokens: 10, cache_read_input_tokens: 5, cache_creation_input_tokens: 0, output_tokens: 20 },
+                }),
+              };
+            }
+          },
+        },
+      });
 
-describe('sumUsage', () => {
-  it('sums two usage objects', () => {
-    const a = { model: 'haiku', inputTokens: 100, cachedInputTokens: 50, cacheCreationInputTokens: 10, outputTokens: 20 };
-    const b = { model: 'sonnet', inputTokens: 200, cachedInputTokens: 100, cacheCreationInputTokens: 5, outputTokens: 40 };
-    const result = sumUsage([a, b]);
+      const result = await callWithCachedSystem({
+        model: MODELS.HAIKU,
+        system: 'test system prompt',
+        messages: [{ role: 'user', content: 'hello' }],
+        maxTokens: 200,
+        responseJSON: true,
+      });
+      assert.deepEqual(result.data, { intent: 'explain', args: {}, confidence: 0.9 });
+      assert.equal(result.usage.model, MODELS.HAIKU);
+      assert.equal(result.usage.inputTokens, 10);
+    });
 
-    assert.equal(result.inputTokens, 300);
-    assert.equal(result.cachedInputTokens, 150);
-    assert.equal(result.cacheCreationInputTokens, 15);
-    assert.equal(result.outputTokens, 60);
-    assert.equal(result.model, 'haiku+sonnet');
-  });
+    it('returns raw text when responseJSON is false', async () => {
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [{ type: 'text', text: 'Hello there!' }],
+                  usage: { input_tokens: 5, output_tokens: 10 },
+                }),
+              };
+            }
+          },
+        },
+      });
 
-  it('handles missing fields gracefully', () => {
-    const a = { model: 'haiku', inputTokens: 100 };
-    const b = { model: 'sonnet', outputTokens: 50 };
-    const result = sumUsage([a, b]);
+      const result = await callWithCachedSystem({
+        model: MODELS.HAIKU,
+        system: 'test system prompt',
+        messages: [{ role: 'user', content: 'hello' }],
+        maxTokens: 200,
+        responseJSON: false,
+      });
+      assert.equal(result.data, 'Hello there!');
+      assert.equal(result.raw, 'Hello there!');
+    });
 
-    assert.equal(result.inputTokens, 100);
-    assert.equal(result.cachedInputTokens, 0);
-    assert.equal(result.outputTokens, 50);
-  });
+    it('throws on invalid JSON response', async () => {
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [{ type: 'text', text: 'not valid json at all' }],
+                  usage: { input_tokens: 5, output_tokens: 10 },
+                }),
+              };
+            }
+          },
+        },
+      });
 
-  it('handles single usage object', () => {
-    const a = { model: 'haiku', inputTokens: 100, cachedInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 25 };
-    const result = sumUsage([a]);
+      await assert.rejects(
+        callWithCachedSystem({
+          model: MODELS.HAIKU,
+          system: 'test',
+          messages: [{ role: 'user', content: 'hello' }],
+          maxTokens: 200,
+          responseJSON: true,
+        }),
+        /Model returned invalid JSON/,
+      );
+    });
 
-    assert.equal(result.inputTokens, 100);
-    assert.equal(result.outputTokens, 25);
-    assert.equal(result.model, 'haiku');
-  });
+    it('filters non-text content blocks', async () => {
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [
+                    { type: 'tool_use', text: 'should be ignored' },
+                    { type: 'text', text: 'only this' },
+                  ],
+                  usage: { input_tokens: 5, output_tokens: 10 },
+                }),
+              };
+            }
+          },
+        },
+      });
 
-  it('handles three usage objects', () => {
-    const parts = [
-      { model: 'a', inputTokens: 10, cachedInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 },
-      { model: 'b', inputTokens: 20, cachedInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 10 },
-      { model: 'c', inputTokens: 30, cachedInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 15 },
-    ];
-    const result = sumUsage(parts);
-    assert.equal(result.inputTokens, 60);
-    assert.equal(result.outputTokens, 30);
-    assert.equal(result.model, 'a+b+c');
+      const result = await callWithCachedSystem({
+        model: MODELS.HAIKU,
+        system: 'test',
+        messages: [{ role: 'user', content: 'hello' }],
+        maxTokens: 200,
+      });
+      assert.equal(result.data, 'only this');
+    });
+
+    it('handles missing usage fields gracefully', async () => {
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [{ type: 'text', text: 'hi' }],
+                  usage: {},
+                }),
+              };
+            }
+          },
+        },
+      });
+
+      const result = await callWithCachedSystem({
+        model: MODELS.HAIKU,
+        system: 'test',
+        messages: [{ role: 'user', content: 'hello' }],
+        maxTokens: 200,
+      });
+      assert.equal(result.usage.inputTokens, 0);
+      assert.equal(result.usage.outputTokens, 0);
+      assert.equal(result.usage.cachedInputTokens, 0);
+    });
   });
 });

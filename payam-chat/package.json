@@ -7,17 +7,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "c8 node --test tests/*.test.mjs",
-    "test:ci": "c8 --reporter=text --reporter=lcov node --test tests/*.test.mjs",
-    "test:no-threshold": "c8 --no-check-coverage node --test tests/*.test.mjs",
-    "coverage": "c8 report"
+    "test": "c8 node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
     "@aws-sdk/client-secrets-manager": "^3.787.0"
   },
   "devDependencies": {
-    "c8": "^10.1.3",
+    "c8": "^11.0.0",
+    "esmock": "^2.7.6",
     "serverless": "^3.40.0"
   }
 }

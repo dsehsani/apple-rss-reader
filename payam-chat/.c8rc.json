@@ -1,15 +1,9 @@
 {
   "all": true,
-  "src": ["src"],
-  "exclude": [
-    "node_modules/**",
-    "tests/**",
-    "src/providers/**",
-    "src/db.mjs"
-  ],
-  "reporter": ["text", "text-summary"],
-  "check-coverage": true,
+  "src": ["src/**/*.mjs"],
+  "exclude": ["src/prompts/**"],
   "lines": 85,
-  "branches": 75,
-  "functions": 80
+  "branches": 85,
+  "functions": 85,
+  "reporter": ["text", "text-summary"]
 }

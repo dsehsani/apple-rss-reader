@@ -1,66 +1,108 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import esmock from 'esmock';
 
-// secrets.mjs uses SecretsManagerClient at module level, so we test
-// the parseKey logic by reimplementing it here (same as source).
+describe('secrets', () => {
+  describe('getAnthropicApiKey', () => {
+    it('returns the secret string when it is a plain key', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return { SecretString: 'sk-ant-abc123' };
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      const key = await getAnthropicApiKey();
+      assert.equal(key, 'sk-ant-abc123');
+    });
 
-function parseKey(secretString) {
-  const trimmed = secretString.trim();
-  if (!trimmed.startsWith('{')) return trimmed;
-  try {
-    const obj = JSON.parse(trimmed);
-    return (
-      obj.ANTHROPIC_API_KEY?.trim() ||
-      obj.apiKey?.trim() ||
-      Object.values(obj).find((v) => typeof v === 'string' && v.trim().length > 0)?.trim() ||
-      trimmed
-    );
-  } catch {
-    return trimmed;
-  }
-}
+    it('parses ANTHROPIC_API_KEY from a JSON secret', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return { SecretString: JSON.stringify({ ANTHROPIC_API_KEY: 'sk-from-json' }) };
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      const key = await getAnthropicApiKey();
+      assert.equal(key, 'sk-from-json');
+    });
 
-describe('parseKey (from secrets.mjs)', () => {
-  it('returns plain string API key', () => {
-    assert.equal(parseKey('sk-ant-abc123'), 'sk-ant-abc123');
-  });
+    it('parses apiKey field from a JSON secret', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return { SecretString: JSON.stringify({ apiKey: 'sk-apikey-field' }) };
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      const key = await getAnthropicApiKey();
+      assert.equal(key, 'sk-apikey-field');
+    });
 
-  it('trims whitespace from plain string', () => {
-    assert.equal(parseKey('  sk-ant-abc  \n'), 'sk-ant-abc');
-  });
+    it('falls back to first string value in JSON secret', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return { SecretString: JSON.stringify({ someOtherKey: 'sk-fallback' }) };
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      const key = await getAnthropicApiKey();
+      assert.equal(key, 'sk-fallback');
+    });
 
-  it('extracts ANTHROPIC_API_KEY from JSON', () => {
-    assert.equal(parseKey('{"ANTHROPIC_API_KEY": "sk-ant-xyz"}'), 'sk-ant-xyz');
-  });
+    it('throws when SecretString is missing', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return {};
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      await assert.rejects(getAnthropicApiKey(), /Anthropic secret missing SecretString/);
+    });
 
-  it('extracts apiKey from JSON', () => {
-    assert.equal(parseKey('{"apiKey": "sk-ant-456"}'), 'sk-ant-456');
-  });
-
-  it('falls back to first string value', () => {
-    assert.equal(parseKey('{"customField": "sk-ant-789"}'), 'sk-ant-789');
-  });
-
-  it('prefers ANTHROPIC_API_KEY over apiKey', () => {
-    assert.equal(
-      parseKey('{"ANTHROPIC_API_KEY": "first", "apiKey": "second"}'),
-      'first',
-    );
-  });
-
-  it('handles empty JSON object', () => {
-    assert.equal(parseKey('{}'), '{}');
-  });
-
-  it('handles malformed JSON starting with {', () => {
-    assert.equal(parseKey('{broken'), '{broken');
-  });
-
-  it('trims extracted values', () => {
-    assert.equal(parseKey('{"ANTHROPIC_API_KEY": "  key  "}'), 'key');
-  });
-
-  it('skips empty string values', () => {
-    assert.equal(parseKey('{"ANTHROPIC_API_KEY": "", "apiKey": "fallback"}'), 'fallback');
+    it('returns raw trimmed string for invalid JSON that starts with {', async () => {
+      const { getAnthropicApiKey } = await esmock('../src/secrets.mjs', {
+        '@aws-sdk/client-secrets-manager': {
+          SecretsManagerClient: class {
+            send() {
+              return { SecretString: '{not-valid-json' };
+            }
+          },
+          GetSecretValueCommand: class {
+            constructor(params) { this.params = params; }
+          },
+        },
+      });
+      const key = await getAnthropicApiKey();
+      assert.equal(key, '{not-valid-json');
+    });
   });
 });
