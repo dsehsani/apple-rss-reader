@@ -58,6 +58,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    tourSection
                     aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
@@ -87,6 +88,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    tourSection
                     aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
@@ -335,6 +337,28 @@ struct SettingsView: View {
     }
 
     // MARK: - About Section
+
+    private var tourSection: some View {
+        settingsSection(title: "Tour", icon: "map.fill") {
+            Button {
+                TutorialManager.shared.start()
+            } label: {
+                HStack {
+                    Text("Replay App Tutorial")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Image(systemName: "arrow.right.circle")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Design.Colors.primary)
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     private var aboutSection: some View {
         settingsSection(title: "About", icon: "info.circle.fill") {

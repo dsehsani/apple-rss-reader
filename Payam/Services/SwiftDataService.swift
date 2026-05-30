@@ -21,6 +21,10 @@ import WebKit
 extension Notification.Name {
     /// Posted on the main thread whenever a new feed is successfully saved.
     static let feedAdded = Notification.Name("openrss.feedAdded")
+    /// Posted on the main thread whenever a new folder is successfully saved.
+    static let folderAdded = Notification.Name("payam.folderAdded")
+    /// Posted on the main thread whenever a folder is permanently deleted.
+    static let folderDeleted = Notification.Name("payam.folderDeleted")
 }
 
 // MARK: - SwiftDataService
@@ -272,6 +276,7 @@ final class SwiftDataService: FeedDataService {
             return folder.id
         }.value
         loadFromSwiftData()
+        NotificationCenter.default.post(name: .folderAdded, object: nil)
         return newID
     }
 
@@ -290,6 +295,7 @@ final class SwiftDataService: FeedDataService {
             }
         }.value
         loadFromSwiftData()
+        NotificationCenter.default.post(name: .folderDeleted, object: nil)
     }
 
     /// Updates an existing folder's name, icon, or color on a background context.

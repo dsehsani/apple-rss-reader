@@ -173,6 +173,7 @@ struct TodayView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
             }
+            .tutorialSpotlight(for: .todayFeed)
             } // close else (hasSources)
         }
         .overlay(alignment: .bottomTrailing) {

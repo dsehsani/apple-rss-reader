@@ -41,6 +41,7 @@ struct MyFeedsView: View {
     @State private var navigatedFolder: Category? = nil
     @State private var editableFolder: EditableFolderWrapper? = nil
     @State private var folderColorTick    = 0
+    @State private var showingNewFolder   = false
 
     // MARK: - Environment
 
@@ -97,12 +98,22 @@ struct MyFeedsView: View {
                                 .font(.system(size: 16, weight: .medium))
                         }
 
-                        Button {
-                            viewModel.showingAddFeed = true
+                        Menu {
+                            Button {
+                                showingNewFolder = true
+                            } label: {
+                                Label("New Folder", systemImage: "folder.badge.plus")
+                            }
+                            Button {
+                                viewModel.showingAddFeed = true
+                            } label: {
+                                Label("Add Feed", systemImage: "plus.circle")
+                            }
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 16, weight: .semibold))
                         }
+                        .tutorialPulse(for: .createFolder)
                     }
                 }
             }
@@ -115,6 +126,9 @@ struct MyFeedsView: View {
         }
         .sheet(isPresented: $viewModel.showingAddFeed) {
             AddFeedView()
+        }
+        .sheet(isPresented: $showingNewFolder) {
+            NewFolderSheet()
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
@@ -163,6 +177,9 @@ struct MyFeedsView: View {
         .sheet(isPresented: $viewModel.showingAddFeed) {
             AddFeedView()
         }
+        .sheet(isPresented: $showingNewFolder) {
+            NewFolderSheet()
+        }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
         }
@@ -209,14 +226,24 @@ struct MyFeedsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button {
-                        viewModel.showingAddFeed = true
+                    Menu {
+                        Button {
+                            showingNewFolder = true
+                        } label: {
+                            Label("New Folder", systemImage: "folder.badge.plus")
+                        }
+                        Button {
+                            viewModel.showingAddFeed = true
+                        } label: {
+                            Label("Add Feed", systemImage: "plus.circle")
+                        }
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Design.Colors.primary)
                     }
                     .buttonStyle(.plain)
+                    .tutorialPulse(for: .createFolder)
                 }
             }
             .padding(.horizontal, Design.Spacing.edge + 4)
@@ -290,6 +317,7 @@ struct MyFeedsView: View {
             }
             .padding(.top, 16)
         }
+        .tutorialSpotlight(for: .sources)
     }
 
     // MARK: - Folder Grid
@@ -651,6 +679,184 @@ struct MyFeedsView: View {
                         lineWidth: 0.5
                     )
             )
+    }
+}
+
+// MARK: - New Folder Sheet (standalone creation)
+
+struct NewFolderSheet: View {
+
+    @Environment(\.dismiss)     private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    @State private var folderName    = ""
+    @State private var selectedColor = folderColorHexOptions[0]
+    @State private var selectedIcon  = folderIconOptions[0]
+    @State private var isSaving      = false
+
+    private var accentColor: Color { Color(hex: selectedColor) }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+
+                    // Live preview tile
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(LinearGradient(
+                                colors: [accentColor, accentColor.opacity(0.75)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 120, height: 120)
+                        VStack(spacing: 8) {
+                            Image(systemName: selectedIcon)
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundStyle(.white)
+                            Text(folderName.isEmpty ? "Folder" : folderName)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                        }
+                    }
+                    .padding(.top, 8)
+                    .animation(Design.Animation.quick, value: selectedColor)
+                    .animation(Design.Animation.quick, value: selectedIcon)
+
+                    // Name field
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("NAME")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                            .tracking(0.8)
+                        TextField("Folder name", text: $folderName)
+                            .font(.system(size: 16))
+                            .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                            .tint(Design.Colors.primary)
+                            .autocorrectionDisabled()
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: Design.Radius.standard)
+                                    .fill(Design.Colors.cardBackground(for: colorScheme))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: Design.Radius.standard)
+                                            .stroke(Design.Colors.glassBorder(for: colorScheme), lineWidth: 0.5)
+                                    )
+                            )
+                    }
+                    .padding(.horizontal, Design.Spacing.edge)
+
+                    // Color picker
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("COLOR")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                            .tracking(0.8)
+                            .padding(.horizontal, Design.Spacing.edge)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(folderColorHexOptions, id: \.self) { hex in
+                                    let color = Color(hex: hex)
+                                    let isSelected = selectedColor == hex
+                                    Button { selectedColor = hex } label: {
+                                        Circle()
+                                            .fill(color)
+                                            .frame(width: 32, height: 32)
+                                            .overlay(
+                                                Circle().stroke(.white, lineWidth: isSelected ? 2.5 : 0)
+                                            )
+                                            .shadow(color: color.opacity(0.4), radius: isSelected ? 6 : 2)
+                                            .scaleEffect(isSelected ? 1.15 : 1.0)
+                                            .animation(Design.Animation.quick, value: isSelected)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, Design.Spacing.edge)
+                        }
+                    }
+
+                    // Icon picker
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("ICON")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                            .tracking(0.8)
+                            .padding(.horizontal, Design.Spacing.edge)
+                        let cols = Array(repeating: GridItem(.flexible(), spacing: 8), count: 5)
+                        LazyVGrid(columns: cols, spacing: 8) {
+                            ForEach(folderIconOptions, id: \.self) { icon in
+                                let isSelected = selectedIcon == icon
+                                Button { selectedIcon = icon } label: {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 9)
+                                            .fill(isSelected
+                                                ? accentColor.opacity(0.15)
+                                                : Design.Colors.cardBackground(for: colorScheme).opacity(0.6))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 9)
+                                                    .stroke(isSelected ? accentColor : Design.Colors.glassBorder(for: colorScheme),
+                                                            lineWidth: isSelected ? 1.5 : 0.5)
+                                            )
+                                        Image(systemName: icon)
+                                            .font(.system(size: 18, weight: .medium))
+                                            .foregroundStyle(isSelected
+                                                ? accentColor
+                                                : Design.Colors.secondaryText(for: colorScheme))
+                                    }
+                                    .frame(height: 46)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Design.Spacing.edge)
+                    }
+                }
+                .padding(.top, Design.Spacing.section)
+                .padding(.bottom, 32)
+            }
+            .background(Design.Colors.background(for: colorScheme))
+            .navigationTitle("New Folder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(Design.Colors.primary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        let name = folderName.trimmingCharacters(in: .whitespaces)
+                        guard !name.isEmpty else { return }
+                        isSaving = true
+                        Task {
+                            try? await SwiftDataService.shared.addFolder(
+                                name: name,
+                                iconName: selectedIcon,
+                                colorHex: selectedColor
+                            )
+                            dismiss()
+                        }
+                    } label: {
+                        if isSaving {
+                            ProgressView().tint(Design.Colors.primary)
+                        } else {
+                            Text("Create")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(
+                                    folderName.trimmingCharacters(in: .whitespaces).isEmpty
+                                        ? Design.Colors.primary.opacity(0.35)
+                                        : Design.Colors.primary
+                                )
+                        }
+                    }
+                    .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+        .presentationCornerRadius(Design.Radius.glass)
     }
 }
 

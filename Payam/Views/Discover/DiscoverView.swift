@@ -286,7 +286,7 @@ struct DiscoverView: View {
                                 .background(Design.Colors.glassBorder(for: colorScheme))
                                 .padding(.leading, Design.Spacing.edge + 56)
                         }
-                        recommendedRow(feed)
+                        recommendedRow(feed, showPulse: index == 0)
                     }
                 }
                 .background(Design.Colors.cardBackground(for: colorScheme).opacity(0.6))
@@ -301,7 +301,7 @@ struct DiscoverView: View {
         .padding(.bottom, Design.Spacing.edge)
     }
 
-    private func recommendedRow(_ feed: CatalogFeed) -> some View {
+    private func recommendedRow(_ feed: CatalogFeed, showPulse: Bool = false) -> some View {
         let isSubscribed = subscribedURLs.contains(feed.feedURL.lowercased())
         let cat          = RSSCatalog.category(for: feed)
 
@@ -331,7 +331,7 @@ struct DiscoverView: View {
 
             Spacer()
 
-            addButton(for: feed, isSubscribed: isSubscribed, compact: true)
+            addButton(for: feed, isSubscribed: isSubscribed, compact: true, showPulse: showPulse && !isSubscribed)
         }
         .padding(.vertical, 11)
         .padding(.horizontal, Design.Spacing.edge)
@@ -344,7 +344,7 @@ struct DiscoverView: View {
 
     /// Reusable + / ✓ button for both Featured cards and Recommended rows.
     @ViewBuilder
-    private func addButton(for feed: CatalogFeed, isSubscribed: Bool, compact: Bool) -> some View {
+    private func addButton(for feed: CatalogFeed, isSubscribed: Bool, compact: Bool, showPulse: Bool = false) -> some View {
         if isSubscribed {
             if compact {
                 Image(systemName: "checkmark.circle.fill")
@@ -372,6 +372,7 @@ struct DiscoverView: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .tutorialPulse(for: showPulse ? .addFromDiscover : .whatIsRSS)
             } else {
                 Button {
                     feedToAdd = feed

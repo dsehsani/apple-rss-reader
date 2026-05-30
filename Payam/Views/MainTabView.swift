@@ -21,6 +21,10 @@ struct MainTabView: View {
 
     @Namespace private var tabNamespace
 
+    // MARK: - Tutorial
+
+    private var tutorial: TutorialManager { .shared }
+
     // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
@@ -29,10 +33,17 @@ struct MainTabView: View {
     // MARK: - Body
 
     var body: some View {
+        // Read tutorial state here in body so @Observable registers these as
+        // dependencies on MainTabView — guaranteeing a re-render when they change.
+        let isActive = tutorial.isActive
+        let step     = tutorial.currentStep
+
         if #available(iOS 26.0, *) {
             liquidGlassTabView
+                .applyTutorial(isActive: isActive, step: step, tutorial: tutorial, appState: appState)
         } else {
             legacyCustomTabView
+                .applyTutorial(isActive: isActive, step: step, tutorial: tutorial, appState: appState)
         }
     }
 
@@ -187,6 +198,49 @@ struct MainTabView: View {
                 radius: colorScheme == .dark ? 24 : 16,
                 y: colorScheme == .dark ? 8 : 4
             )
+    }
+}
+
+// MARK: - Tutorial Overlay Modifier
+
+private extension View {
+    /// Attaches the tutorial overlay, tab-switching, and start-on-appear logic.
+    /// Applied to each OS branch individually so the modifier sits on a concrete
+    /// view type, not a Group — this keeps @Observable tracking reliable.
+    func applyTutorial(
+        isActive: Bool,
+        step: TutorialStep,
+        tutorial: TutorialManager,
+        appState: AppState
+    ) -> some View {
+        self
+            .overlayPreferenceValue(TutorialSpotlightKey.self) { prefs in
+                // `isActive` and `step` are captured from body's local lets,
+                // so this closure always reflects the latest tracked values.
+                if isActive {
+                    GeometryReader { geo in
+                        let frame: CGRect? = prefs[step].map { geo[$0] }
+                        TutorialOverlayView(
+                            step: step,
+                            spotlightFrame: frame,
+                            screenSize: geo.size,
+                            onNext: { tutorial.advance() },
+                            onSkip: { tutorial.finish() }
+                        )
+                    }
+                    .ignoresSafeArea()
+                }
+            }
+            .onChange(of: step) { _, newStep in
+                if let tab = newStep.targetTab {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        appState.selectedTab = tab
+                    }
+                }
+            }
+            .onAppear {
+                tutorial.startIfNeeded()
+            }
     }
 }
 
