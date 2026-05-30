@@ -28,3 +28,4 @@ OpenRSS Development Plan*
 # Claude Code agent configuration
 .claude/
 .cursor/
+payam-chat/coverage/
