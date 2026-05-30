@@ -2,7 +2,8 @@
 //  PayamUITestsLaunchTests.swift
 //  PayamUITests
 //
-//  Created by Darius Ehsani on 2/3/26.
+//  Screenshot-based launch tests that run for each UI configuration
+//  (light/dark mode, dynamic type sizes, etc.)
 //
 
 import XCTest
@@ -20,10 +21,8 @@ final class PayamUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
+        app.launchArguments += ["-UITesting"]
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"
