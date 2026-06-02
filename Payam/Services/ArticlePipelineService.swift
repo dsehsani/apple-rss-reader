@@ -91,6 +91,13 @@ final class ArticlePipelineService {
 
     // MARK: - Public API
 
+    /// Drops the in-memory L1 cache. Called from `SwiftDataService.clearAllCaches`
+    /// so a previously-opened article isn't served instantly from RAM after the
+    /// user taps Clear Cache.
+    static func purgeMemoryCache() {
+        memoryCache.removeAllObjects()
+    }
+
     /// Processes a single RSS item through the full pipeline.
     /// Returns a cached result immediately if one exists (memory or disk).
     func process(item: RSSItem) async throws -> ExtractedArticle {
@@ -222,7 +229,10 @@ final class ArticlePipelineService {
     /// Converts the server payload into a fully-formed `ExtractedArticle`.
     /// Returns nil on missing content or normalization failure so the caller
     /// falls through to the on-device extractor.
+    /// In Basic mode, returns nil immediately so the pipeline never hits the
+    /// /v1/extractions endpoint and instead uses local WKWebView + Readability.
     private func fetchFromCloud(item: RSSItem) async -> ExtractedArticle? {
+        guard PremiumGate.isPremium else { return nil }
         guard let payload = await fetchExtractionPayload(item: item),
               !payload.content.isEmpty else { return nil }
 

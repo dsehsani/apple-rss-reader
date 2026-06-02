@@ -79,7 +79,7 @@ struct ArticleReaderHostView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            if case .loaded = loadState {
+            if case .loaded = loadState, PremiumGate.isPremium {
                 chatBubbleButton
                     .padding(.trailing, 20)
                     .padding(.bottom, 30)

@@ -49,7 +49,7 @@ final class CloudFeedSubscriptionService: @unchecked Sendable {
     /// Diffs the current Source list against the last-pushed snapshot and
     /// POSTs only the changes. No-op when the set is unchanged or in Basic mode.
     private func reconcile() async {
-        guard UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true else {
+        guard PremiumGate.isPremium else {
             log.info("Skipping subscription sync — Basic mode active")
             return
         }

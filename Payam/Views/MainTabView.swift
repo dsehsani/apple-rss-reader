@@ -21,6 +21,10 @@ struct MainTabView: View {
 
     @Namespace private var tabNamespace
 
+    // MARK: - Tutorial
+
+    private var tutorial: TutorialManager { .shared }
+
     // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
@@ -29,11 +33,45 @@ struct MainTabView: View {
     // MARK: - Body
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            liquidGlassTabView
-        } else {
-            legacyCustomTabView
+        // Read tutorial state here in body so @Observable registers these as
+        // dependencies on MainTabView — guaranteeing a re-render when they change.
+        let phase           = tutorial.phase
+        let completed       = tutorial.completedItems
+        let checklistOpen   = tutorial.checklistExpanded
+        let modalActive     = tutorial.coveringModalActive
+        let glowTarget      = tutorial.glowTargetItem
+
+        VStack(spacing: 0) {
+            if phase == .checklist && !modalActive {
+                TutorialChecklistCard(
+                    tutorial: tutorial,
+                    completedItems: completed,
+                    expanded: checklistOpen
+                )
+                .environment(appState)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            Group {
+                if #available(iOS 26.0, *) {
+                    liquidGlassTabView
+                } else {
+                    legacyCustomTabView
+                }
+            }
         }
+        .applyTutorial(
+            phase: phase,
+            completedItems: completed,
+            checklistExpanded: checklistOpen,
+            coveringModalActive: modalActive,
+            glowTarget: glowTarget,
+            tutorial: tutorial,
+            appState: appState
+        )
     }
 
     // MARK: - iOS 26+ Liquid Glass Native TabView
@@ -187,6 +225,125 @@ struct MainTabView: View {
                 radius: colorScheme == .dark ? 24 : 16,
                 y: colorScheme == .dark ? 8 : 4
             )
+    }
+}
+
+// MARK: - Tutorial Overlay Modifier
+
+private extension View {
+    /// Attaches the redesigned onboarding flow: hero / intent full-screen
+    /// covers, the persistent checklist card, the demo-feed sheet, the
+    /// completion celebration, and a global attention glow that highlights
+    /// the next action target. Applied per OS branch so the modifier sits on
+    /// a concrete view type — this keeps @Observable tracking reliable.
+    func applyTutorial(
+        phase: TutorialManager.Phase,
+        completedItems: Set<TutorialManager.ChecklistItem>,
+        checklistExpanded: Bool,
+        coveringModalActive: Bool,
+        glowTarget: TutorialManager.ChecklistItem?,
+        tutorial: TutorialManager,
+        appState: AppState
+    ) -> some View {
+        modifier(TutorialModifier(
+            phase: phase,
+            completedItems: completedItems,
+            checklistExpanded: checklistExpanded,
+            coveringModalActive: coveringModalActive,
+            glowTarget: glowTarget,
+            tutorial: tutorial,
+            appState: appState
+        ))
+    }
+}
+
+private struct TutorialModifier: ViewModifier {
+    let phase: TutorialManager.Phase
+    let completedItems: Set<TutorialManager.ChecklistItem>
+    let checklistExpanded: Bool
+    let coveringModalActive: Bool
+    let glowTarget: TutorialManager.ChecklistItem?
+    let tutorial: TutorialManager
+    let appState: AppState
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var showHero: Binding<Bool> {
+        Binding(
+            get: { phase == .hero },
+            set: { newValue in
+                guard !newValue, phase == .hero else { return }
+                tutorial.skipHero()
+            }
+        )
+    }
+
+    private var showIntent: Binding<Bool> {
+        Binding(
+            get: { phase == .intent },
+            set: { newValue in
+                guard !newValue, phase == .intent else { return }
+                tutorial.skipIntent()
+            }
+        )
+    }
+
+    private var showCompletion: Binding<Bool> {
+        Binding(
+            get: { phase == .completion },
+            set: { newValue in
+                guard !newValue, phase == .completion else { return }
+                tutorial.finishCompletion(appState: appState)
+            }
+        )
+    }
+
+    func body(content: Content) -> some View {
+        content
+            // Global attention glow — drawn at the top overlay layer so it
+            // isn't clipped by clipShape() / toolbar containers further down.
+            .overlayPreferenceValue(TutorialGlowKey.self) { prefs in
+                if let target = glowTarget, let anchor = prefs[target] {
+                    GeometryReader { geo in
+                        let frame = geo[anchor]
+                        TutorialGlow()
+                            .frame(
+                                width: max(frame.width, 32) + 36,
+                                height: max(frame.height, 32) + 36
+                            )
+                            .position(x: frame.midX, y: frame.midY)
+                            .allowsHitTesting(false)
+                    }
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                }
+            }
+            // Hero welcome
+            .fullScreenCover(isPresented: showHero) {
+                TutorialHeroView(
+                    onStart: { tutorial.advanceFromHero() },
+                    onSkip:  { tutorial.skipHero() }
+                )
+                .interactiveDismissDisabled()
+            }
+            // Intent personalization
+            .fullScreenCover(isPresented: showIntent) {
+                TutorialIntentView(
+                    onContinue: { picked in tutorial.completeIntent(picked: picked) },
+                    onSkip:     { tutorial.skipIntent() }
+                )
+                .interactiveDismissDisabled()
+            }
+            // Completion celebration
+            .fullScreenCover(isPresented: showCompletion) {
+                TutorialCompletionView(
+                    onFinish: { tutorial.finishCompletion(appState: appState) }
+                )
+                .interactiveDismissDisabled()
+            }
+            .onAppear {
+                tutorial.startIfNeeded()
+            }
     }
 }
 

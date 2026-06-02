@@ -93,6 +93,7 @@ struct TodayView: View {
                                                     sourceID: article.sourceID,
                                                     itemID: article.id
                                                 )
+                                                NotificationCenter.default.post(name: .articleOpened, object: nil)
                                             }
                                         )
                                     }
@@ -176,9 +177,11 @@ struct TodayView: View {
             } // close else (hasSources)
         }
         .overlay(alignment: .bottomTrailing) {
-            chatBubbleButton
-                .padding(.trailing, 20)
-                .padding(.bottom, 30)
+            if PremiumGate.isPremium {
+                chatBubbleButton
+                    .padding(.trailing, 20)
+                    .padding(.bottom, chatBubbleBottomPadding)
+            }
         }
         .sheet(isPresented: $showChatSheet) {
             AgentSheetView(viewModel: agentViewModel)
@@ -245,6 +248,17 @@ struct TodayView: View {
 
     // MARK: - Chat Bubble
 
+    // On iOS 26+ the native tab bar insets the safe area, so a small gap clears it.
+    // On legacy the custom floating tab bar overlaps content, so lift the bubble
+    // above its 94pt clearance zone to keep it off the far-right Settings tab.
+    private var chatBubbleBottomPadding: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 30
+        } else {
+            return 106
+        }
+    }
+
     private var chatBubbleButton: some View {
         Button {
             showChatSheet = true
@@ -304,7 +318,9 @@ struct TodayView: View {
                     .glassEffect(in: RoundedRectangle(cornerRadius: Design.Radius.glass))
             } else {
                 RoundedRectangle(cornerRadius: Design.Radius.glass)
-                    .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+                    .fill(colorScheme == .dark
+                          ? AnyShapeStyle(.ultraThinMaterial)
+                          : AnyShapeStyle(Design.Colors.cardBackground(for: colorScheme)))
                     .overlay(
                         RoundedRectangle(cornerRadius: Design.Radius.glass)
                             .stroke(

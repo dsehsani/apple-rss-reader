@@ -41,60 +41,29 @@ struct PayamApp: App {
 
         // Check Keychain directly — AuthenticationManager isn't configured yet.
         // If an Apple user ID is stored, the user was previously signed in.
-        var isSignedIn = KeychainService.loadAppleUserID() != nil
+        let isSignedIn = KeychainService.loadAppleUserID() != nil
 
-        // Read isPremium from UserDefaults — SwiftData isn't ready yet.
+        // Read isPremium via PremiumGate — SwiftData isn't ready yet.
         // Default true so new installs start on Premium.
-        let isPremium = UserDefaults.standard.object(forKey: "payam.isPremium") as? Bool ?? true
+        let isPremium = PremiumGate.isPremium
 
         // Disable CloudKit on simulator/DEBUG builds so local development never
-        // blocks on CloudKit sync round-trips. Production device builds keep
-        // the original behavior: enable CloudKit when the user is signed in and
-        // on Premium (Basic mode skips all cloud services including CloudKit).
+        // blocks on CloudKit sync round-trips. Production device builds enable
+        // CloudKit only when the user is signed in and on Premium (Basic mode
+        // skips all cloud services including CloudKit).
         #if targetEnvironment(simulator) || DEBUG
-        let cloudKitDB: ModelConfiguration.CloudKitDatabase = .none
+        let wantsCloudKit = false
         #else
-        let cloudKitDB: ModelConfiguration.CloudKitDatabase = (isSignedIn && isPremium) ? .automatic : .none
+        let wantsCloudKit = isSignedIn && isPremium
         #endif
 
-        let config = ModelConfiguration(
-            schema: schema,
-            cloudKitDatabase: cloudKitDB
-        )
-
-        do {
-            container = try ModelContainer(for: schema, configurations: config)
-        } catch {
-            // Schema changed and lightweight migration failed.
-            // Auto-export an OPML backup before wiping so the user can recover.
-            print("⚠️ SwiftData migration failed — wiping store: \(error)")
-            Self.emergencyOPMLExport(schema: schema)
-            let storeURL  = config.url
-            let storeDir  = storeURL.deletingLastPathComponent()
-            let storeName = storeURL.lastPathComponent
-            if let files = try? FileManager.default.contentsOfDirectory(
-                at: storeDir, includingPropertiesForKeys: nil
-            ) {
-                for file in files where file.lastPathComponent.hasPrefix(storeName) {
-                    try? FileManager.default.removeItem(at: file)
-                }
-            }
-            do {
-                container = try ModelContainer(for: schema, configurations: config)
-            } catch {
-                print("⚠️ CloudKit-enabled container still failing — falling back to local-only: \(error)")
-                isSignedIn = false
-                let localConfig = ModelConfiguration(
-                    schema: schema,
-                    cloudKitDatabase: .none
-                )
-                do {
-                    container = try ModelContainer(for: schema, configurations: localConfig)
-                } catch {
-                    fatalError("Failed to create local-only SwiftData ModelContainer: \(error)")
-                }
-            }
-        }
+        // Open the store through a non-destructive recovery ladder (retry, then
+        // a CloudKit-off open of the SAME file) so a transient open failure
+        // after an out-of-memory kill never deletes the user's feeds/folders.
+        // CloudKit is treated as active only if the store actually opened with it.
+        let result = Self.makeContainer(schema: schema, wantsCloudKit: wantsCloudKit)
+        container = result.container
+        let cloudKitActive = result.cloudKitActive
 
         // Bootstrap the shared service with the container's main context.
         // @main App.init() is always called on the main thread, so assumeIsolated is safe.
@@ -105,7 +74,11 @@ struct PayamApp: App {
             // Pre-warm the WKWebView pool so the first article open is fast.
             WebViewPool.shared.warmUp()
 
-            SyncService.shared.startMonitoring(isCloudKitEnabled: isSignedIn && isPremium)
+            SyncService.shared.startMonitoring(isCloudKitEnabled: cloudKitActive)
+
+            // If the store had to be wiped as a true last resort, repopulate
+            // feeds/folders from the OPML backup written just before the wipe.
+            Self.restoreFromOPMLBackupIfNeeded()
         }
 
         // Phase 2a — Register BGTask for background river refresh
@@ -315,9 +288,133 @@ struct PayamApp: App {
         }
     }
 
+    // MARK: - Store Recovery
+
+    /// UserDefaults flag set the moment the store is wiped as a last resort, and
+    /// cleared only after the OPML backup has been fully re-imported. Tying
+    /// recovery to this one-shot flag (rather than "the store is empty") avoids
+    /// resurrecting feeds a user deliberately deleted and avoids re-importing on
+    /// every launch.
+    static let pendingOPMLRecoveryKey = "payam.pendingOPMLRecovery"
+
+    private struct ContainerResult {
+        let container: ModelContainer
+        let cloudKitActive: Bool
+    }
+
+    /// Opens the SwiftData store through a non-destructive recovery ladder and,
+    /// only as an absolute last resort, backs up + wipes + recreates it.
+    ///
+    /// Order (stops at the first success):
+    ///   1–2. Requested config (CloudKit on/off), with one brief retry for
+    ///        transient `-wal`/`-shm` sidecar contention after an abrupt kill.
+    ///   3.   CloudKit-off open of the SAME file — non-destructive, keeps all
+    ///        local data, only disables sync for this session.
+    ///   4.   Genuine corruption only: OPML backup → flag → wipe → fresh store
+    ///        (falling back to an in-memory store rather than crashing).
+    private static func makeContainer(schema: Schema, wantsCloudKit: Bool) -> ContainerResult {
+        let primaryConfig = ModelConfiguration(
+            schema: schema,
+            cloudKitDatabase: wantsCloudKit ? .automatic : .none
+        )
+
+        // 1 + 2. Try the requested config, with a brief retry. An OOM kill is a
+        // SIGKILL with no clean flush, so the next cold open can fail transiently.
+        for attempt in 0..<2 {
+            do {
+                let c = try ModelContainer(for: schema, configurations: primaryConfig)
+                return ContainerResult(container: c, cloudKitActive: wantsCloudKit)
+            } catch {
+                print("⚠️ SwiftData open failed (attempt \(attempt + 1), cloudKit=\(wantsCloudKit)): \(error)")
+                if attempt == 0 { Thread.sleep(forTimeInterval: 0.2) }
+            }
+        }
+
+        // 3. Non-destructive CloudKit-off retry on the SAME store. Opening the
+        // existing file without CloudKit mirroring preserves all local data and
+        // only disables sync for this session (it re-attaches next clean launch).
+        // Skip if we already opened CloudKit-off above.
+        let localConfig = ModelConfiguration(schema: schema, cloudKitDatabase: .none)
+        if wantsCloudKit {
+            do {
+                let c = try ModelContainer(for: schema, configurations: localConfig)
+                print("⚠️ Opened store with CloudKit disabled — data preserved, sync inactive this session")
+                return ContainerResult(container: c, cloudKitActive: false)
+            } catch {
+                print("⚠️ CloudKit-off open of existing store also failed: \(error)")
+            }
+        }
+
+        // 4. True last resort: the store is genuinely unopenable. Back it up to
+        // OPML, flag for auto-restore, wipe, and recreate an empty store.
+        print("⛔️ Store unopenable by any config — backing up and wiping as a last resort")
+        emergencyOPMLExport(schema: schema)
+        UserDefaults.standard.set(true, forKey: pendingOPMLRecoveryKey)
+        wipeStoreFiles(at: localConfig.url)
+
+        if let c = try? ModelContainer(for: schema, configurations: localConfig) {
+            return ContainerResult(container: c, cloudKitActive: false)
+        }
+
+        // Absolute final guard: an in-memory store so the app at least launches.
+        do {
+            let memConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            let c = try ModelContainer(for: schema, configurations: memConfig)
+            print("⛔️ Falling back to in-memory store — data will not persist this session")
+            return ContainerResult(container: c, cloudKitActive: false)
+        } catch {
+            fatalError("Failed to create any SwiftData ModelContainer: \(error)")
+        }
+    }
+
+    /// Removes the SQLite store file and its `-wal`/`-shm` sidecars.
+    private static func wipeStoreFiles(at storeURL: URL) {
+        let storeDir  = storeURL.deletingLastPathComponent()
+        let storeName = storeURL.lastPathComponent
+        if let files = try? FileManager.default.contentsOfDirectory(
+            at: storeDir, includingPropertiesForKeys: nil
+        ) {
+            for file in files where file.lastPathComponent.hasPrefix(storeName) {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
+    /// Location of the OPML safety copy written before a last-resort wipe. Shared
+    /// by the export and the auto-restore so they always agree on the path.
+    static var recoveryBackupURL: URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return docs.appendingPathComponent("payam-recovery-backup.opml")
+    }
+
+    /// After a last-resort wipe, repopulate feeds/folders from the OPML backup.
+    /// Runs only when the one-shot recovery flag is set; clears the flag only on
+    /// a fully successful import so an interrupted restore is retried next launch
+    /// (import skips duplicates by feedURL, so retries are idempotent).
+    @MainActor
+    private static func restoreFromOPMLBackupIfNeeded() {
+        guard UserDefaults.standard.bool(forKey: pendingOPMLRecoveryKey) else { return }
+
+        let backupURL = recoveryBackupURL
+        guard FileManager.default.fileExists(atPath: backupURL.path) else {
+            UserDefaults.standard.set(false, forKey: pendingOPMLRecoveryKey)
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                let result = try await OPMLService.shared.importFromURL(backupURL, into: .shared)
+                print("✅ Auto-restored \(result.imported) feed(s) from recovery backup")
+                UserDefaults.standard.set(false, forKey: pendingOPMLRecoveryKey)
+            } catch {
+                print("⚠️ OPML auto-restore failed, will retry next launch: \(error)")
+            }
+        }
+    }
+
     // MARK: - Emergency OPML Backup
 
-    /// Attempts to read folders and feeds from the existing (pre-migration) store
+    /// Attempts to read folders and feeds from the existing (pre-wipe) store
     /// and write an OPML backup to Documents. Called before the store is wiped.
     /// Best-effort: if the old store is too corrupted to read, we skip silently.
     private static func emergencyOPMLExport(schema: Schema) {
@@ -349,8 +446,7 @@ struct PayamApp: App {
                 unfiledFeeds: unfiledFeeds
             )
 
-            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let backupURL = docs.appendingPathComponent("payam-recovery-backup.opml")
+            let backupURL = recoveryBackupURL
             try? FileManager.default.removeItem(at: backupURL)
             try FileManager.default.copyItem(at: opmlURL, to: backupURL)
 
@@ -393,6 +489,10 @@ struct PayamApp: App {
                         for: UIApplication.didEnterBackgroundNotification
                     )
                 ) { _ in
+                    // Flush any pending main-context edits before the OS can
+                    // suspend or memory-kill us. CRUD already saves via background
+                    // contexts; this is low-risk insurance for main-context writes.
+                    SwiftDataService.shared.saveMainContext()
                     Self.scheduleNextRiverRefresh()
                     Self.scheduleNextHeroPrefetch()
                 }

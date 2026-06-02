@@ -108,6 +108,25 @@ struct SourceDiscoveryCardListView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+
+                // Recent headlines from the live feed — proof it has real content.
+                if !card.sampleHeadlines.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(card.sampleHeadlines.prefix(2), id: \.self) { headline in
+                            HStack(alignment: .top, spacing: 5) {
+                                Text("•")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                                Text(headline)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                            }
+                        }
+                    }
+                    .padding(.top, 2)
+                }
             }
 
             Spacer(minLength: 8)

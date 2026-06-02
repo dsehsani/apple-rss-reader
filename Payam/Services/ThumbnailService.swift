@@ -142,6 +142,21 @@ actor ThumbnailService {
         return FileManager.default.fileExists(atPath: diskPath(for: url).path)
     }
 
+    /// Cancels in-flight downloads, drops the in-memory cache, and removes the
+    /// on-disk thumbnails directory. Cancellation runs first so a download in
+    /// progress doesn't re-populate `cache` or write a JPEG to disk after we
+    /// finish purging. Recreates the empty directory so subsequent writes
+    /// land cleanly without a separate mkdir hop.
+    func purge() {
+        for task in inFlight.values { task.cancel() }
+        inFlight.removeAll()
+        cache.removeAllObjects()
+        try? FileManager.default.removeItem(at: diskDir)
+        try? FileManager.default.createDirectory(
+            at: diskDir, withIntermediateDirectories: true
+        )
+    }
+
     // MARK: - Internals
 
     private func fetchAndStore(url: URL, pointSize: CGSize) async throws -> UIImage {

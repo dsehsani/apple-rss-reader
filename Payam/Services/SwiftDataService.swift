@@ -14,12 +14,17 @@ import Foundation
 import SwiftUI
 import SwiftData
 import CryptoKit
+import WebKit
 
 // MARK: - Notification Names
 
 extension Notification.Name {
     /// Posted on the main thread whenever a new feed is successfully saved.
     static let feedAdded = Notification.Name("openrss.feedAdded")
+    /// Posted on the main thread whenever a new folder is successfully saved.
+    static let folderAdded = Notification.Name("payam.folderAdded")
+    /// Posted on the main thread whenever a folder is permanently deleted.
+    static let folderDeleted = Notification.Name("payam.folderDeleted")
 }
 
 // MARK: - SwiftDataService
@@ -159,16 +164,33 @@ final class SwiftDataService: FeedDataService {
 
             self.categories = folders.map { Category(from: $0) }
             self.sources    = feeds.map   { Source(from: $0) }
+
+            // Reconcile subscriptions with the polling server. Idempotent — only
+            // POSTs when the canonical-feedURL set differs from the last successful
+            // push, so calling on every load (CloudKit import, add, delete, toggle)
+            // is cheap. Without this, /v1/river returns empty and the River stays
+            // stale even though the local Source list is correct.
+            //
+            // Only runs on a successful fetch: on a transient read error we keep
+            // the previous in-memory arrays and must NOT push an empty
+            // subscription set to the server.
+            CloudFeedSubscriptionService.shared.requestSync()
         } catch {
             print("SwiftDataService load error: \(error)")
         }
+    }
 
-        // Reconcile subscriptions with the polling server. Idempotent — only
-        // POSTs when the canonical-feedURL set differs from the last successful
-        // push, so calling on every load (CloudKit import, add, delete, toggle)
-        // is cheap. Without this, /v1/river returns empty and the River stays
-        // stale even though the local Source list is correct.
-        CloudFeedSubscriptionService.shared.requestSync()
+    /// Saves any pending changes on the main context. Called when the app moves
+    /// to the background so edits aren't lost if the OS suspends or memory-kills
+    /// us before the next explicit save.
+    @MainActor
+    func saveMainContext() {
+        guard let context = modelContext, context.hasChanges else { return }
+        do {
+            try context.save()
+        } catch {
+            print("SwiftDataService saveMainContext error: \(error)")
+        }
     }
 
     // MARK: - FeedDataService Protocol
@@ -254,6 +276,7 @@ final class SwiftDataService: FeedDataService {
             return folder.id
         }.value
         loadFromSwiftData()
+        NotificationCenter.default.post(name: .folderAdded, object: nil)
         return newID
     }
 
@@ -272,6 +295,7 @@ final class SwiftDataService: FeedDataService {
             }
         }.value
         loadFromSwiftData()
+        NotificationCenter.default.post(name: .folderDeleted, object: nil)
     }
 
     /// Updates an existing folder's name, icon, or color on a background context.
@@ -634,10 +658,13 @@ final class SwiftDataService: FeedDataService {
         try? service.purgeOldCache(olderThan: days)
     }
 
-    /// Clears all caches: the JSON article cache, all SwiftData CachedArticle records,
-    /// and the shared URL response cache used for images.
+    /// Clears every cache the app writes to disk or UserDefaults: the JSON
+    /// article cache, all SwiftData CachedArticle records, the shared URL
+    /// response cache, the hero-thumbnail cache (memory + disk), and the
+    /// og:image lookup cache. Async because the thumbnail and og:image
+    /// services are actors.
     @MainActor
-    func clearAllCaches() {
+    func clearAllCaches() async {
         // 1. JSON file cache
         ArticleCacheStore.clear()
 
@@ -652,6 +679,34 @@ final class SwiftDataService: FeedDataService {
 
         // 3. URL response cache (images, web assets)
         URLCache.shared.removeAllCachedResponses()
+
+        // 4. ArticlePipelineService L1 — in-memory NSCache of extracted articles.
+        //    Without this, re-opening an article from earlier in the session
+        //    serves the in-memory copy instantly and the button looks like a no-op.
+        ArticlePipelineService.purgeMemoryCache()
+
+        // 5. WKWebView's own data store — separate from URLCache.shared; holds
+        //    HTTP responses fetched during Readability extraction. Without
+        //    clearing this, the next extraction hits the disk-cached HTML
+        //    instead of the live URL.
+        let webKitTypes: Set<String> = [
+            WKWebsiteDataTypeDiskCache,
+            WKWebsiteDataTypeMemoryCache,
+            WKWebsiteDataTypeOfflineWebApplicationCache,
+            WKWebsiteDataTypeFetchCache,
+        ]
+        await WKWebsiteDataStore.default().removeData(
+            ofTypes: webKitTypes,
+            modifiedSince: .distantPast
+        )
+
+        // 6. Hero thumbnail cache — memory NSCache + on-disk JPEGs under
+        //    Caches/thumbnails/. This is typically the bulk of the on-disk
+        //    cache size, so missing it made the button look broken.
+        await ThumbnailService.shared.purge()
+
+        // 7. og:image lookup cache (positive + negative entries in UserDefaults).
+        await OGImageService.shared.purge()
     }
 
     /// Returns the combined on-disk size of all caches in bytes.

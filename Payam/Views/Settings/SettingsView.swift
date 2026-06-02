@@ -19,7 +19,7 @@ struct SettingsView: View {
 
     // Cache
     @State private var cacheSizeLabel: String = "Calculating…"
-    @State private var cacheCleared: Bool = false
+    @State private var clearing: Bool = false
 
     // OPML
     @State private var isImporting = false
@@ -58,6 +58,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    tourSection
                     aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
@@ -87,6 +88,7 @@ struct SettingsView: View {
                     readingSection
                     affinitySection
                     dataSection
+                    tourSection
                     aboutSection
                 }
                 .padding(.top, Design.Spacing.edge)
@@ -186,7 +188,7 @@ struct SettingsView: View {
                     get: { userPrefs?.isPremium ?? true },
                     set: { newValue in
                         userPrefs?.isPremium = newValue
-                        UserDefaults.standard.set(newValue, forKey: "payam.isPremium")
+                        UserDefaults.standard.set(newValue, forKey: PremiumGate.userDefaultsKey)
                     }
                 ))
                 divider
@@ -290,12 +292,16 @@ struct SettingsView: View {
                 divider
                 settingsButton(
                     title: "Clear Cache",
-                    subtitle: cacheCleared ? "Cleared" : cacheSizeLabel,
-                    color: cacheCleared ? Design.Colors.secondaryText(for: colorScheme) : .red
+                    subtitle: clearing ? "Clearing…" : cacheSizeLabel,
+                    color: clearing ? Design.Colors.secondaryText(for: colorScheme) : .red
                 ) {
-                    SwiftDataService.shared.clearAllCaches()
-                    cacheCleared = true
-                    cacheSizeLabel = "0 KB"
+                    guard !clearing else { return }
+                    clearing = true
+                    Task {
+                        await SwiftDataService.shared.clearAllCaches()
+                        computeCacheSize()
+                        clearing = false
+                    }
                 }
                 divider
                 settingsButton(title: "Import / Export", subtitle: "OPML", color: Design.Colors.primary) {
@@ -331,6 +337,28 @@ struct SettingsView: View {
     }
 
     // MARK: - About Section
+
+    private var tourSection: some View {
+        settingsSection(title: "Tour", icon: "map.fill") {
+            Button {
+                TutorialManager.shared.start()
+            } label: {
+                HStack {
+                    Text("Replay App Tutorial")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                    Spacer()
+                    Image(systemName: "arrow.right.circle")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Design.Colors.primary)
+                }
+                .padding(.horizontal, Design.Spacing.edge)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     private var aboutSection: some View {
         settingsSection(title: "About", icon: "info.circle.fill") {
@@ -495,7 +523,6 @@ struct SettingsView: View {
             let label = Self.formatBytes(bytes)
             await MainActor.run {
                 self.cacheSizeLabel = label
-                self.cacheCleared = false
             }
         }
     }

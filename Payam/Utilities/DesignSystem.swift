@@ -52,9 +52,9 @@ enum Design {
         /// Adaptive background color
         /// Page background.
         /// Dark: near-black #0C0C0E — refined, no blue tint, depth from card contrast not hue.
-        /// Light: Apple systemGroupedBackground #F2F2F7 — cards pop as white against this.
+        /// Light: pure white — a single clean surface; cards separate via shadow/border.
         static func background(for colorScheme: ColorScheme) -> Color {
-            colorScheme == .dark ? Color(hex: "0C0C0E") : Color(hex: "F2F2F7")
+            colorScheme == .dark ? Color(hex: "0C0C0E") : Color.white
         }
 
         /// Primary text — near-black Apple ink in light; true white in dark.
