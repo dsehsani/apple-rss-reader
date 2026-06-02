@@ -160,17 +160,14 @@ export const CATALOG = [
 ];
 
 /**
- * Pick candidate feeds for a topic by scoring categories against the topic phrase.
- *
- * Returns up to `limit` candidates from the highest-scoring category, falling through
- * to lower-scoring categories if a category lacks enough feeds. Pure function — no
- * external state, deterministic ordering.
+ * Score every catalog category against a topic phrase. Pure helper shared by the
+ * candidate pickers below. Higher score = stronger match; 0 means no signal at all.
  */
-export function candidatesForTopic(topic, { limit = 8 } = {}) {
+function scoreCategories(topic) {
   const topicLower = topic.toLowerCase();
   const tokens = topicLower.split(/\W+/).filter(Boolean);
 
-  const scored = CATALOG.map((cat) => {
+  return CATALOG.map((cat) => {
     let score = 0;
     for (const kw of cat.keywords) {
       if (topicLower.includes(kw)) score += 3;
@@ -178,13 +175,46 @@ export function candidatesForTopic(topic, { limit = 8 } = {}) {
     }
     if (cat.category.toLowerCase().includes(topicLower)) score += 5;
     return { cat, score };
-  });
+  }).sort((a, b) => b.score - a.score);
+}
 
-  scored.sort((a, b) => b.score - a.score);
+/**
+ * Pick candidate feeds for a topic by scoring categories against the topic phrase.
+ *
+ * Returns up to `limit` candidates from the highest-scoring category, falling through
+ * to lower-scoring categories if a category lacks enough feeds. Pure function — no
+ * external state, deterministic ordering.
+ *
+ * NOTE: this legacy picker will pad with the first (score-0) category when nothing
+ * matches. Prefer `matchedCandidatesForTopic` for discovery — it never pads with
+ * unrelated feeds.
+ */
+export function candidatesForTopic(topic, { limit = 8 } = {}) {
+  const scored = scoreCategories(topic);
 
   const out = [];
   for (const { cat, score } of scored) {
     if (score === 0 && out.length > 0) break;
+    for (const f of cat.feeds) {
+      out.push({ ...f, category: cat.category });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
+
+/**
+ * Like `candidatesForTopic`, but ONLY returns feeds from categories that actually
+ * matched the topic (score > 0). When nothing in the catalog matches the topic
+ * (e.g. "soccer"), this returns `[]` rather than padding the list with unrelated
+ * feeds from the first category — so the caller can fall back to AI web discovery.
+ */
+export function matchedCandidatesForTopic(topic, { limit = 8 } = {}) {
+  const scored = scoreCategories(topic);
+
+  const out = [];
+  for (const { cat, score } of scored) {
+    if (score === 0) break; // sorted desc — once we hit 0, the rest are 0 too.
     for (const f of cat.feeds) {
       out.push({ ...f, category: cat.category });
       if (out.length >= limit) return out;

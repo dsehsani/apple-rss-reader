@@ -113,7 +113,7 @@ struct MyFeedsView: View {
                             Image(systemName: "plus")
                                 .font(.system(size: 16, weight: .semibold))
                         }
-                        .tutorialPulse(for: .createFolder)
+                        .tutorialGlow(for: .createFolder)
                     }
                 }
             }
@@ -132,6 +132,12 @@ struct MyFeedsView: View {
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
+        }
+        .onChange(of: showingNewFolder) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
+        }
+        .onChange(of: editableFolder != nil) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
         }
         .alert("Delete Folder?", isPresented: $showDeleteAlert, presenting: folderToDelete) { folder in
             Button("Cancel", role: .cancel) { folderToDelete = nil }
@@ -182,6 +188,12 @@ struct MyFeedsView: View {
         }
         .sheet(item: $editableFolder) { wrapper in
             EditFolderSheet(folder: wrapper.folder, viewModel: viewModel)
+        }
+        .onChange(of: showingNewFolder) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
+        }
+        .onChange(of: editableFolder != nil) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
         }
         .alert("Delete Folder?", isPresented: $showDeleteAlert, presenting: folderToDelete) { folder in
             Button("Cancel", role: .cancel) { folderToDelete = nil }
@@ -243,7 +255,7 @@ struct MyFeedsView: View {
                             .foregroundStyle(Design.Colors.primary)
                     }
                     .buttonStyle(.plain)
-                    .tutorialPulse(for: .createFolder)
+                    .tutorialGlow(for: .createFolder)
                 }
             }
             .padding(.horizontal, Design.Spacing.edge + 4)
@@ -317,7 +329,6 @@ struct MyFeedsView: View {
             }
             .padding(.top, 16)
         }
-        .tutorialSpotlight(for: .sources)
     }
 
     // MARK: - Folder Grid

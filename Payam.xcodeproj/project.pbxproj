@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3DFD570F2FCD156400EB4A40 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DFD570E2FCD156400EB4A40 /* WidgetKit.framework */; };
+		3DFD57112FCD156400EB4A40 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DFD57102FCD156400EB4A40 /* SwiftUI.framework */; };
+		3DFD57202FCD156500EB4A40 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3DFD58002FCD156400EB4A40 /* TutorialActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD58012FCD156400EB4A40 /* TutorialActivityAttributes.swift */; };
 		71B2CA312F4312700054BC30 /* FeedKit in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA302F4312700054BC30 /* FeedKit */; };
 		71B2CA342F4412700054BC30 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA332F4412700054BC30 /* SwiftSoup */; };
 /* End PBXBuildFile section */
@@ -26,13 +30,38 @@
 			remoteGlobalIDString = 3D147CA02F32B35E00748E17;
 			remoteInfo = Payam;
 		};
+		3DFD571E2FCD156500EB4A40 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3D147C992F32B35E00748E17 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DFD570C2FCD156400EB4A40;
+			remoteInfo = PayamTutorialWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3DFD57212FCD156500EB4A40 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3DFD57202FCD156500EB4A40 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		3D147CA12F32B35E00748E17 /* Payam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Payam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D147CB02F32B36000748E17 /* PayamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PayamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D147CBA2F32B36000748E17 /* PayamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PayamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D7E39622F38015300A6B0F2 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PayamTutorialWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DFD570E2FCD156400EB4A40 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		3DFD57102FCD156400EB4A40 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		3DFD58012FCD156400EB4A40 /* TutorialActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TutorialActivityAttributes.swift; path = Payam/Shared/TutorialActivityAttributes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -60,6 +89,13 @@
 			);
 			target = 3D147CA02F32B35E00748E17 /* Payam */;
 		};
+		3DFD57252FCD156500EB4A40 /* Exceptions for "PayamTutorialWidget" folder in "PayamTutorialWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3DFD570C2FCD156400EB4A40 /* PayamTutorialWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +115,14 @@
 		3D147CBD2F32B36000748E17 /* PayamUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PayamUITests;
+			sourceTree = "<group>";
+		};
+		3DFD57122FCD156400EB4A40 /* PayamTutorialWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3DFD57252FCD156500EB4A40 /* Exceptions for "PayamTutorialWidget" folder in "PayamTutorialWidgetExtension" target */,
+			);
+			path = PayamTutorialWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -107,6 +151,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3DFD570A2FCD156400EB4A40 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DFD57112FCD156400EB4A40 /* SwiftUI.framework in Frameworks */,
+				3DFD570F2FCD156400EB4A40 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -117,8 +170,10 @@
 				3D147CA32F32B35E00748E17 /* Payam */,
 				3D147CB32F32B36000748E17 /* PayamTests */,
 				3D147CBD2F32B36000748E17 /* PayamUITests */,
+				3DFD57122FCD156400EB4A40 /* PayamTutorialWidget */,
 				71B2CA2A2F42FBBA0054BC30 /* Frameworks */,
 				3D147CA22F32B35E00748E17 /* Products */,
+				3DDD74D52FCD1C6D006B0A2B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -128,13 +183,24 @@
 				3D147CA12F32B35E00748E17 /* Payam.app */,
 				3D147CB02F32B36000748E17 /* PayamTests.xctest */,
 				3D147CBA2F32B36000748E17 /* PayamUITests.xctest */,
+				3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3DDD74D52FCD1C6D006B0A2B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				3DFD58012FCD156400EB4A40 /* TutorialActivityAttributes.swift */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		71B2CA2A2F42FBBA0054BC30 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3DFD570E2FCD156400EB4A40 /* WidgetKit.framework */,
+				3DFD57102FCD156400EB4A40 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -149,10 +215,12 @@
 				3D147C9D2F32B35E00748E17 /* Sources */,
 				3D147C9E2F32B35E00748E17 /* Frameworks */,
 				3D147C9F2F32B35E00748E17 /* Resources */,
+				3DFD57212FCD156500EB4A40 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3DFD571F2FCD156500EB4A40 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3D147CA32F32B35E00748E17 /* Payam */,
@@ -212,6 +280,28 @@
 			productReference = 3D147CBA2F32B36000748E17 /* PayamUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		3DFD570C2FCD156400EB4A40 /* PayamTutorialWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3DFD57242FCD156500EB4A40 /* Build configuration list for PBXNativeTarget "PayamTutorialWidgetExtension" */;
+			buildPhases = (
+				3DFD57092FCD156400EB4A40 /* Sources */,
+				3DFD570A2FCD156400EB4A40 /* Frameworks */,
+				3DFD570B2FCD156400EB4A40 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3DFD57122FCD156400EB4A40 /* PayamTutorialWidget */,
+			);
+			name = PayamTutorialWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = PayamTutorialWidgetExtension;
+			productReference = 3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -233,6 +323,9 @@
 					3D147CB92F32B36000748E17 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 3D147CA02F32B35E00748E17;
+					};
+					3DFD570C2FCD156400EB4A40 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -257,6 +350,7 @@
 				3D147CA02F32B35E00748E17 /* Payam */,
 				3D147CAF2F32B36000748E17 /* PayamTests */,
 				3D147CB92F32B36000748E17 /* PayamUITests */,
+				3DFD570C2FCD156400EB4A40 /* PayamTutorialWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -277,6 +371,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3D147CB82F32B36000748E17 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3DFD570B2FCD156400EB4A40 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -307,6 +408,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3DFD57092FCD156400EB4A40 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DFD58002FCD156400EB4A40 /* TutorialActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -319,6 +428,11 @@
 			isa = PBXTargetDependency;
 			target = 3D147CA02F32B35E00748E17 /* Payam */;
 			targetProxy = 3D147CBB2F32B36000748E17 /* PBXContainerItemProxy */;
+		};
+		3DFD571F2FCD156500EB4A40 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3DFD570C2FCD156400EB4A40 /* PayamTutorialWidgetExtension */;
+			targetProxy = 3DFD571E2FCD156500EB4A40 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -459,6 +573,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "fetch processing";
@@ -500,6 +615,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "fetch processing";
@@ -609,6 +725,68 @@
 			};
 			name = Release;
 		};
+		3DFD57222FCD156500EB4A40 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PayamTutorialWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PayamTutorialWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam.PayamTutorialWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3DFD57232FCD156500EB4A40 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PayamTutorialWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PayamTutorialWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam.PayamTutorialWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -644,6 +822,15 @@
 			buildConfigurations = (
 				3D147CCB2F32B36000748E17 /* Debug */,
 				3D147CCC2F32B36000748E17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3DFD57242FCD156500EB4A40 /* Build configuration list for PBXNativeTarget "PayamTutorialWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DFD57222FCD156500EB4A40 /* Debug */,
+				3DFD57232FCD156500EB4A40 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

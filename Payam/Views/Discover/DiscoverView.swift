@@ -33,7 +33,22 @@ struct DiscoverView: View {
     }
 
     private var recommendedFeeds: [CatalogFeed] {
-        RSSCatalog.recommendedFeeds(subscribedURLs: subscribedURLs)
+        // During the tutorial, prefer feeds from the user's picked interests
+        // so the first recommended row matches what they said they want.
+        let base = RSSCatalog.recommendedFeeds(subscribedURLs: subscribedURLs, limit: 16)
+        let interests = TutorialManager.shared.interests
+        guard !interests.isEmpty else { return Array(base.prefix(8)) }
+
+        var preferred: [CatalogFeed] = []
+        var rest: [CatalogFeed] = []
+        for feed in base {
+            if let cat = RSSCatalog.category(for: feed), interests.contains(cat.name) {
+                preferred.append(feed)
+            } else {
+                rest.append(feed)
+            }
+        }
+        return Array((preferred + rest).prefix(8))
     }
 
     // MARK: - Body
@@ -63,6 +78,9 @@ struct DiscoverView: View {
         .sheet(item: $selectedCategory) { cat in
             CategoryFeedsView(category: cat)
         }
+        .onChange(of: feedToAdd != nil) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
+        }
     }
 
     // MARK: - Legacy Body (iOS 17–25)
@@ -84,6 +102,9 @@ struct DiscoverView: View {
         }
         .sheet(item: $selectedCategory) { cat in
             CategoryFeedsView(category: cat)
+        }
+        .onChange(of: feedToAdd != nil) { _, isOpen in
+            TutorialManager.shared.setCoveringModal(isOpen)
         }
     }
 
@@ -361,7 +382,7 @@ struct DiscoverView: View {
             }
         } else {
             if compact {
-                Button {
+                let button = Button {
                     feedToAdd = feed
                 } label: {
                     Image(systemName: "plus")
@@ -372,7 +393,12 @@ struct DiscoverView: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .tutorialPulse(for: showPulse ? .addFromDiscover : .whatIsRSS)
+
+                if showPulse {
+                    button.tutorialGlow(for: .subscribeFirst)
+                } else {
+                    button
+                }
             } else {
                 Button {
                     feedToAdd = feed

@@ -2,112 +2,23 @@
 //  TutorialManager.swift
 //  Payam
 //
-//  @Observable singleton driving the optional first-run interactive tutorial.
-//  MainTabView observes `isActive` / `currentStep` and renders the overlay.
+//  @Observable singleton driving the first-run onboarding tour.
+//
+//  Flow:
+//    hero    → welcome cover
+//    intent  → interest picker (seeds Discover ordering)
+//    checklist → persistent collapsible card with 5 items; user completes them
+//                by performing real actions (subscribe, read, create folder, etc.)
+//    completion → celebration cover; tap "Start reading" to finish
 //
 
 import SwiftUI
 
-// MARK: - TutorialStep
+// MARK: - Notifications
 
-enum TutorialStep: Int, CaseIterable, Equatable {
-    case whatIsRSS       = 0  // full-screen intro
-    case todayFeed       = 1  // spotlight
-    case sources         = 2  // spotlight
-    case createFolder    = 3  // interactive — auto-advances when folder is created
-    case addFromDiscover = 4  // interactive — auto-advances when source is added
-    case deleteFolder    = 5  // interactive — auto-advances when folder is deleted
-    case done            = 6  // full-screen completion
-
-    // MARK: Properties
-
-    /// Which tab to switch to when this step becomes active. nil = stay.
-    var targetTab: AppTab? {
-        switch self {
-        case .todayFeed:                        return .today
-        case .sources, .createFolder,
-             .deleteFolder:                     return .saved
-        case .addFromDiscover:                  return .discover
-        default:                                return nil
-        }
-    }
-
-    /// Full-screen modal card with no spotlight or card.
-    var isFullScreen: Bool { self == .whatIsRSS || self == .done }
-
-    /// Show a spotlight cutout (only informational non-full-screen steps).
-    var hasSpotlight: Bool {
-        self == .todayFeed || self == .sources
-    }
-
-    /// App is fully interactive — no blocking scrim, just a floating card.
-    var isInteractive: Bool {
-        switch self {
-        case .createFolder, .addFromDiscover, .deleteFolder: return true
-        default: return false
-        }
-    }
-
-    // MARK: Content
-
-    var title: String {
-        switch self {
-        case .whatIsRSS:       return "What is RSS?"
-        case .todayFeed:       return "Your Feed"
-        case .sources:         return "Your Sources"
-        case .createFolder:    return "Create a Folder"
-        case .addFromDiscover: return "Add a Feed"
-        case .deleteFolder:    return "Clean Up (Optional)"
-        case .done:            return "You're all set!"
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .whatIsRSS:
-            return "RSS is how websites publish updates. When a blog posts an article or a YouTube channel uploads a video, it appears in an RSS feed — like a live inbox for content.\n\nInstead of checking every site manually or relying on an algorithm, Payam pulls all your subscriptions into one clean, ranked river. You choose what you follow. No ads, no tracking."
-
-        case .todayFeed:
-            return "This is your river — every new article from the feeds you follow, ranked by freshness. Pull down to refresh, or use the folder tabs at the top to filter by topic."
-
-        case .sources:
-            return "This is where all your subscriptions live, organized into folder tiles. Tap any folder to see the feeds inside it. Now let's actually build one together."
-
-        case .createFolder:
-            return "Tap the + button in the top right corner.\n\nIn the menu that appears, tap New Folder. Give it a name, pick a color, and choose an icon — then tap Create.\n\nThe tour moves forward automatically once your folder is created."
-
-        case .addFromDiscover:
-            return "You're now in Discover. Browse by category or scroll the featured feeds.\n\nWhen you find one you like, tap its + button. A folder picker will slide up — select the folder you just created.\n\nThe tour moves forward automatically once you subscribe to a feed."
-
-        case .deleteFolder:
-            return "The folder you created is yours to keep. If you made it just for practice, you can remove it now.\n\nTo delete: tap the folder tile, then tap Edit Folder → Delete Folder.\n\nOtherwise, tap Finish Tour below."
-
-        case .done:
-            return "Your first folder and feed are set up. Explore Discover to find more, or add any RSS URL manually from Sources. You can replay this tour anytime from Settings → Tour."
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .whatIsRSS:       return "dot.radiowaves.left.and.right"
-        case .todayFeed:       return "newspaper.fill"
-        case .sources:         return "antenna.radiowaves.left.and.right"
-        case .createFolder:    return "folder.badge.plus"
-        case .addFromDiscover: return "plus.square.fill"
-        case .deleteFolder:    return "trash"
-        case .done:            return "checkmark.circle.fill"
-        }
-    }
-
-    // 1-based position among all non-full-screen steps for the "X of Y" counter.
-    var stepIndex: Int {
-        let steps = TutorialStep.allCases.filter { !$0.isFullScreen }
-        return (steps.firstIndex(of: self) ?? 0) + 1
-    }
-
-    static var stepCount: Int {
-        TutorialStep.allCases.filter { !$0.isFullScreen }.count
-    }
+extension Notification.Name {
+    /// Posted by TodayView when the user opens an article.
+    static let articleOpened = Notification.Name("payam.articleOpened")
 }
 
 // MARK: - TutorialManager
@@ -115,119 +26,335 @@ enum TutorialStep: Int, CaseIterable, Equatable {
 @Observable
 final class TutorialManager {
 
-    static let shared = TutorialManager()
-    private static let completedKey = "payam.tutorial.completed"
+    // MARK: - Phase
 
-    var isActive: Bool = false
-    var currentStep: TutorialStep = .whatIsRSS
+    enum Phase: Equatable {
+        case dismissed   // not running
+        case hero        // full-screen welcome
+        case intent      // interest picker
+        case checklist   // persistent top card
+        case completion  // celebration
+    }
+
+    // MARK: - Checklist Item
+
+    /// Three core actions that capture the essence of the RSS reader.
+    /// Order matters: it controls the order rows render and the order DI
+    /// dots appear left-to-right.
+    enum ChecklistItem: String, CaseIterable, Identifiable {
+        case createFolder    = "create_folder"
+        case subscribeFirst  = "subscribe_first"
+        case readToday       = "read_today"
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .createFolder:   return "Create a folder"
+            case .subscribeFirst: return "Select a feed from Discover"
+            case .readToday:      return "Read your feed"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .createFolder:   return "Use the + menu in Sources to make a folder."
+            case .subscribeFirst: return "Tap + on a recommended feed in Discover."
+            case .readToday:      return "Tap any article in your river to open it."
+            }
+        }
+
+        /// Icons mirror each step's destination so the row reads as the place it
+        /// sends you: folder for "Create a folder" (Sources), the Discover tab
+        /// glyph for "Select a feed from Discover", the Feed tab glyph for "Read
+        /// your feed".
+        var icon: String {
+            switch self {
+            case .createFolder:   return "folder.fill"
+            case .subscribeFirst: return Design.Icons.discover   // sparkles
+            case .readToday:      return Design.Icons.today      // newspaper.fill
+            }
+        }
+
+        var targetTab: AppTab? {
+            switch self {
+            case .createFolder:   return .saved
+            case .subscribeFirst: return .discover
+            case .readToday:      return .today
+            }
+        }
+    }
+
+    // MARK: - Singleton
+
+    static let shared = TutorialManager()
+
+    // MARK: - Persistence keys
+
+    private static let completedKey = "payam.tutorial.completed"
+    private static let interestsKey = "payam.tutorial.interests"
+    private static func itemKey(_ item: ChecklistItem) -> String {
+        "payam.tutorial.checklist.\(item.rawValue)"
+    }
+
+    // MARK: - Observable state
+
+    var phase: Phase = .dismissed
+    var interests: Set<String> = []
+    var completedItems: Set<ChecklistItem> = []
+    var checklistExpanded: Bool = true
+
+    /// While true the persistent checklist hides itself (a sheet/modal would cover it).
+    var coveringModalActive: Bool = false
+
+    /// Which element should pulse with the attention glow right now. Nil = none.
+    var glowTargetItem: ChecklistItem? = nil
+
+    // MARK: - Derived state
+
+    var isActive: Bool { phase != .dismissed }
+
+    var progress: (done: Int, total: Int) {
+        (completedItems.count, ChecklistItem.allCases.count)
+    }
+
+    var nextItem: ChecklistItem? {
+        ChecklistItem.allCases.first { !completedItems.contains($0) }
+    }
+
+    var isChecklistVisible: Bool {
+        phase == .checklist && !coveringModalActive
+    }
+
+    // MARK: - Lifecycle
 
     private var observers: [NSObjectProtocol] = []
 
-    private init() {}
+    private init() {
+        loadInterests()
+        loadCompletedItems()
+    }
 
+    /// Called on app launch. Starts the tour only on first run.
     func startIfNeeded() {
         guard !UserDefaults.standard.bool(forKey: Self.completedKey) else { return }
         start()
     }
 
+    /// Replay path — wipes prior progress and restarts at hero.
     func start() {
-        currentStep = .whatIsRSS
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
-            isActive = true
+        completedItems = []
+        interests = []
+        UserDefaults.standard.removeObject(forKey: Self.completedKey)
+        UserDefaults.standard.removeObject(forKey: Self.interestsKey)
+        for item in ChecklistItem.allCases {
+            UserDefaults.standard.removeObject(forKey: Self.itemKey(item))
+        }
+        glowTargetItem = nil
+        checklistExpanded = true
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+            phase = .hero
         }
         observeDataEvents()
     }
 
-    private func observeDataEvents() {
-        let nc = NotificationCenter.default
-        observers.forEach { nc.removeObserver($0) }
-        observers = [
-            nc.addObserver(forName: .folderAdded, object: nil, queue: .main) { [weak self] _ in
-                guard let self, self.currentStep == .createFolder else { return }
-                self.advance()
-            },
-            nc.addObserver(forName: .feedAdded, object: nil, queue: .main) { [weak self] _ in
-                guard let self, self.currentStep == .addFromDiscover else { return }
-                self.advance()
-            },
-            nc.addObserver(forName: .folderDeleted, object: nil, queue: .main) { [weak self] _ in
-                guard let self, self.currentStep == .deleteFolder else { return }
-                self.advance()
-            },
-        ]
+    // MARK: - Hero / Intent transitions
+
+    func advanceFromHero() {
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+            phase = .intent
+        }
     }
 
-    func advance() {
-        let all = TutorialStep.allCases
-        guard let idx = all.firstIndex(of: currentStep) else { return }
-        if idx + 1 < all.count {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                currentStep = all[idx + 1]
+    func skipHero() {
+        finish()
+    }
+
+    func completeIntent(picked: Set<String>) {
+        interests = picked
+        saveInterests()
+        checklistExpanded = true
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+            phase = .checklist
+        }
+        TutorialLiveActivityController.shared.start(
+            completed: completedItems,
+            currentTitle: nextItem?.title ?? "All done"
+        )
+    }
+
+    func skipIntent() {
+        checklistExpanded = true
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+            phase = .checklist
+        }
+        TutorialLiveActivityController.shared.start(
+            completed: completedItems,
+            currentTitle: nextItem?.title ?? "All done"
+        )
+    }
+
+    // MARK: - Checklist interaction
+
+    /// User tapped a checklist row. Switches tabs and arms the glow on the
+    /// relevant element. The row itself completes when the user does the action
+    /// (notification-driven).
+    func tapChecklistItem(_ item: ChecklistItem, appState: AppState) {
+        guard !completedItems.contains(item) else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            checklistExpanded = false
+        }
+        if let tab = item.targetTab {
+            withAnimation(Design.Animation.standard) {
+                appState.selectedTab = tab
+            }
+        }
+        if item == .readToday {
+            // Completes on the .articleOpened event; no element-level glow.
+            glowTargetItem = nil
+        } else {
+            triggerGlow(for: item)
+        }
+    }
+
+    func triggerGlow(for item: ChecklistItem) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            glowTargetItem = item
+        }
+    }
+
+    func dismissGlow() {
+        guard glowTargetItem != nil else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            glowTargetItem = nil
+        }
+    }
+
+    func complete(_ item: ChecklistItem) {
+        guard !completedItems.contains(item) else { return }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+            completedItems.insert(item)
+            checklistExpanded = true
+            glowTargetItem = nil
+        }
+        UserDefaults.standard.set(true, forKey: Self.itemKey(item))
+
+        TutorialLiveActivityController.shared.update(
+            completed: completedItems,
+            currentTitle: nextItem?.title ?? "All done"
+        )
+
+        if completedItems.count == ChecklistItem.allCases.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
+                    self?.phase = .completion
+                }
             }
         } else {
-            finish()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
+                guard let self, self.phase == .checklist else { return }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                    self.checklistExpanded = false
+                }
+            }
         }
+    }
+
+    func toggleChecklistExpanded() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            checklistExpanded.toggle()
+        }
+    }
+
+    // MARK: - Modal coordination
+
+    func setCoveringModal(_ active: Bool) {
+        guard isActive else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            coveringModalActive = active
+        }
+    }
+
+    // MARK: - Finish
+
+    func finishCompletion(appState: AppState) {
+        withAnimation(Design.Animation.standard) {
+            appState.selectedTab = .today
+        }
+        finish()
     }
 
     func finish() {
         UserDefaults.standard.set(true, forKey: Self.completedKey)
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         observers = []
+        TutorialLiveActivityController.shared.end()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
-            isActive = false
+            phase = .dismissed
+            glowTargetItem = nil
+            coveringModalActive = false
         }
+    }
+
+    // MARK: - Data event observers
+
+    private func observeDataEvents() {
+        let nc = NotificationCenter.default
+        observers.forEach { nc.removeObserver($0) }
+        observers = [
+            nc.addObserver(forName: .folderAdded, object: nil, queue: .main) { [weak self] _ in
+                self?.complete(.createFolder)
+            },
+            nc.addObserver(forName: .feedAdded, object: nil, queue: .main) { [weak self] _ in
+                self?.complete(.subscribeFirst)
+            },
+            nc.addObserver(forName: .articleOpened, object: nil, queue: .main) { [weak self] _ in
+                self?.complete(.readToday)
+            },
+        ]
+    }
+
+    // MARK: - Persistence
+
+    private func saveInterests() {
+        UserDefaults.standard.set(Array(interests), forKey: Self.interestsKey)
+    }
+
+    private func loadInterests() {
+        if let arr = UserDefaults.standard.stringArray(forKey: Self.interestsKey) {
+            interests = Set(arr)
+        }
+    }
+
+    private func loadCompletedItems() {
+        var items = Set<ChecklistItem>()
+        for item in ChecklistItem.allCases {
+            if UserDefaults.standard.bool(forKey: Self.itemKey(item)) {
+                items.insert(item)
+            }
+        }
+        completedItems = items
     }
 }
 
-// MARK: - Spotlight Anchor Preference Key
+// MARK: - Glow Preference Key
 
-struct TutorialSpotlightKey: PreferenceKey {
-    static var defaultValue: [TutorialStep: Anchor<CGRect>] = [:]
+/// Anchors the bounding rect of any view that should receive the tutorial's
+/// attention glow when it's the active target. Rendered globally from MainTabView
+/// so the glow can extend beyond clipped parent containers (e.g. toolbar buttons).
+struct TutorialGlowKey: PreferenceKey {
+    static var defaultValue: [TutorialManager.ChecklistItem: Anchor<CGRect>] = [:]
     static func reduce(
-        value: inout [TutorialStep: Anchor<CGRect>],
-        nextValue: () -> [TutorialStep: Anchor<CGRect>]
+        value: inout [TutorialManager.ChecklistItem: Anchor<CGRect>],
+        nextValue: () -> [TutorialManager.ChecklistItem: Anchor<CGRect>]
     ) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
 
-// MARK: - View Modifier Helper
-
 extension View {
-    func tutorialSpotlight(for step: TutorialStep) -> some View {
-        anchorPreference(key: TutorialSpotlightKey.self, value: .bounds) { anchor in
-            [step: anchor]
-        }
-    }
-
-    /// Draws a pulsing attention ring on any view when the tutorial is on the given step.
-    func tutorialPulse(for step: TutorialStep) -> some View {
-        modifier(TutorialPulseModifier(step: step))
-    }
-}
-
-// MARK: - Pulsing Attention Ring
-
-private struct TutorialPulseModifier: ViewModifier {
-    let step: TutorialStep
-    @State private var phase: Bool = false
-
-    func body(content: Content) -> some View {
-        let isOn = TutorialManager.shared.isActive && TutorialManager.shared.currentStep == step
-        content
-            .overlay(
-                Circle()
-                    .stroke(Design.Colors.primary, lineWidth: 2.5)
-                    .scaleEffect(phase ? 2.0 : 1.0)
-                    .opacity(phase ? 0 : 0.85)
-                    .allowsHitTesting(false)
-                    .opacity(isOn ? 1 : 0)
-                    .animation(.easeOut(duration: 1.1).repeatForever(autoreverses: false), value: phase)
-            )
-            .onAppear { if isOn { phase = false; phase = true } }
-            .onChange(of: isOn) { _, on in
-                phase = false
-                if on { phase = true }
-            }
+    /// Marks this view as the target of the tutorial's attention glow.
+    func tutorialGlow(for item: TutorialManager.ChecklistItem) -> some View {
+        anchorPreference(key: TutorialGlowKey.self, value: .bounds) { [item: $0] }
     }
 }

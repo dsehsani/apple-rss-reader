@@ -93,6 +93,7 @@ struct TodayView: View {
                                                     sourceID: article.sourceID,
                                                     itemID: article.id
                                                 )
+                                                NotificationCenter.default.post(name: .articleOpened, object: nil)
                                             }
                                         )
                                     }
@@ -173,7 +174,6 @@ struct TodayView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Color.clear.frame(height: 94)
             }
-            .tutorialSpotlight(for: .todayFeed)
             } // close else (hasSources)
         }
         .overlay(alignment: .bottomTrailing) {
@@ -318,7 +318,9 @@ struct TodayView: View {
                     .glassEffect(in: RoundedRectangle(cornerRadius: Design.Radius.glass))
             } else {
                 RoundedRectangle(cornerRadius: Design.Radius.glass)
-                    .fill(colorScheme == .dark ? .ultraThinMaterial : .regularMaterial)
+                    .fill(colorScheme == .dark
+                          ? AnyShapeStyle(.ultraThinMaterial)
+                          : AnyShapeStyle(Design.Colors.cardBackground(for: colorScheme)))
                     .overlay(
                         RoundedRectangle(cornerRadius: Design.Radius.glass)
                             .stroke(

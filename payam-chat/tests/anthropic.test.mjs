@@ -39,6 +39,115 @@ describe('anthropic', () => {
     });
   });
 
+  describe('extractJSONObject', () => {
+    it('extracts a balanced JSON object from surrounding prose', async () => {
+      const { extractJSONObject } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': { getAnthropicApiKey: async () => 'sk-test' },
+      });
+      assert.equal(extractJSONObject('here you go: {"a":1} thanks'), '{"a":1}');
+    });
+
+    it('handles braces inside strings', async () => {
+      const { extractJSONObject } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': { getAnthropicApiKey: async () => 'sk-test' },
+      });
+      const out = extractJSONObject('{"name":"a}b","x":{"y":2}}');
+      assert.equal(out, '{"name":"a}b","x":{"y":2}}');
+    });
+
+    it('returns null when there is no object', async () => {
+      const { extractJSONObject } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': { getAnthropicApiKey: async () => 'sk-test' },
+      });
+      assert.equal(extractJSONObject('no json here'), null);
+      assert.equal(extractJSONObject(42), null);
+    });
+  });
+
+  describe('callWithWebSearch', () => {
+    function mockSDK(content, usage = { input_tokens: 5, output_tokens: 10 }) {
+      return {
+        '../src/secrets.mjs': { getAnthropicApiKey: async () => 'sk-test' },
+        '@anthropic-ai/sdk': {
+          default: class {
+            get messages() {
+              return { create: async () => ({ content, usage }) };
+            }
+          },
+        },
+      };
+    }
+
+    it('passes the web_search tool and parses JSON from mixed content blocks', async () => {
+      let received;
+      const { callWithWebSearch, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': { getAnthropicApiKey: async () => 'sk-test' },
+        '@anthropic-ai/sdk': {
+          default: class {
+            get messages() {
+              return {
+                create: async (body) => {
+                  received = body;
+                  return {
+                    content: [
+                      { type: 'server_tool_use', name: 'web_search' },
+                      { type: 'web_search_tool_result', content: [] },
+                      { type: 'text', text: 'Found these: {"topic":"soccer","candidates":[]}' },
+                    ],
+                    usage: { input_tokens: 12, output_tokens: 8 },
+                  };
+                },
+              };
+            }
+          },
+        },
+      });
+
+      const result = await callWithWebSearch({
+        model: MODELS.SONNET,
+        system: 'find feeds',
+        messages: [{ role: 'user', content: 'soccer' }],
+        maxTokens: 500,
+        responseJSON: true,
+      });
+      assert.deepEqual(result.data, { topic: 'soccer', candidates: [] });
+      assert.equal(received.tools[0].type, 'web_search_20250305');
+      assert.equal(received.tools[0].name, 'web_search');
+      assert.equal(result.usage.inputTokens, 12);
+    });
+
+    it('returns raw text when responseJSON is false', async () => {
+      const { callWithWebSearch, MODELS } = await esmock(
+        '../src/anthropic.mjs',
+        mockSDK([{ type: 'text', text: 'plain answer' }]),
+      );
+      const result = await callWithWebSearch({
+        model: MODELS.SONNET,
+        system: 's',
+        messages: [{ role: 'user', content: 'x' }],
+        maxTokens: 100,
+      });
+      assert.equal(result.data, 'plain answer');
+    });
+
+    it('throws when no JSON object is present', async () => {
+      const { callWithWebSearch, MODELS } = await esmock(
+        '../src/anthropic.mjs',
+        mockSDK([{ type: 'text', text: 'sorry, nothing' }]),
+      );
+      await assert.rejects(
+        callWithWebSearch({
+          model: MODELS.SONNET,
+          system: 's',
+          messages: [{ role: 'user', content: 'x' }],
+          maxTokens: 100,
+          responseJSON: true,
+        }),
+        /no JSON object/,
+      );
+    });
+  });
+
   describe('callWithCachedSystem', () => {
     it('returns parsed JSON when responseJSON is true', async () => {
       const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {

@@ -35,16 +35,43 @@ struct MainTabView: View {
     var body: some View {
         // Read tutorial state here in body so @Observable registers these as
         // dependencies on MainTabView — guaranteeing a re-render when they change.
-        let isActive = tutorial.isActive
-        let step     = tutorial.currentStep
+        let phase           = tutorial.phase
+        let completed       = tutorial.completedItems
+        let checklistOpen   = tutorial.checklistExpanded
+        let modalActive     = tutorial.coveringModalActive
+        let glowTarget      = tutorial.glowTargetItem
 
-        if #available(iOS 26.0, *) {
-            liquidGlassTabView
-                .applyTutorial(isActive: isActive, step: step, tutorial: tutorial, appState: appState)
-        } else {
-            legacyCustomTabView
-                .applyTutorial(isActive: isActive, step: step, tutorial: tutorial, appState: appState)
+        VStack(spacing: 0) {
+            if phase == .checklist && !modalActive {
+                TutorialChecklistCard(
+                    tutorial: tutorial,
+                    completedItems: completed,
+                    expanded: checklistOpen
+                )
+                .environment(appState)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            Group {
+                if #available(iOS 26.0, *) {
+                    liquidGlassTabView
+                } else {
+                    legacyCustomTabView
+                }
+            }
         }
+        .applyTutorial(
+            phase: phase,
+            completedItems: completed,
+            checklistExpanded: checklistOpen,
+            coveringModalActive: modalActive,
+            glowTarget: glowTarget,
+            tutorial: tutorial,
+            appState: appState
+        )
     }
 
     // MARK: - iOS 26+ Liquid Glass Native TabView
@@ -204,39 +231,115 @@ struct MainTabView: View {
 // MARK: - Tutorial Overlay Modifier
 
 private extension View {
-    /// Attaches the tutorial overlay, tab-switching, and start-on-appear logic.
-    /// Applied to each OS branch individually so the modifier sits on a concrete
-    /// view type, not a Group — this keeps @Observable tracking reliable.
+    /// Attaches the redesigned onboarding flow: hero / intent full-screen
+    /// covers, the persistent checklist card, the demo-feed sheet, the
+    /// completion celebration, and a global attention glow that highlights
+    /// the next action target. Applied per OS branch so the modifier sits on
+    /// a concrete view type — this keeps @Observable tracking reliable.
     func applyTutorial(
-        isActive: Bool,
-        step: TutorialStep,
+        phase: TutorialManager.Phase,
+        completedItems: Set<TutorialManager.ChecklistItem>,
+        checklistExpanded: Bool,
+        coveringModalActive: Bool,
+        glowTarget: TutorialManager.ChecklistItem?,
         tutorial: TutorialManager,
         appState: AppState
     ) -> some View {
-        self
-            .overlayPreferenceValue(TutorialSpotlightKey.self) { prefs in
-                // `isActive` and `step` are captured from body's local lets,
-                // so this closure always reflects the latest tracked values.
-                if isActive {
+        modifier(TutorialModifier(
+            phase: phase,
+            completedItems: completedItems,
+            checklistExpanded: checklistExpanded,
+            coveringModalActive: coveringModalActive,
+            glowTarget: glowTarget,
+            tutorial: tutorial,
+            appState: appState
+        ))
+    }
+}
+
+private struct TutorialModifier: ViewModifier {
+    let phase: TutorialManager.Phase
+    let completedItems: Set<TutorialManager.ChecklistItem>
+    let checklistExpanded: Bool
+    let coveringModalActive: Bool
+    let glowTarget: TutorialManager.ChecklistItem?
+    let tutorial: TutorialManager
+    let appState: AppState
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var showHero: Binding<Bool> {
+        Binding(
+            get: { phase == .hero },
+            set: { newValue in
+                guard !newValue, phase == .hero else { return }
+                tutorial.skipHero()
+            }
+        )
+    }
+
+    private var showIntent: Binding<Bool> {
+        Binding(
+            get: { phase == .intent },
+            set: { newValue in
+                guard !newValue, phase == .intent else { return }
+                tutorial.skipIntent()
+            }
+        )
+    }
+
+    private var showCompletion: Binding<Bool> {
+        Binding(
+            get: { phase == .completion },
+            set: { newValue in
+                guard !newValue, phase == .completion else { return }
+                tutorial.finishCompletion(appState: appState)
+            }
+        )
+    }
+
+    func body(content: Content) -> some View {
+        content
+            // Global attention glow — drawn at the top overlay layer so it
+            // isn't clipped by clipShape() / toolbar containers further down.
+            .overlayPreferenceValue(TutorialGlowKey.self) { prefs in
+                if let target = glowTarget, let anchor = prefs[target] {
                     GeometryReader { geo in
-                        let frame: CGRect? = prefs[step].map { geo[$0] }
-                        TutorialOverlayView(
-                            step: step,
-                            spotlightFrame: frame,
-                            screenSize: geo.size,
-                            onNext: { tutorial.advance() },
-                            onSkip: { tutorial.finish() }
-                        )
+                        let frame = geo[anchor]
+                        TutorialGlow()
+                            .frame(
+                                width: max(frame.width, 32) + 36,
+                                height: max(frame.height, 32) + 36
+                            )
+                            .position(x: frame.midX, y: frame.midY)
+                            .allowsHitTesting(false)
                     }
                     .ignoresSafeArea()
+                    .transition(.opacity)
                 }
             }
-            .onChange(of: step) { _, newStep in
-                if let tab = newStep.targetTab {
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                        appState.selectedTab = tab
-                    }
-                }
+            // Hero welcome
+            .fullScreenCover(isPresented: showHero) {
+                TutorialHeroView(
+                    onStart: { tutorial.advanceFromHero() },
+                    onSkip:  { tutorial.skipHero() }
+                )
+                .interactiveDismissDisabled()
+            }
+            // Intent personalization
+            .fullScreenCover(isPresented: showIntent) {
+                TutorialIntentView(
+                    onContinue: { picked in tutorial.completeIntent(picked: picked) },
+                    onSkip:     { tutorial.skipIntent() }
+                )
+                .interactiveDismissDisabled()
+            }
+            // Completion celebration
+            .fullScreenCover(isPresented: showCompletion) {
+                TutorialCompletionView(
+                    onFinish: { tutorial.finishCompletion(appState: appState) }
+                )
+                .interactiveDismissDisabled()
             }
             .onAppear {
                 tutorial.startIfNeeded()

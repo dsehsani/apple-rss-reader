@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { candidatesForTopic, CATALOG } from '../src/catalog.mjs';
+import { candidatesForTopic, matchedCandidatesForTopic, CATALOG } from '../src/catalog.mjs';
 
 describe('candidatesForTopic', () => {
   it('returns candidates for a known category keyword', () => {
@@ -45,5 +45,30 @@ describe('candidatesForTopic', () => {
   it('CATALOG is a non-empty array', () => {
     assert.ok(Array.isArray(CATALOG));
     assert.ok(CATALOG.length > 0);
+  });
+});
+
+describe('matchedCandidatesForTopic', () => {
+  it('returns feeds from matching categories, top match first', () => {
+    const results = matchedCandidatesForTopic('apple');
+    assert.ok(results.length > 0);
+    assert.equal(results[0].category, 'Apple');
+    // Only related categories are allowed in; clearly-unrelated ones are excluded.
+    assert.ok(!results.some((r) => ['Music', 'Books', 'Gaming', 'Space'].includes(r.category)));
+  });
+
+  it('returns an empty array when nothing in the catalog matches', () => {
+    assert.deepEqual(matchedCandidatesForTopic('soccer'), []);
+    assert.deepEqual(matchedCandidatesForTopic('xyznonexistent123456'), []);
+  });
+
+  it('does NOT pad with unrelated Tech feeds on a miss (regression)', () => {
+    const results = matchedCandidatesForTopic('underwater basket weaving');
+    assert.equal(results.length, 0);
+  });
+
+  it('respects the limit parameter', () => {
+    const results = matchedCandidatesForTopic('tech', { limit: 2 });
+    assert.ok(results.length <= 2);
   });
 });
