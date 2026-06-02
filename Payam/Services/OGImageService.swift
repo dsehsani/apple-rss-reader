@@ -51,7 +51,7 @@ actor OGImageService {
     /// Bump this integer whenever a bug fix means old negative-cache entries are known
     /// to be invalid (e.g. false-negatives written by task-cancellation before the fix).
     /// The init() will discard the entire negative cache when the stored version is older.
-    private static let negativeCacheVersion = 2
+    private static let negativeCacheVersion = 3  // v3: 512KB buffer fixes false-negatives for Stratechery, Seeking Alpha
     private static let negativeCacheVersionKey = "openrss.ogImageNegativeCacheVersion"
 
     /// How long a negative result is honored before we re-attempt the fetch.
@@ -136,8 +136,12 @@ actor OGImageService {
 
     // MARK: - Fetch (static — accesses no actor state)
 
-    /// Streams the article page up to 64 KB, stopping early once `</head>`
+    /// Streams the article page up to 512 KB, stopping early once `</head>`
     /// is seen, then extracts a usable hero image URL.
+    ///
+    /// 512 KB covers sites with large `<head>` sections (e.g. Stratechery puts
+    /// og:image at ~216 KB, Seeking Alpha at ~434 KB). The `</head>` check uses
+    /// a tail-only scan so each check stays O(1) regardless of buffer size.
     private static func fetchImageURL(from url: URL) async -> String? {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
@@ -161,15 +165,19 @@ actor OGImageService {
             }
 
             var buffer = Data()
-            buffer.reserveCapacity(65_536)
+            buffer.reserveCapacity(524_288)
 
             for try await byte in asyncBytes {
                 buffer.append(byte)
-                if buffer.count >= 65_536 { break }
-                // Check for end of <head> every 512 bytes to avoid scanning every byte.
-                if buffer.count % 512 == 0,
-                   let partial = String(data: buffer, encoding: .utf8),
-                   partial.contains("</head>") { break }
+                if buffer.count >= 524_288 { break }
+                // Check for end of <head> every 512 bytes. Scan only the last
+                // 519 bytes (new chunk + 7-byte overlap) so this stays O(1)
+                // instead of O(buffer) — critical for 200-400 KB <head> sections.
+                if buffer.count % 512 == 0, buffer.count >= 7 {
+                    let tail = buffer.suffix(512 + 7)
+                    if let tailStr = String(data: tail, encoding: .utf8),
+                       tailStr.contains("</head>") { break }
+                }
             }
 
             guard let html = String(data: buffer, encoding: .utf8)
@@ -308,6 +316,11 @@ actor OGImageService {
             absolute = "https://" + absolute.dropFirst(7)
         }
 
+        // Filter blank/placeholder images served by WordPress.com and similar CDNs
+        // when no og:image has been configured. Returning nil lets the caller record
+        // a proper negative result instead of caching a 1×1 transparent placeholder.
+        if absolute.contains("wp.com/i/blank.jpg") { return nil }
+
         return upgradeImageQuality(absolute)
     }
 
@@ -342,19 +355,35 @@ actor OGImageService {
             return result
         }
 
-        // Generic query-param upgrade for unambiguous image-width controls.
-        // Guards: value must be a positive integer ≤ 640 (clearly a small thumbnail).
+        // Generic query-param upgrade for unambiguous image-size controls.
+        // Guards: value must represent a dimension ≤ 640 (clearly a small thumbnail).
         guard var comps = URLComponents(string: result),
               let items = comps.queryItems, !items.isEmpty else { return result }
 
-        let sizeParams: Set<String> = ["w", "width", "mw", "maxwidth"]
+        let scalarParams: Set<String> = ["w", "width", "mw", "maxwidth"]
         var changed = false
         comps.queryItems = items.map { item in
-            guard sizeParams.contains(item.name.lowercased()),
-                  let val = item.value,
-                  let n = Int(val), n > 0, n <= 640 else { return item }
-            changed = true
-            return URLQueryItem(name: item.name, value: "1024")
+            let key = item.name.lowercased()
+
+            // Scalar width params — value is a plain integer
+            if scalarParams.contains(key),
+               let val = item.value, let n = Int(val), n > 0, n <= 640 {
+                changed = true
+                return URLQueryItem(name: item.name, value: "1024")
+            }
+
+            // Compound dimension params — value is "W,H" or "WxH"
+            // WordPress.com CDN uses fit=32,32 (logo thumbnails), resize=300,200, etc.
+            if key == "fit" || key == "resize", let val = item.value {
+                let parts = val.components(separatedBy: CharacterSet(charactersIn: ",x"))
+                let dims = parts.compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+                if let maxDim = dims.max(), maxDim > 0, maxDim <= 640 {
+                    changed = true
+                    return URLQueryItem(name: item.name, value: "1024,1024")
+                }
+            }
+
+            return item
         }
 
         return changed ? (comps.url?.absoluteString ?? result) : result

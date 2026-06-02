@@ -222,21 +222,16 @@ struct ArticleReaderView: View {
         summaryState = .loading
         showSummarySheet = true
 
-        let text = String(articlePlainText().prefix(3000))
-        let prompt = """
-        Summarize the following article in exactly 3 concise sentences. \
-        Focus on the key facts and main takeaway. Plain text only.
-
-        Title: \(extracted.title)
-
-        Content:
-        \(text)
-        """
+        let articleContext = AgentClient.ArticleContext(
+            title: extracted.title,
+            feedName: extracted.feedName,
+            content: String(articlePlainText().prefix(3000))
+        )
 
         do {
             let envelope = try await AgentClient.send(
-                history: [ChatMessage(role: .user, content: prompt)],
-                articleContext: nil,
+                history: [ChatMessage(role: .user, content: "Summarize this article in exactly 3 concise sentences. Focus on the key facts and main takeaway. Plain text only.")],
+                articleContext: articleContext,
                 subscriptions: []
             )
             let reply: String
