@@ -70,11 +70,19 @@ export async function callWithCachedSystem({
   };
 
   if (responseJSON) {
+    // The assistant turn is pre-filled with `{`, so the model continues the JSON
+    // object — but it sometimes keeps writing prose after the closing brace. Extract
+    // the first balanced object (same robust path callWithWebSearch uses) instead of
+    // parsing the whole string, which would throw on any trailing text.
     const reconstructed = '{' + text;
+    const json = extractJSONObject(reconstructed);
+    if (json == null) {
+      throw new Error(`Model returned no JSON object\n--- raw ---\n${reconstructed}`);
+    }
     try {
-      return { data: JSON.parse(reconstructed), raw: reconstructed, usage };
+      return { data: JSON.parse(json), raw: json, usage };
     } catch (e) {
-      throw new Error(`Model returned invalid JSON: ${e.message}\n--- raw ---\n${reconstructed}`);
+      throw new Error(`Model returned invalid JSON: ${e.message}\n--- raw ---\n${json}`);
     }
   }
 

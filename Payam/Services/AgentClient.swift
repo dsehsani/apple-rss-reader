@@ -47,6 +47,12 @@ enum AgentClient {
         }
     }
 
+    /// Minimal decoder for the backend's error response. The full body also carries
+    /// `view`, `usage`, and `quota`, but we only need the human-readable `error` string.
+    private struct ErrorEnvelope: Decodable {
+        let error: String?
+    }
+
     // MARK: - Errors
 
     enum AgentError: LocalizedError {
@@ -113,8 +119,11 @@ enum AgentClient {
 
         guard (200..<300).contains(http.statusCode) else {
             // Try to surface a structured error envelope first; fall back to plain HTTP code.
-            if let payload = try? JSONDecoder().decode([String: String].self, from: data),
-               let msg = payload["error"] {
+            // The backend's error body is the full envelope (error, view, usage, quota), so we
+            // decode just the optional `error` string rather than a flat [String: String] map
+            // (which fails because `view` is a nested object, silently dropping the message).
+            if let payload = try? JSONDecoder().decode(ErrorEnvelope.self, from: data),
+               let msg = payload.error, !msg.isEmpty {
                 throw AgentError.http(http.statusCode, msg)
             }
             throw AgentError.http(http.statusCode, nil)

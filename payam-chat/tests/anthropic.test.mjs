@@ -181,6 +181,42 @@ describe('anthropic', () => {
       assert.equal(result.usage.inputTokens, 10);
     });
 
+    it('parses JSON even when the model appends trailing prose after the object', async () => {
+      // Regression: Haiku sometimes emits a valid object then keeps writing an
+      // "Explanation: ..." paragraph, which caused a strict JSON.parse to throw and
+      // surface as an HTTP 500 on the article-summary path.
+      const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
+        '../src/secrets.mjs': {
+          getAnthropicApiKey: async () => 'sk-test',
+        },
+        '@anthropic-ai/sdk': {
+          default: class {
+            constructor() {}
+            get messages() {
+              return {
+                create: async () => ({
+                  content: [{
+                    type: 'text',
+                    text: '\n  "intent": "unknown",\n  "args": { "raw": "x" },\n  "confidence": 0.35\n}\n\nExplanation: This message appears to be instructing the assistant to summarize an article.',
+                  }],
+                  usage: { input_tokens: 10, output_tokens: 20 },
+                }),
+              };
+            }
+          },
+        },
+      });
+
+      const result = await callWithCachedSystem({
+        model: MODELS.HAIKU,
+        system: 'test system prompt',
+        messages: [{ role: 'user', content: 'summarize this' }],
+        maxTokens: 200,
+        responseJSON: true,
+      });
+      assert.deepEqual(result.data, { intent: 'unknown', args: { raw: 'x' }, confidence: 0.35 });
+    });
+
     it('returns raw text when responseJSON is false', async () => {
       const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
         '../src/secrets.mjs': {
@@ -212,7 +248,7 @@ describe('anthropic', () => {
       assert.equal(result.raw, 'Hello there!');
     });
 
-    it('throws on invalid JSON response', async () => {
+    it('throws when no JSON object can be recovered', async () => {
       const { callWithCachedSystem, MODELS } = await esmock('../src/anthropic.mjs', {
         '../src/secrets.mjs': {
           getAnthropicApiKey: async () => 'sk-test',
@@ -223,7 +259,8 @@ describe('anthropic', () => {
             get messages() {
               return {
                 create: async () => ({
-                  content: [{ type: 'text', text: 'not valid json at all' }],
+                  // Prefill is `{`; an unterminated object never closes → unrecoverable.
+                  content: [{ type: 'text', text: '"intent": "explain"' }],
                   usage: { input_tokens: 5, output_tokens: 10 },
                 }),
               };
@@ -240,7 +277,7 @@ describe('anthropic', () => {
           maxTokens: 200,
           responseJSON: true,
         }),
-        /Model returned invalid JSON/,
+        /Model returned no JSON object/,
       );
     });
 
