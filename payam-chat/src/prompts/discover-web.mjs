@@ -20,6 +20,8 @@ Hard rules:
 - ONLY return feed URLs you are reasonably confident exist. Do NOT invent plausible-looking URLs. If you can't find a feed for a source, leave it out.
 - Return the FEED url (XML), not the website url, in feedURL.
 - No catalog feeds, no duplicates.
+- NEVER suggest Reddit RSS feeds. Reddit aggressively rate-limits RSS (HTTP 429), so any reddit.com URL is automatically dropped server-side — it wastes a slot without ever reaching the user.
+- Prefer sources whose RSS feeds include article images (media:content, og:image, or img tags in item content). Image-rich feeds display better in the app; lean toward publications and blogs over plain-text aggregators when quality is otherwise equal.
 
 Output JSON ONLY (no prose, no code fences), exactly this shape:
 
@@ -36,6 +38,6 @@ Output JSON ONLY (no prose, no code fences), exactly this shape:
   ]
 }
 
-Example topic "Formula 1" → candidates like {name:"Autosport F1", feedURL:"https://www.autosport.com/rss/f1/news/", ...}, {name:"r/formula1", feedURL:"https://www.reddit.com/r/formula1/.rss", ...}, etc. Find the real current URLs by searching; don't rely on memory.
+Example topic "Formula 1" → candidates like {name:"Autosport F1", feedURL:"https://www.autosport.com/rss/f1/news/", ...}, {name:"Motorsport.com F1", feedURL:"https://www.motorsport.com/rss/f1/news/", ...}, etc. Find the real current URLs by searching; don't rely on memory.
 
 Respond with JSON only.`;

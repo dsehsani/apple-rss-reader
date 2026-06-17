@@ -118,7 +118,7 @@ describe('runDiscoverSources', () => {
       webResponse: {
         candidates: [
           { name: 'ESPN FC', feedURL: 'https://espn.com/soccer.xml', oneLine: 'Soccer news', why: 'global coverage' },
-          { name: 'r/soccer', feedURL: 'https://reddit.com/r/soccer/.rss', oneLine: 'Community' },
+          { name: 'BBC Sport Football', feedURL: 'https://feeds.bbci.co.uk/sport/football/rss.xml', oneLine: 'BBC football' },
         ],
       },
     });
@@ -128,6 +128,24 @@ describe('runDiscoverSources', () => {
     assert.equal(result.view.payload.cards[0].name, 'ESPN FC');
     // sample headlines come from the verifier (capped at 2).
     assert.equal(result.view.payload.cards[0].sampleHeadlines.length, 2);
+  });
+
+  it('filters Reddit feeds from AI-discovered candidates', async () => {
+    const { runDiscoverSources } = await makeDiscoverSources({
+      catalogCandidates: [],
+      webResponse: {
+        candidates: [
+          { name: 'r/soccer', feedURL: 'https://reddit.com/r/soccer/.rss', oneLine: 'Community' },
+          { name: 'ESPN FC', feedURL: 'https://espn.com/soccer.xml', oneLine: 'Soccer news' },
+        ],
+      },
+    });
+
+    const result = await runDiscoverSources({ topic: 'soccer' });
+    const urls = result.view.payload.cards.map((c) => c.feedURL);
+    assert.ok(!urls.some((u) => /reddit\.com/i.test(u)), 'no Reddit feeds in results');
+    assert.equal(result.view.payload.cards.length, 1);
+    assert.equal(result.view.payload.cards[0].name, 'ESPN FC');
   });
 
   it('drops AI-discovered feeds that fail validation', async () => {

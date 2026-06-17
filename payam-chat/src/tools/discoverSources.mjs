@@ -133,12 +133,13 @@ async function discoverViaWeb({ topic, exclude = new Set() }) {
     return { cards: [], usage };
   }
 
-  // Dedupe + drop anything already covered by the catalog cards.
+  // Dedupe + drop Reddit (rate-limits RSS with 429) + anything already covered.
   const seen = new Set(exclude);
   const unique = [];
   for (const c of proposed) {
     const url = typeof c?.feedURL === 'string' ? c.feedURL.trim() : '';
     if (!url) continue;
+    if (/reddit\.com/i.test(url)) continue; // Reddit returns 429 on RSS; skip it
     const key = url.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -150,7 +151,8 @@ async function discoverViaWeb({ topic, exclude = new Set() }) {
   const verified = await validateFeeds(unique.map((c) => c.feedURL), { timeoutMs: FEED_TIMEOUT_MS });
   const verifiedByURL = new Map(verified.map((v) => [v.url.toLowerCase(), v]));
 
-  const cards = unique
+  // Build cards, then float image-rich feeds to the top — they render better in the app.
+  const rawCards = unique
     .filter((c) => verifiedByURL.has(c.feedURL.toLowerCase()))
     .map((c) => {
       const v = verifiedByURL.get(c.feedURL.toLowerCase());
@@ -161,8 +163,12 @@ async function discoverViaWeb({ topic, exclude = new Set() }) {
         oneLine: c.oneLine ?? '',
         sampleHeadlines: v.sampleHeadlines.slice(0, 2),
         why: c.why ?? null,
+        hasImages: v.hasImages ?? false,
       };
     });
+
+  rawCards.sort((a, b) => (b.hasImages ? 1 : 0) - (a.hasImages ? 1 : 0));
+  const cards = rawCards.map(({ hasImages: _, ...card }) => card);
 
   return { cards, usage };
 }
