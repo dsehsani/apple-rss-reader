@@ -16,7 +16,7 @@ import { parseFeed } from './lib/parser.mjs';
 
 const FETCH_TIMEOUT_MS = 12_000;
 const TTL_SECONDS = 30 * 24 * 60 * 60;
-const DEAD_THRESHOLD = 3;
+const DEAD_THRESHOLD = 8;
 
 export async function main(event) {
   for (const record of event.Records ?? []) {
@@ -33,9 +33,18 @@ export async function main(event) {
       console.error(JSON.stringify({
         event: 'worker.error',
         feedUrl: body?.feedUrl,
+        receiveCount: record.attributes?.ApproximateReceiveCount,
         err: String(err),
       }));
-      await recordFailure(body.feedUrl);
+      // Only count one failure per orchestrator-triggered message regardless of
+      // how many times SQS retries it. Without this guard, a single transient
+      // error (timeout, 429, 503) with a maxReceiveCount of 3 would call
+      // recordFailure three times in rapid succession and dead-flag the feed
+      // before any real polling problem exists.
+      const isFirstDelivery = record.attributes?.ApproximateReceiveCount === '1';
+      if (isFirstDelivery) {
+        await recordFailure(body.feedUrl);
+      }
       // Rethrow so SQS retries via the queue's redrive policy.
       throw err;
     }

@@ -165,6 +165,11 @@ final class SwiftDataService: FeedDataService {
             self.categories = folders.map { Category(from: $0) }
             self.sources    = feeds.map   { Source(from: $0) }
 
+            if let first = self.sources.first {
+                let uniqueCategoryIDs = Set(self.sources.map(\.categoryID))
+                print("DEBUG loadFromSwiftData: \(self.sources.count) source(s), \(self.categories.count) folder(s), first source '\(first.name)' categoryID=\(first.categoryID) unfiledSentinel=\(SwiftDataService.unfiledFolderID) uniqueCategoryIDCount=\(uniqueCategoryIDs.count)")
+            }
+
             // Reconcile subscriptions with the polling server. Idempotent — only
             // POSTs when the canonical-feedURL set differs from the last successful
             // push, so calling on every load (CloudKit import, add, delete, toggle)
@@ -290,6 +295,12 @@ final class SwiftDataService: FeedDataService {
                 predicate: #Predicate { $0.id == id }
             )
             if let folder = try bg.fetch(descriptor).first {
+                // Collect feed IDs before the cascade delete removes them, then
+                // purge SQLite items so no orphans survive in the River.
+                let feedIDs = folder.feeds.map(\.id)
+                for feedID in feedIDs {
+                    SQLiteStore.shared.deleteItems(forSourceID: feedID)
+                }
                 bg.delete(folder)
                 try bg.save()
             }
@@ -371,6 +382,10 @@ final class SwiftDataService: FeedDataService {
     @MainActor
     func deleteFeed(id: UUID) async throws {
         guard let container else { return }
+        // Delete SQLite items first so there is no window where the source is gone
+        // from SwiftData but its articles still appear as orphans in the River.
+        // FeedModel.id == Source.id == source_id in SQLite, so `id` is correct here.
+        SQLiteStore.shared.deleteItems(forSourceID: id)
         try await Task.detached {
             let bg = ModelContext(container)
             let descriptor = FetchDescriptor<FeedModel>(

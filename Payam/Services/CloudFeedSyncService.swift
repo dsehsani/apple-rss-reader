@@ -117,6 +117,15 @@ final class CloudFeedSyncService: Sendable {
             // can't recur. The OSLog warning is enough.
         }
 
+        log.debug("sync: response had \(response.items.count, privacy: .public) items, mapped \(mapped.count, privacy: .public), unknownIDs=\(unknownFeedIDs.count, privacy: .public), sources count=\(sources.count, privacy: .public)")
+        if let firstMapped = mapped.first,
+           let firstSource = sources.first(where: { $0.id == firstMapped.sourceID }) {
+            log.debug("sync: first mapped FeedItem sourceID=\(firstMapped.sourceID.uuidString, privacy: .public) source='\(firstSource.name, privacy: .public)' categoryID=\(firstSource.categoryID.uuidString, privacy: .public) unfiledSentinel=\(SwiftDataService.unfiledFolderID.uuidString, privacy: .public)")
+        }
+        if !unknownFeedIDs.isEmpty {
+            log.debug("sync: unknown feedIDs: \(unknownFeedIDs.sorted().joined(separator: ", "), privacy: .public)")
+        }
+
         // Dedup against existing rows, then upsert.
         let candidateIDs = Set(mapped.map(\.id))
         let existingIDs = store.existingItemIDs(from: candidateIDs)
@@ -125,6 +134,10 @@ final class CloudFeedSyncService: Sendable {
             store.upsertFeedItems(newItems)
             log.info("Inserted \(newItems.count, privacy: .public) new items (serverTime=\(response.serverTime, privacy: .public))")
         }
+
+        let allInStore = store.fetchAllRecentItems()
+        let visibleInStore = store.fetchRiverItemsAllHistory()
+        log.debug("sync: SQLite after upsert — allRecent=\(allInStore.count, privacy: .public) riverVisible=\(visibleInStore.count, privacy: .public)")
 
         // Persist serverTime only after a successful upsert. Using the server's
         // clock — not Date() — avoids re-fetching the same window if the device
