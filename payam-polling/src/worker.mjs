@@ -150,8 +150,20 @@ function itemRow({ feedId, parsed, nowSec }) {
 }
 
 async function batchPutItems(rows) {
-  for (let i = 0; i < rows.length; i += 25) {
-    const slice = rows.slice(i, i + 25);
+  // BatchWrite rejects batches with duplicate primary keys. Podcast feeds can
+  // surface the same episode URL more than once per parse (e.g. NPR Hidden Brain
+  // re-lists an episode). Deduplicate by itemId, keeping the most recent entry.
+  const byKey = new Map();
+  for (const row of rows) {
+    const existing = byKey.get(row.itemId);
+    if (!existing || row.publishedAt > existing.publishedAt) {
+      byKey.set(row.itemId, row);
+    }
+  }
+  const deduped = [...byKey.values()];
+
+  for (let i = 0; i < deduped.length; i += 25) {
+    const slice = deduped.slice(i, i + 25);
     const RequestItems = {
       [TABLES.items]: slice.map((Item) => ({ PutRequest: { Item } })),
     };

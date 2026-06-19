@@ -21,6 +21,7 @@ Hard rules:
 - Return the FEED url (XML), not the website url, in feedURL.
 - No catalog feeds, no duplicates.
 - NEVER suggest Reddit RSS feeds. Reddit aggressively rate-limits RSS (HTTP 429), so any reddit.com URL is automatically dropped server-side — it wastes a slot without ever reaching the user.
+- NEVER suggest Google News (news.google.com). Its RSS items use redirect URLs instead of direct article links, which breaks article loading in the app, and images never appear in feed cards. Always suggest the original source publication instead.
 - Prefer sources whose RSS feeds include article images (media:content, og:image, or img tags in item content). Image-rich feeds display better in the app; lean toward publications and blogs over plain-text aggregators when quality is otherwise equal.
 
 Output JSON ONLY (no prose, no code fences), exactly this shape:

@@ -65,30 +65,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3D147D0F2F32B99900748E17 /* Exceptions for "Payam" folder in "Payam" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Prompts/AddRSSFeed.md,
-				Prompts/BackgroundRefreshPrompt.md,
-				Prompts/CloudKitPrompt.md,
-				"Prompts/flow-arch.md",
-				Prompts/LiquidGlass.md,
-				Prompts/NavigationBarPrompt.md,
-				Prompts/OnboardingPrompt.md,
-				Prompts/OPMLPrompt.md,
-				Prompts/SearchBarImplementation.md,
-				Prompts/SplashScreen.md,
-				Prompts/stitchCSS.md,
-				Prompts/TextRenderingOptimizationPrompt.md,
-				Prompts/TextRenderingPrompt.md,
-				Prompts/tweakingUI.md,
-				Prompts/UIPrompt.md,
-				Prompts/UpdateUI.md,
-				tasks/lesson.md,
-				tasks/todo.md,
-			);
-			target = 3D147CA02F32B35E00748E17 /* Payam */;
-		};
 		3DFD57252FCD156500EB4A40 /* Exceptions for "PayamTutorialWidget" folder in "PayamTutorialWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -101,9 +77,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3D147CA32F32B35E00748E17 /* Payam */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3D147D0F2F32B99900748E17 /* Exceptions for "Payam" folder in "Payam" target */,
-			);
 			path = Payam;
 			sourceTree = "<group>";
 		};
@@ -215,12 +188,10 @@
 				3D147C9D2F32B35E00748E17 /* Sources */,
 				3D147C9E2F32B35E00748E17 /* Frameworks */,
 				3D147C9F2F32B35E00748E17 /* Resources */,
-				3DFD57212FCD156500EB4A40 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3DFD571F2FCD156500EB4A40 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3D147CA32F32B35E00748E17 /* Payam */,
@@ -565,10 +536,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Payam/Payam.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = GH83YW9NBA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
@@ -586,7 +556,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.awaab.payam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -607,10 +577,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Payam/Payam.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = GH83YW9NBA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
@@ -628,7 +597,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.awaab.payam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -732,7 +701,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = GH83YW9NBA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PayamTutorialWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PayamTutorialWidget;
@@ -744,7 +713,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam.PayamTutorialWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.awaab.payam.tutorialwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -763,7 +732,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H8GRXJ93NR;
+				DEVELOPMENT_TEAM = GH83YW9NBA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PayamTutorialWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PayamTutorialWidget;
@@ -775,7 +744,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam.PayamTutorialWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.awaab.payam.tutorialwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

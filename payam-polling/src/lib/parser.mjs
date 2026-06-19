@@ -60,6 +60,10 @@ function toParsedArticle(item, feedUrl) {
   if (imageURL?.startsWith('http://')) {
     imageURL = 'https://' + imageURL.slice('http://'.length);
   }
+  if (!imageURL) {
+    const videoID = youtubeVideoID(link);
+    if (videoID) imageURL = `https://img.youtube.com/vi/${videoID}/maxresdefault.jpg`;
+  }
 
   let audioURL = null;
   if (isAudioEnc) audioURL = item.enclosure?.url ?? null;
@@ -134,6 +138,20 @@ function firstImageInHtml(html) {
     .replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>');
   if (!decoded.startsWith('http')) return null;
   return decoded.startsWith('http://') ? 'https://' + decoded.slice(7) : decoded;
+}
+
+function youtubeVideoID(urlString) {
+  try {
+    const url = new URL(urlString);
+    const host = url.hostname.replace(/^(www\.|m\.)/, '');
+    if (host === 'youtu.be') return url.pathname.slice(1) || null;
+    if (host === 'youtube.com') {
+      if (url.pathname === '/watch') return url.searchParams.get('v') || null;
+      const shorts = url.pathname.match(/^\/shorts\/([^/]+)/);
+      if (shorts) return shorts[1];
+    }
+  } catch { /* invalid URL */ }
+  return null;
 }
 
 function isAudio(type) { return typeof type === 'string' && type.startsWith('audio/'); }
