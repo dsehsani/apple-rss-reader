@@ -9,10 +9,10 @@
 /* Begin PBXBuildFile section */
 		3DFD570F2FCD156400EB4A40 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DFD570E2FCD156400EB4A40 /* WidgetKit.framework */; };
 		3DFD57112FCD156400EB4A40 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DFD57102FCD156400EB4A40 /* SwiftUI.framework */; };
-		3DFD57202FCD156500EB4A40 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3DFD58002FCD156400EB4A40 /* TutorialActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD58012FCD156400EB4A40 /* TutorialActivityAttributes.swift */; };
 		71B2CA312F4312700054BC30 /* FeedKit in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA302F4312700054BC30 /* FeedKit */; };
 		71B2CA342F4412700054BC30 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 71B2CA332F4412700054BC30 /* SwiftSoup */; };
+		B1A0E5010000000000000001 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3DFD570D2FCD156400EB4A40 /* PayamTutorialWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 			remoteGlobalIDString = 3D147CA02F32B35E00748E17;
 			remoteInfo = Payam;
 		};
-		3DFD571E2FCD156500EB4A40 /* PBXContainerItemProxy */ = {
+		B1A0E5010000000000000003 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3D147C992F32B35E00748E17 /* Project object */;
 			proxyType = 1;
@@ -40,13 +40,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		3DFD57212FCD156500EB4A40 /* Embed Foundation Extensions */ = {
+		B1A0E5010000000000000002 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				3DFD57202FCD156500EB4A40 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */,
+				B1A0E5010000000000000001 /* PayamTutorialWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -65,30 +65,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3D147D0F2F32B99900748E17 /* Exceptions for "Payam" folder in "Payam" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Prompts/AddRSSFeed.md,
-				Prompts/BackgroundRefreshPrompt.md,
-				Prompts/CloudKitPrompt.md,
-				"Prompts/flow-arch.md",
-				Prompts/LiquidGlass.md,
-				Prompts/NavigationBarPrompt.md,
-				Prompts/OnboardingPrompt.md,
-				Prompts/OPMLPrompt.md,
-				Prompts/SearchBarImplementation.md,
-				Prompts/SplashScreen.md,
-				Prompts/stitchCSS.md,
-				Prompts/TextRenderingOptimizationPrompt.md,
-				Prompts/TextRenderingPrompt.md,
-				Prompts/tweakingUI.md,
-				Prompts/UIPrompt.md,
-				Prompts/UpdateUI.md,
-				tasks/lesson.md,
-				tasks/todo.md,
-			);
-			target = 3D147CA02F32B35E00748E17 /* Payam */;
-		};
 		3DFD57252FCD156500EB4A40 /* Exceptions for "PayamTutorialWidget" folder in "PayamTutorialWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -101,9 +77,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3D147CA32F32B35E00748E17 /* Payam */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3D147D0F2F32B99900748E17 /* Exceptions for "Payam" folder in "Payam" target */,
-			);
 			path = Payam;
 			sourceTree = "<group>";
 		};
@@ -215,12 +188,12 @@
 				3D147C9D2F32B35E00748E17 /* Sources */,
 				3D147C9E2F32B35E00748E17 /* Frameworks */,
 				3D147C9F2F32B35E00748E17 /* Resources */,
-				3DFD57212FCD156500EB4A40 /* Embed Foundation Extensions */,
+				B1A0E5010000000000000002 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3DFD571F2FCD156500EB4A40 /* PBXTargetDependency */,
+				B1A0E5010000000000000004 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3D147CA32F32B35E00748E17 /* Payam */,
@@ -429,10 +402,10 @@
 			target = 3D147CA02F32B35E00748E17 /* Payam */;
 			targetProxy = 3D147CBB2F32B36000748E17 /* PBXContainerItemProxy */;
 		};
-		3DFD571F2FCD156500EB4A40 /* PBXTargetDependency */ = {
+		B1A0E5010000000000000004 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 3DFD570C2FCD156400EB4A40 /* PayamTutorialWidgetExtension */;
-			targetProxy = 3DFD571E2FCD156500EB4A40 /* PBXContainerItemProxy */;
+			targetProxy = B1A0E5010000000000000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -565,13 +538,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Payam/Payam.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H8GRXJ93NR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
+				INFOPLIST_KEY_CFBundleDisplayName = Payam;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -588,6 +563,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -607,13 +583,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Payam/Payam.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H8GRXJ93NR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "com.openrss.riverRefresh com.openrss.heroPrefetch";
+				INFOPLIST_KEY_CFBundleDisplayName = Payam;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -630,6 +608,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = DariusEhsani.Payam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

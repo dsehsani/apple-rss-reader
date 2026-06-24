@@ -21,6 +21,7 @@ struct FolderDetailView: View {
     // MARK: - Environment
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
 
     // MARK: - Body
 
@@ -61,6 +62,18 @@ struct FolderDetailView: View {
                             } label: {
                                 Image(systemName: "trash")
                             }
+
+                            // Report a source serving objectionable content
+                            // (App Store Guideline 1.2).
+                            Button {
+                                openURL(AppLinks.reportContent(
+                                    title: feed.name,
+                                    source: feed.websiteURL
+                                ))
+                            } label: {
+                                Image(systemName: "exclamationmark.bubble")
+                            }
+                            .tint(.orange)
                         }
                         .listRowBackground(
                             Design.Colors.cardBackground(for: colorScheme)

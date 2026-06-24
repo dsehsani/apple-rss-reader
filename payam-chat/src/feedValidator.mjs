@@ -71,6 +71,25 @@ function deriveWebsiteURL(xml, feedURL) {
   }
 }
 
+/**
+ * Check whether any of the first 3 item/entry blocks contain an image signal.
+ * Covers the patterns the app's HeroPrefetcher uses: media:content, media:thumbnail,
+ * image/* enclosure, or a bare <img> tag in description/content HTML.
+ */
+function detectImages(xml) {
+  const blockRe = /<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  let m;
+  let checked = 0;
+  while ((m = blockRe.exec(xml)) && checked < 3) {
+    const block = m[2];
+    if (/<media:(content|thumbnail)\b[^>]+url=/i.test(block)) return true;
+    if (/<enclosure\b[^>]+type="image\//i.test(block)) return true;
+    if (/<img[\s][^>]*src=/i.test(block)) return true;
+    checked++;
+  }
+  return false;
+}
+
 /** Does this body look like an RSS/Atom/RDF feed at all? */
 function looksLikeFeed(body) {
   return /<rss[\s>]/i.test(body) || /<feed[\s>]/i.test(body) || /<rdf:RDF[\s>]/i.test(body);
@@ -82,7 +101,7 @@ function looksLikeFeed(body) {
  * @param {string} url
  * @param {object} [opts]
  * @param {number} [opts.timeoutMs=4000]
- * @returns {Promise<{ok: boolean, url: string, title: string|null, websiteURL: string|null, sampleHeadlines: string[], reason?: string}>}
+ * @returns {Promise<{ok: boolean, url: string, title: string|null, websiteURL: string|null, sampleHeadlines: string[], hasImages: boolean, reason?: string}>}
  */
 export async function validateFeed(url, { timeoutMs = 4000 } = {}) {
   const fail = (reason) => ({ ok: false, url, title: null, websiteURL: null, sampleHeadlines: [], reason });
@@ -115,6 +134,7 @@ export async function validateFeed(url, { timeoutMs = 4000 } = {}) {
       title: firstTag(body, 'title'),
       websiteURL: deriveWebsiteURL(body, url),
       sampleHeadlines: headlines,
+      hasImages: detectImages(body),
     };
   } catch (e) {
     return fail(e?.name === 'AbortError' ? 'timeout' : e?.message || 'fetch failed');

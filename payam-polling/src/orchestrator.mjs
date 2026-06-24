@@ -26,6 +26,12 @@ export async function main() {
       ProjectionExpression: 'feedUrl, feedId, etag, lastModified, lastFetchedAt, velocityTier, isDead',
     }));
     for (const row of page.Items ?? []) {
+      // Skip feeds with no active subscribers. subscriberCount can drift negative
+      // if a removal races with an add, so guard with <= 0. Feeds that pre-date
+      // the subscriberCount field (attribute_not_exists) are kept — they may be
+      // legacy rows that haven't been through a subscribe/unsubscribe cycle yet.
+      const count = row.subscriberCount;
+      if (typeof count === 'number' && count <= 0) continue;
       if (isDueForPoll(row, nowSec)) due.push(row);
     }
     ExclusiveStartKey = page.LastEvaluatedKey;

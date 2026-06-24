@@ -6,7 +6,7 @@
 // payam-feed-registry. New feed URLs get a registry row with lastFetchedAt=0
 // so the next orchestrator scan picks them up immediately.
 
-import { PutCommand, DeleteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
 
 import { ddb, TABLES } from './lib/ddb.mjs';
@@ -47,29 +47,41 @@ export async function main(event) {
 
       let inserted = false;
       try {
-        await ddb.send(new PutCommand({
-          TableName: TABLES.userFeeds,
-          Item: {
-            userId,
-            feedUrl,
-            feedId,
-            folderName: entry.folder ?? null,
-            addedAt: nowSec,
-          },
-          ConditionExpression: 'attribute_not_exists(userId) OR attribute_not_exists(feedUrl)',
+        await ddb.send(new TransactWriteCommand({
+          TransactItems: [
+            {
+              Put: {
+                TableName: TABLES.userFeeds,
+                Item: {
+                  userId,
+                  feedUrl,
+                  feedId,
+                  folderName: entry.folder ?? null,
+                  addedAt: nowSec,
+                },
+                ConditionExpression: 'attribute_not_exists(userId) OR attribute_not_exists(feedUrl)',
+              },
+            },
+            {
+              Update: {
+                TableName: TABLES.registry,
+                Key: { feedUrl },
+                UpdateExpression: 'ADD subscriberCount :one',
+                ExpressionAttributeValues: { ':one': 1 },
+              },
+            },
+          ],
         }));
         inserted = true;
       } catch (err) {
-        if (err?.name !== 'ConditionalCheckFailedException') throw err;
-        // Already subscribed — no-op, don't double-increment subscriberCount.
+        if (err?.name === 'TransactionCanceledException' &&
+            err.CancellationReasons?.[0]?.Code === 'ConditionalCheckFailed') {
+          // Already subscribed — no-op, don't double-increment subscriberCount.
+        } else {
+          throw err;
+        }
       }
       if (inserted) {
-        await ddb.send(new UpdateCommand({
-          TableName: TABLES.registry,
-          Key: { feedUrl },
-          UpdateExpression: 'ADD subscriberCount :one',
-          ExpressionAttributeValues: { ':one': 1 },
-        }));
         toKickPoll.push({ feedUrl, feedId });
         result.added++;
       }
@@ -88,22 +100,36 @@ export async function main(event) {
       const feedUrl = canonicalizeFeedUrl(entry.feedUrl);
       let didDelete = false;
       try {
-        await ddb.send(new DeleteCommand({
-          TableName: TABLES.userFeeds,
-          Key: { userId, feedUrl },
-          ConditionExpression: 'attribute_exists(userId)',
+        await ddb.send(new TransactWriteCommand({
+          TransactItems: [
+            {
+              Delete: {
+                TableName: TABLES.userFeeds,
+                Key: { userId, feedUrl },
+                ConditionExpression: 'attribute_exists(userId)',
+              },
+            },
+            {
+              Update: {
+                TableName: TABLES.registry,
+                Key: { feedUrl },
+                UpdateExpression: 'ADD subscriberCount :neg',
+                ConditionExpression: 'subscriberCount > :zero',
+                ExpressionAttributeValues: { ':neg': -1, ':zero': 0 },
+              },
+            },
+          ],
         }));
         didDelete = true;
       } catch (err) {
-        if (err?.name !== 'ConditionalCheckFailedException') throw err;
+        if (err?.name === 'TransactionCanceledException' &&
+            err.CancellationReasons?.[0]?.Code === 'ConditionalCheckFailed') {
+          // Already unsubscribed — no-op.
+        } else {
+          throw err;
+        }
       }
       if (didDelete) {
-        await ddb.send(new UpdateCommand({
-          TableName: TABLES.registry,
-          Key: { feedUrl },
-          UpdateExpression: 'ADD subscriberCount :neg',
-          ExpressionAttributeValues: { ':neg': -1 },
-        }));
         result.removed++;
       }
     } catch (err) {

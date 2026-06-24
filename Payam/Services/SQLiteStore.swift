@@ -774,6 +774,19 @@ final class SQLiteStore: Sendable {
 
     // MARK: - Maintenance
 
+    /// Deletes all feed items belonging to a single source. Called when a feed is
+    /// unsubscribed so orphaned items never appear in the River with missing source names.
+    func deleteItems(forSourceID sourceID: UUID) {
+        queue.sync {
+            let sql = "DELETE FROM feed_items WHERE source_id = ?"
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db.pointer, sql, -1, &stmt, nil) == SQLITE_OK else { return }
+            defer { sqlite3_finalize(stmt) }
+            bindText(stmt, 1, sourceID.uuidString)
+            sqlite3_step(stmt)
+        }
+    }
+
     /// Deletes items that have been aged out for more than `days` days.
     func purgeAgedItems(olderThan days: Int = 30) {
         queue.sync {

@@ -29,3 +29,6 @@ OpenRSS Development Plan*
 .claude/
 .cursor/
 payam-chat/coverage/
+
+# Dev docs/prompts/logs moved out of the app target (not shipped)
+dev-artifacts/

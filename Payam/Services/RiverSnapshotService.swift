@@ -124,6 +124,8 @@ final class RiverSnapshotService: @unchecked Sendable {
                 > $1.adjustedPositionalWeight(preferUniqueStories: preferUniqueStories)
         }
 
+        print("snapshot: SQLite=\(rawRiverItems.count) afterFilterRules=\(riverItems.count) afterAssembly=\(items.count) finalSorted=\(sorted.count) suppressed=\(suppressedCount)")
+
         // Diff against previous snapshot
         let currentIDs = Set(sorted.map(\.id))
         let newIDs = currentIDs.subtracting(previousItemIDs)

@@ -188,6 +188,9 @@ final class RiverViewModel {
         .map(\.0)
 
         // Break up runs of 3+ consecutive items from the same source
+        if !isAllUpdates {
+            print("folder filter: category='\(category?.name ?? "nil")' id=\(category?.id.uuidString ?? "nil") riverItemsTotal=\(riverItems.count) matchedAfterFilter=\(sorted.count)")
+        }
         return interleaveBySource(sorted, maxConsecutive: 3)
     }
 

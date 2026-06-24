@@ -23,6 +23,8 @@ struct AccountView: View {
     // MARK: - State
 
     @State private var showSignOutConfirmation = false
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
     @State private var showError = false
     @State private var errorMessage = ""
 
@@ -56,6 +58,19 @@ struct AccountView: View {
         } message: {
             Text("Your data will remain on this device but will no longer sync to iCloud. You can sign in again at any time.")
         }
+        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
+            Button("Delete Account", role: .destructive) {
+                isDeleting = true
+                Task {
+                    await authManager.deleteAccount()
+                    isDeleting = false
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your account and removes your name, email, and Apple ID from this app and iCloud. This action cannot be undone.")
+        }
         .alert("Sign In Failed", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -75,6 +90,9 @@ struct AccountView: View {
 
             // Sign out
             signOutSection
+
+            // Delete account (Guideline 5.1.1(v))
+            deleteAccountSection
         }
     }
 
@@ -203,6 +221,41 @@ struct AccountView: View {
                 )
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, Design.Spacing.edge)
+    }
+
+    private var deleteAccountSection: some View {
+        VStack(spacing: 8) {
+            Button {
+                showDeleteConfirmation = true
+            } label: {
+                HStack(spacing: 8) {
+                    if isDeleting {
+                        ProgressView()
+                            .tint(.red)
+                    }
+                    Text(isDeleting ? "Deleting…" : "Delete Account")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Design.Colors.cardBackground(for: colorScheme))
+                .clipShape(RoundedRectangle(cornerRadius: Design.Radius.standard))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Design.Radius.standard)
+                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isDeleting)
+
+            Text("Permanently deletes your account and removes your name, email, and Apple ID from this app and iCloud. This cannot be undone.")
+                .font(.system(size: 12))
+                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
+        }
         .padding(.horizontal, Design.Spacing.edge)
     }
 

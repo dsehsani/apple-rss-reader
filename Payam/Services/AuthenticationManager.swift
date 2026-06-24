@@ -179,6 +179,42 @@ final class AuthenticationManager {
         NotificationCenter.default.post(name: Notification.Name("Payam.AuthStateChanged"), object: nil)
     }
 
+    // MARK: - Delete Account
+
+    /// Permanently deletes the user's account and associated personal data from
+    /// the device, satisfying App Store Guideline 5.1.1(v).
+    ///
+    /// Removes the stored Apple credential and device identifier from Keychain,
+    /// deletes the `UserProfile` (name / email / Apple user ID) from SwiftData —
+    /// which also tombstones the record in the user's private CloudKit database so
+    /// it is removed from any other signed-in devices on next sync — and returns
+    /// the app to a signed-out state. Locally cached articles are also purged.
+    @MainActor
+    func deleteAccount() async {
+        // Delete the persisted profile (and let CloudKit propagate the deletion).
+        if let context = modelContext {
+            let descriptor = FetchDescriptor<UserProfile>()
+            if let profiles = try? context.fetch(descriptor) {
+                for profile in profiles { context.delete(profile) }
+                try? context.save()
+            }
+        }
+
+        // Purge locally cached content tied to this account.
+        await SwiftDataService.shared.clearAllCaches()
+
+        // Remove credentials that survive reinstall.
+        KeychainService.deleteAppleUserID()
+        KeychainService.deleteDeviceID()
+
+        // Reset auth state. Clearing guest mode means onboarding is shown again.
+        currentUser = nil
+        hasSkippedSignIn = false
+        state = .signedOut
+
+        NotificationCenter.default.post(name: Notification.Name("Payam.AuthStateChanged"), object: nil)
+    }
+
     // MARK: - Guest Mode
 
     /// User chose to skip sign-in. They can sign in later from Settings.
