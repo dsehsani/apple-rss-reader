@@ -1,0 +1,49 @@
+{
+  "" : {
+    "diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetExtension-primary.dia",
+    "emit-module-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetExtension-primary-emit-module.dia",
+    "pch" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetExtension-primary.swiftdeps"
+  },
+  "/Volumes/Darius_SSD/Payam Master/Payam/Payam/Shared/TutorialActivityAttributes.swift" : {
+    "const-values" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.swiftconstvalues",
+    "dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.d",
+    "diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.dia",
+    "index-unit-output-path" : "/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.o",
+    "llvm-bc" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.bc",
+    "object" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.o",
+    "swift-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes.swiftdeps",
+    "swiftmodule" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/TutorialActivityAttributes~partial.swiftmodule"
+  },
+  "/Volumes/Darius_SSD/Payam Master/Payam/PayamTutorialWidget/PayamTutorialWidgetBundle.swift" : {
+    "const-values" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.swiftconstvalues",
+    "dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.d",
+    "diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.dia",
+    "index-unit-output-path" : "/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.o",
+    "llvm-bc" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.bc",
+    "object" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.o",
+    "swift-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle.swiftdeps",
+    "swiftmodule" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetBundle~partial.swiftmodule"
+  },
+  "/Volumes/Darius_SSD/Payam Master/Payam/PayamTutorialWidget/PayamTutorialWidgetLiveActivity.swift" : {
+    "const-values" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.swiftconstvalues",
+    "dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.d",
+    "diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.dia",
+    "index-unit-output-path" : "/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.o",
+    "llvm-bc" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.bc",
+    "object" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.o",
+    "swift-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity.swiftdeps",
+    "swiftmodule" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/PayamTutorialWidgetLiveActivity~partial.swiftmodule"
+  },
+  "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Volumes/Darius_SSD/Payam Master/Payam/build/Payam.build/Debug-iphoneos/PayamTutorialWidgetExtension.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

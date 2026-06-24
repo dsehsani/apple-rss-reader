@@ -37,6 +37,8 @@ struct ArticleReaderView: View {
     @State private var showSummarySheet = false
     @State private var showVideoSafari = false
 
+    @Environment(\.openURL) private var openURL
+
     // MARK: - Body
 
     var body: some View {
@@ -360,6 +362,26 @@ struct ArticleReaderView: View {
                             .fill(Color(.secondarySystemFill))
                     )
             }
+
+            // Report objectionable content (App Store Guideline 1.2). Routes to
+            // support so reports of third-party feed content are actionable.
+            Menu {
+                Button(role: .destructive) {
+                    openURL(AppLinks.reportContent(
+                        title: extracted.title,
+                        source: extracted.feedName
+                    ))
+                } label: {
+                    Label("Report Content", systemImage: "exclamationmark.bubble")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .background(Capsule().fill(Color(.secondarySystemFill)))
+            }
+            .accessibilityLabel("More options")
         }
     }
 

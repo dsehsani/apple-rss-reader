@@ -35,6 +35,7 @@ struct AgentSheetView: View {
             turnList
             Divider().opacity(colorScheme == .dark ? 0.15 : 0.25)
             inputBar
+            aiDisclaimer
         }
         .background(Design.Colors.background(for: colorScheme).ignoresSafeArea())
     }
@@ -77,6 +78,19 @@ struct AgentSheetView: View {
         .padding(.horizontal, 20)
         .padding(.top, 16)
         .padding(.bottom, 14)
+    }
+
+    // MARK: - AI Disclaimer
+
+    private var aiDisclaimer: some View {
+        Text("AI-generated responses may be inaccurate. Verify important information.")
+            .font(.system(size: 11))
+            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+            .background(Design.Colors.background(for: colorScheme))
     }
 
     // MARK: - Quota banner

@@ -361,23 +361,41 @@ struct SettingsView: View {
     }
 
     private var aboutSection: some View {
-        settingsSection(title: "About", icon: "info.circle.fill") {
-            Link(destination: AppLinks.privacyPolicy) {
-                HStack {
-                    Text("Privacy Policy")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+        VStack(alignment: .leading, spacing: Design.Spacing.small) {
+            settingsSection(title: "About", icon: "info.circle.fill") {
+                VStack(spacing: 0) {
+                    aboutLinkRow(title: "Privacy Policy", url: AppLinks.privacyPolicy)
+                    divider
+                    aboutLinkRow(title: "Terms of Use", url: AppLinks.termsOfService)
+                    divider
+                    aboutLinkRow(title: "Contact Support", url: AppLinks.support)
                 }
-                .padding(.horizontal, Design.Spacing.edge)
-                .padding(.vertical, 14)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+
+            Text("Payam aggregates third-party RSS feeds you choose to add. We have no tolerance for objectionable content — use \u{201C}Report Content\u{201D} on any article or feed to flag it, and we'll review reports promptly.")
+                .font(.system(size: 12))
+                .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+                .padding(.horizontal, Design.Spacing.edge + 4)
+                .padding(.top, 2)
         }
+    }
+
+    private func aboutLinkRow(title: String, url: URL) -> some View {
+        Link(destination: url) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 16))
+                    .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Design.Colors.secondaryText(for: colorScheme).opacity(0.5))
+            }
+            .padding(.horizontal, Design.Spacing.edge)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helper Views

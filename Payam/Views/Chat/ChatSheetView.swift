@@ -24,6 +24,7 @@ struct ChatSheetView: View {
             messageList
             Divider().opacity(colorScheme == .dark ? 0.15 : 0.25)
             inputBar
+            aiDisclaimer
         }
         .background(Design.Colors.background(for: colorScheme).ignoresSafeArea())
     }
@@ -46,7 +47,7 @@ struct ChatSheetView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Design.Colors.primaryText(for: colorScheme))
 
-                Text(viewModel.articleContext != nil ? "Article context loaded" : "Powered by ChatGPT")
+                Text(viewModel.articleContext != nil ? "Article context loaded" : "Powered by AI")
                     .font(.system(size: 11))
                     .foregroundStyle(
                         viewModel.articleContext != nil
@@ -68,6 +69,19 @@ struct ChatSheetView: View {
         .padding(.horizontal, 20)
         .padding(.top, 16)
         .padding(.bottom, 14)
+    }
+
+    // MARK: - AI Disclaimer
+
+    private var aiDisclaimer: some View {
+        Text("AI-generated responses may be inaccurate. Verify important information.")
+            .font(.system(size: 11))
+            .foregroundStyle(Design.Colors.secondaryText(for: colorScheme))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+            .background(Design.Colors.background(for: colorScheme))
     }
 
     // MARK: - Message List
